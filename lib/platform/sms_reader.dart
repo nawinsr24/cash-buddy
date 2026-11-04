@@ -1,0 +1,100 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+
+import '../data/repo.dart';
+import '../domain/sms_parser.dart';
+
+/// Android-only bridge to the on-device SMS inbox (see MainActivity.kt).
+/// On iOS / web there is no inbox access, so every call reports "unsupported".
+class SmsReader {
+  SmsReader._();
+  static final instance = SmsReader._();
+  static const _ch = MethodChannel('cash_buddy/sms');
+
+  static bool get supported =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+
+  Future<bool> hasPermission() async {
+    if (!supported) return false;
+    try {
+      return await _ch.invokeMethod<bool>('hasPermission') ?? false;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
+
+  /// Shows the system permission dialog (no-op if already granted).
+  Future<bool> requestPermission() async {
+    if (!supported) return false;
+    try {
+      return await _ch.invokeMethod<bool>('requestPermission') ?? false;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
+
+  Future<List<({String sender, String body, DateTime receivedAt})>> readInbox({
+    required DateTime since,
+    int limit = 500,
+  }) async {
+    final rows = await _ch.invokeListMethod<Map>('readInbox', {
+      'sinceMillis': since.millisecondsSinceEpoch,
+      'limit': limit,
+    });
+    return [
+      for (final r in rows ?? const <Map>[])
+        (
+          sender: (r['address'] as String?) ?? '',
+          body: (r['body'] as String?) ?? '',
+          receivedAt: DateTime.fromMillisecondsSinceEpoch(
+            (r['date'] as num).toInt(),
+          ),
+        ),
+    ];
+  }
+}
+
+class SmsScanResult {
+  final int scanned, added, duplicates, ignored;
+  final String? error;
+  const SmsScanResult(
+    this.scanned,
+    this.added,
+    this.duplicates,
+    this.ignored, [
+    this.error,
+  ]);
+  bool get ok => error == null;
+}
+
+/// Reads recent inbox messages and queues transaction candidates for review.
+/// Nothing is written to the ledger here; the user confirms each one.
+Future<SmsScanResult> scanSmsInbox(
+  Repo repo, {
+  int firstScanDays = 30,
+  SmsReader? reader,
+}) async {
+  final r = reader ?? SmsReader.instance;
+  if (!await r.hasPermission()) {
+    return const SmsScanResult(0, 0, 0, 0, 'SMS permission not granted');
+  }
+  try {
+    final last = int.tryParse(await repo.getSetting('smsLastScan') ?? '');
+    final startedAt = DateTime.now();
+    // overlap by a minute so a message arriving mid-scan is never skipped (dedup handles repeats)
+    final since = last != null
+        ? DateTime.fromMillisecondsSinceEpoch(last)
+              .subtract(const Duration(minutes: 1))
+        : startedAt.subtract(Duration(days: firstScanDays));
+    final msgs = await r.readInbox(since: since);
+    final res = await repo.ingestSms(msgs, SmsParser());
+    await repo.setSetting('smsLastScan', '${startedAt.millisecondsSinceEpoch}');
+    return SmsScanResult(msgs.length, res.added, res.duplicates, res.rejected);
+  } catch (e) {
+    return SmsScanResult(0, 0, 0, 0, '$e');
+  }
+}

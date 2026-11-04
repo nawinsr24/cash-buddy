@@ -8,7 +8,9 @@ import 'package:intl/intl.dart';
 import '../data/db.dart';
 import '../domain/dates.dart';
 import '../domain/sms_parser.dart';
+import '../platform/sms_reader.dart';
 import '../providers.dart';
+import 'settings.dart' show scanAndReport;
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
 
@@ -25,6 +27,12 @@ class InboxPage extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Inbox'),
         actions: [
+          if (SmsReader.supported)
+            IconButton(
+              tooltip: 'Scan messages',
+              icon: const Icon(Icons.manage_search),
+              onPressed: () => scanAndReport(context, ref),
+            ),
           IconButton(
             tooltip: 'Import messages',
             icon: const Icon(Icons.content_paste),

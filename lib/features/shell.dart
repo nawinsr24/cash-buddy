@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../platform/sms_reader.dart';
 import '../providers.dart';
 import 'dashboard.dart';
 import 'debts.dart';
@@ -14,8 +15,34 @@ class Shell extends ConsumerStatefulWidget {
   ConsumerState<Shell> createState() => ShellState();
 }
 
-class ShellState extends ConsumerState<Shell> {
+class ShellState extends ConsumerState<Shell> with WidgetsBindingObserver {
   int _index = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _autoScan();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _autoScan();
+  }
+
+  /// Quietly look for new bank messages when the app opens or returns.
+  Future<void> _autoScan() async {
+    if (!SmsReader.supported) return;
+    final repo = ref.read(repoProvider);
+    if (await repo.getSetting('smsEnabled') != '1') return;
+    await scanSmsInbox(repo);
+  }
 
   @override
   Widget build(BuildContext context) {

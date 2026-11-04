@@ -8,6 +8,7 @@ import '../data/db.dart';
 import '../data/repo.dart';
 import '../domain/money.dart';
 import '../platform/notifications.dart';
+import '../platform/sms_reader.dart';
 import '../providers.dart';
 import '../sync/backup.dart';
 import '../sync/sync_service.dart';
@@ -190,9 +191,19 @@ class SettingsPage extends ConsumerWidget {
                           : 'Import messages and approve each one. Parsed on this device only.',
                     ),
                     value: s.smsEnabled,
-                    onChanged: (v) =>
-                        repo.setSetting('smsEnabled', v ? '1' : '0'),
+                    onChanged: (v) => _toggleSms(context, ref, v),
                   ),
+                  if (s.smsEnabled && SmsReader.supported) ...[
+                    const Divider(height: 1),
+                    ListTile(
+                      leading: const Icon(Icons.manage_search),
+                      title: const Text('Scan messages now'),
+                      subtitle: const Text(
+                        'Reads recent bank messages on this phone',
+                      ),
+                      onTap: () => scanAndReport(context, ref),
+                    ),
+                  ],
                   if (s.smsEnabled) ...[
                     const Divider(height: 1),
                     SwitchListTile.adaptive(
@@ -202,16 +213,55 @@ class SettingsPage extends ConsumerWidget {
                       title: const Text('Daily review reminder'),
                       value: s.reminderEnabled,
                       onChanged: (v) async {
-                        await repo.setSetting('reminderEnabled', v ? '1' : '0');
                         if (v) {
-                          await Notifications.instance.requestPermission();
+                          final ok = await Notifications.instance
+                              .requestPermission();
+                          if (!ok) {
+                            if (context.mounted) {
+                              toast(
+                                context,
+                                Notifications.instance.lastError ?? 'Notifications are blocked. Allow them for Cash Buddy in system settings.',
+                              );
+                            }
+                            return;
+                          }
                           final t = s.reminderTime.split(':');
                           await Notifications.instance.scheduleDailyReview(
                             int.parse(t[0]),
                             int.parse(t[1]),
                           );
+                          if (Notifications.instance.lastError != null) {
+                            if (context.mounted) {
+                              toast(context, Notifications.instance.lastError!);
+                            }
+                            return;
+                          }
+                          await repo.setSetting('reminderEnabled', '1');
+                          if (context.mounted) {
+                            toast(
+                              context,
+                              'Reminder set for ${s.reminderTime} every day',
+                            );
+                          }
                         } else {
+                          await repo.setSetting('reminderEnabled', '0');
                           await Notifications.instance.cancelDailyReview();
+                        }
+                      },
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.notifications_none),
+                      title: const Text('Send a test notification'),
+                      onTap: () async {
+                        await Notifications.instance.requestPermission();
+                        final err = await Notifications.instance.testNow();
+                        if (context.mounted) {
+                          toast(
+                            context,
+                            err == null
+                                ? 'Sent. Check your notification shade.'
+                                : 'Failed: $err',
+                          );
                         }
                       },
                     ),
@@ -322,6 +372,31 @@ class SettingsPage extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _toggleSms(BuildContext context, WidgetRef ref, bool on) async {
+    final repo = ref.read(repoProvider);
+    if (!on) {
+      await repo.setSetting('smsEnabled', '0');
+      return;
+    }
+    if (SmsReader.supported) {
+      // Show the system permission dialog; only enable when it is granted.
+      final granted = await SmsReader.instance.requestPermission();
+      if (!granted) {
+        if (context.mounted) {
+          toast(
+            context,
+            'SMS permission was denied. Allow "SMS" for Cash Buddy in Android Settings > Apps to enable this.',
+          );
+        }
+        return;
+      }
+      await repo.setSetting('smsEnabled', '1');
+      if (context.mounted) await scanAndReport(context, ref);
+    } else {
+      await repo.setSetting('smsEnabled', '1');
+    }
   }
 
   Future<void> _goOnline(BuildContext context, WidgetRef ref) async {
@@ -755,4 +830,18 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage>
       }
     }
   }
+}
+
+/// Scans the inbox and tells the user what happened.
+Future<void> scanAndReport(BuildContext context, WidgetRef ref) async {
+  final r = await scanSmsInbox(ref.read(repoProvider));
+  if (!context.mounted) return;
+  toast(
+    context,
+    r.ok
+        ? (r.added > 0
+              ? '${r.added} transaction${r.added == 1 ? '' : 's'} found. Review them in the Inbox tab.'
+              : 'Scanned ${r.scanned} messages, nothing new to review.')
+        : 'Scan failed: ${r.error}',
+  );
 }

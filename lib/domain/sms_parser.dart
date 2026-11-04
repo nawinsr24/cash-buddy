@@ -66,9 +66,19 @@ class SmsParser {
   final Set<String> senders;
   final Set<String> deniedSenders;
 
-  SmsParser({Set<String>? senders, Set<String>? deniedSenders})
-    : senders = senders ?? defaultSenders,
-      deniedSenders = deniedSenders ?? const {};
+  /// Also accept TRAI-style headers that look like a bank/payment sender
+  /// (e.g. `JM-KVBANK`, `AD-PAYTMB`) even if not in [senders]. Content rules
+  /// (no OTP / promo / pending) still apply, so false positives stay rare.
+  final bool bankLikeHeaders;
+
+  SmsParser({
+    Set<String>? senders,
+    Set<String>? deniedSenders,
+    this.bankLikeHeaders = true,
+  }) : senders = senders ?? defaultSenders,
+       deniedSenders = deniedSenders ?? const {};
+
+  static final _bankLike = RegExp(r'(BANK|BNK|BK|PAY|CARD|CRD|UPI|FIN|CU)$');
 
   static final _otp = RegExp(
     r'\b(otp|one[- ]time password|verification code|do not share|never share|cvv|passcode)\b',
@@ -156,7 +166,8 @@ class SmsParser {
     final body = m != null ? m.group(1)! : s;
     final suffix = m?.group(2);
     if (suffix == 'P') return false; // TRAI promotional category
-    return senders.contains(body);
+    if (senders.contains(body)) return true;
+    return bankLikeHeaders && m != null && _bankLike.hasMatch(body);
   }
 
   SmsParseResult parse(String sender, String body, DateTime receivedAt) {

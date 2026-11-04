@@ -104,6 +104,32 @@ void main() {
     });
   });
 
+  test(
+    'bank-like but unlisted sender headers are accepted; non-bank ones are not',
+    () {
+      expect(
+        run(
+          'JM-KVBANK',
+          'Rs.250.00 debited from a/c XX1234 on 03-11-26. Ref 1234567890',
+        ).isAccepted,
+        isTrue,
+      );
+      expect(
+        run(
+          'AD-SHOPXY',
+          'Rs.250.00 debited from a/c XX1234 on 03-11-26. Ref 1234567890',
+        ).isAccepted,
+        isFalse,
+      );
+      expect(
+        SmsParser(bankLikeHeaders: false)
+            .parse('JM-KVBANK', 'Rs.250.00 debited from a/c XX1234', now)
+            .isAccepted,
+        isFalse,
+      );
+    },
+  );
+
   test('channel names (UPI/NEFT/ATM) are not mistaken for merchants', () {
     final r = run(
       'AX-AXISBK',

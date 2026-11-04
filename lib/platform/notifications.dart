@@ -12,6 +12,10 @@ class Notifications {
   static const _id = 8001;
   final _plugin = FlutterLocalNotificationsPlugin();
   bool _ready = false;
+  bool get ready => _ready;
+
+  /// Last init/schedule failure, shown to the user instead of failing silently.
+  String? lastError;
 
   Future<void> init() async {
     if (kIsWeb) return; // no local notifications in the browser build
@@ -32,6 +36,7 @@ class Notifications {
       _ready = true;
     } catch (e) {
       debugPrint('Notifications init failed: $e');
+      lastError = 'Notifications could not start: $e';
     }
   }
 
@@ -93,6 +98,34 @@ class Notifications {
       );
     } catch (e) {
       debugPrint('schedule failed: $e');
+      lastError = 'Could not schedule the reminder: $e';
+    }
+  }
+
+  /// Fires one notification immediately so the user can verify permission works.
+  /// Returns null on success, otherwise a human-readable reason.
+  Future<String?> testNow() async {
+    if (!_ready) {
+      return lastError ?? 'Notifications are not available on this device';
+    }
+    try {
+      await _plugin.show(
+        id: _id + 1,
+        title: 'Cash Buddy',
+        body: 'Test: review reminders are working',
+        notificationDetails: const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'sms_review',
+            'Transaction review',
+            channelDescription:
+                'Daily reminder to review detected transactions',
+          ),
+          iOS: DarwinNotificationDetails(),
+        ),
+      );
+      return null;
+    } catch (e) {
+      return '$e';
     }
   }
 
