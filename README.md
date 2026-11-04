@@ -15,6 +15,9 @@ SMS and Google Drive notes and `STATUS.md` for what is verified vs not.
 
 ## Install on Android (test build)
 Every push to `main` builds an APK in GitHub Actions and publishes it as the
-**latest** release: `https://github.com/nawinsr24/cash-buddy/releases/latest/download/cash-buddy.apk`.
+**latest** pre-release: `https://github.com/nawinsr24/cash-buddy/releases/download/latest/cash-buddy.apk`.
 Open that link on your phone, allow "install unknown apps" for your browser when asked, and install.
 It is a debug-signed test build, not a Play Store build.
+
+## Web preview
+https://nawinsr24.github.io/cash-buddy/ (browser build; data stays in your browser; no Drive sync / notifications).
