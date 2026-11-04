@@ -20,4 +20,4 @@ Open that link on your phone, allow "install unknown apps" for your browser when
 It is a debug-signed test build, not a Play Store build.
 
 ## Web preview
-https://nawinsr24.github.io/cash-buddy/ (browser build; data stays in your browser; no Drive sync / notifications).
+https://nawinsr24.github.io/cash-buddy/app/ (browser build; data stays in your browser; no Drive sync / notifications).

@@ -28,9 +28,14 @@ jobs:
           cache: true
       - run: flutter pub get
       - run: dart run build_runner build --delete-conflicting-outputs
-      - run: flutter build web --release --base-href /cash-buddy/
+      - run: flutter build web --release --base-href /cash-buddy/app/
+      - name: Assemble site (landing page + web app)
+        run: |
+          mkdir -p _site/app
+          cp -r docs/* _site/
+          cp -r build/web/* _site/app/
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: build/web
+          path: _site
       - id: deployment
         uses: actions/deploy-pages@v4
