@@ -1,0 +1,223 @@
+// Renders real screens to PNGs (build/screens/*.png) using the Roboto + Material
+// Icons fonts from the Flutter SDK, so layout and design can be inspected
+// without a simulator. Not a golden comparison: it just writes images.
+import 'dart:io';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+
+import 'package:cash_buddy/app.dart';
+import 'package:cash_buddy/domain/dates.dart';
+import 'package:cash_buddy/domain/sms_parser.dart';
+import 'package:cash_buddy/providers.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart' show FontLoader;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import '../data/helpers.dart';
+import '../ui/app_flow_test.dart' show settle, tapText;
+
+Future<void> loadFonts() async {
+  final root =
+      Platform.environment['FLUTTER_ROOT'] ?? '/opt/homebrew/share/flutter';
+  final dir = '$root/bin/cache/artifacts/material_fonts';
+  Future<ByteData> b(String f) async =>
+      ByteData.sublistView(await File('$dir/$f').readAsBytes());
+  final roboto = FontLoader('Roboto')
+    ..addFont(b('Roboto-Regular.ttf'))
+    ..addFont(b('Roboto-Medium.ttf'))
+    ..addFont(b('Roboto-Bold.ttf'));
+  await roboto.load();
+  final icons = FontLoader('MaterialIcons')
+    ..addFont(b('MaterialIcons-Regular.otf'));
+  await icons.load();
+}
+
+final _key = GlobalKey();
+
+Future<void> shot(WidgetTester tester, String name) async {
+  await settle(tester);
+  await tester.runAsync(() async {
+    final boundary = tester.renderObject<RenderRepaintBoundary>(
+      find.byKey(_key),
+    );
+    final image = await boundary.toImage(pixelRatio: 2);
+    final data = await image.toByteData(format: ui.ImageByteFormat.png);
+    final f = File('build/screens/$name.png')..createSync(recursive: true);
+    f.writeAsBytesSync(data!.buffer.asUint8List());
+  });
+}
+
+void main() {
+  for (final dark in [false, true]) {
+    testWidgets('screens ${dark ? 'dark' : 'light'}', (tester) async {
+      await tester.runAsync(loadFonts);
+      tester.view.physicalSize = const Size(390 * 2, 844 * 2);
+      tester.view.devicePixelRatio = 2;
+      tester.platformDispatcher.platformBrightnessTestValue = dark
+          ? Brightness.dark
+          : Brightness.light;
+      addTearDown(() {
+        tester.view.reset();
+        tester.platformDispatcher.clearAllTestValues();
+      });
+      final now = DateTime.now();
+      late TestEnv env;
+      await tester.runAsync(() async {
+        env = await newEnv(accountMode: 'split', opening: 8500000, now: now);
+        final r = env.repo;
+        await r.setSetting('cashCard', '1');
+        await r.setSetting('smsEnabled', '1');
+        final d = Dates.today();
+        Future<void> t(
+          String type,
+          int amt,
+          String cat,
+          int ago,
+          String note, {
+          String? m,
+          String? pm,
+        }) => r
+            .addTransaction(
+              type: type,
+              amountMinor: amt,
+              categoryId: cat,
+              date: d.subtract(Duration(days: ago)),
+              note: note,
+              merchant: m,
+              paymentMethod: pm,
+              accountId: pm == 'cash' ? 'acc_cash' : 'acc_bank',
+            )
+            .then((_) {});
+        await t(
+          'credit',
+          9500000,
+          'cat_salary',
+          3,
+          'October salary',
+          m: 'DENOVO SYSTEMS',
+        );
+        await t('debit', 1850000, 'cat_bills_rent', 2, 'Rent', pm: 'card');
+        await t(
+          'debit',
+          245000,
+          'cat_food_groceries',
+          1,
+          'Weekly groceries',
+          m: 'BigBasket',
+          pm: 'card',
+        );
+        await t(
+          'debit',
+          85000,
+          'cat_entertainment_movies',
+          1,
+          'Movie night',
+          m: 'PVR',
+          pm: 'card',
+        );
+        await t(
+          'debit',
+          32000,
+          'cat_food_coffee',
+          0,
+          'Coffee',
+          m: 'Starbucks',
+          pm: 'cash',
+        );
+        await t('debit', 120000, 'cat_transport_fuel', 4, 'Petrol', pm: 'cash');
+        await t(
+          'debit',
+          64900,
+          'cat_entertainment_streaming',
+          5,
+          'Netflix',
+          pm: 'card',
+        );
+        await t(
+          'credit',
+          150000,
+          'cat_cash_received',
+          6,
+          'Cash from dad',
+          pm: 'cash',
+        );
+        final a = await r.createDebt(
+          direction: 'receivable',
+          counterparty: 'Ravi Kumar',
+          principalMinor: 2500000,
+          issuedOn: d.subtract(const Duration(days: 100)),
+          interestEnabled: true,
+          rateBps: 150,
+          accountId: 'acc_bank',
+        );
+        await r.addRepayment(
+          a,
+          500000,
+          date: d.subtract(const Duration(days: 20)),
+        );
+        await r.createDebt(
+          direction: 'receivable',
+          counterparty: 'Meera',
+          principalMinor: 800000,
+          issuedOn: d.subtract(const Duration(days: 12)),
+        );
+        await r.createDebt(
+          direction: 'liability',
+          counterparty: 'HDFC Personal Loan',
+          principalMinor: 6000000,
+          issuedOn: d.subtract(const Duration(days: 200)),
+          interestEnabled: true,
+          rateBps: 100,
+          interestType: 'compound',
+          dueOn: d.add(const Duration(days: 30)),
+          accountId: 'acc_bank',
+        );
+        await r.ingestSms([
+          (
+            sender: 'VM-HDFCBK',
+            body:
+                'Rs.1,299.00 debited from a/c XX1234 on ${d.day}-${d.month}-${d.year % 100} at AMAZON PAY. Ref 4093827123',
+            receivedAt: now,
+          ),
+          (
+            sender: 'AX-AXISBK',
+            body:
+                'INR 12000.00 credited to A/c XX9876 on ${d.day}-${d.month}-${d.year % 100} by UPI from RAHUL. Ref 7777777777',
+            receivedAt: now,
+          ),
+        ], SmsParser());
+      });
+      await tester.pumpWidget(
+        RepaintBoundary(
+          key: _key,
+          child: ProviderScope(
+            overrides: [repoProvider.overrideWithValue(env.repo)],
+            child: const CashBuddyApp(),
+          ),
+        ),
+      );
+      await settle(tester);
+      final p = dark ? 'dark' : 'light';
+      await shot(tester, '$p-1-dashboard');
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, -500));
+      await shot(tester, '$p-2-dashboard-scrolled');
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, 800));
+      await tester.pump(const Duration(seconds: 2)); // let the fling finish
+      await tapText(tester, 'Total Spending');
+      await shot(tester, '$p-3-spending-detail');
+      await tester.tap(find.byTooltip('Back'));
+      await settle(tester);
+      await tapText(tester, 'Activity', last: true);
+      await shot(tester, '$p-4-transactions');
+      await tapText(tester, 'Debts', last: true);
+      await shot(tester, '$p-5-debts');
+      await tapText(tester, 'Inbox', last: true);
+      await shot(tester, '$p-6-inbox');
+      await tapText(tester, 'Settings', last: true);
+      await shot(tester, '$p-7-settings');
+      await tester.runAsync(() => env.db.close());
+    });
+  }
+}
