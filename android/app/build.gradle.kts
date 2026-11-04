@@ -4,6 +4,11 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// Release signing comes from the environment (CI secrets or local env). Without it
+// the build falls back to the debug key so local builds still work.
+val releaseStore: String? = System.getenv("CB_KEYSTORE_PATH")
+val hasReleaseKey = releaseStore != null && file(releaseStore).exists()
+
 android {
     namespace = "com.denovo.cash_buddy"
     compileSdk = flutter.compileSdkVersion
@@ -31,11 +36,22 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (hasReleaseKey) {
+            create("release") {
+                storeFile = file(releaseStore!!)
+                storePassword = System.getenv("CB_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("CB_KEY_ALIAS")
+                keyPassword = System.getenv("CB_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = if (hasReleaseKey) signingConfigs.getByName("release") else signingConfigs.getByName("debug")
         }
     }
 }

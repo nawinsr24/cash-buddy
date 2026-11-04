@@ -10,6 +10,12 @@ class FakeReader implements SmsReader {
   FakeReader(this.granted, this.inbox);
 
   @override
+  Future<void> setAutoDetect(bool enabled) async {}
+  @override
+  Future<String?> consumeLaunchAction() async => null;
+  @override
+  Future<void> setSecure(bool on) async {}
+  @override
   Future<bool> hasPermission() async => granted;
   @override
   Future<bool> requestPermission() async => granted;

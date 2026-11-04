@@ -37,6 +37,42 @@ class SmsReader {
     }
   }
 
+  /// Tells the native receiver whether it may alert on incoming transaction SMS.
+  Future<void> setAutoDetect(bool enabled) async {
+    if (!supported) return;
+    try {
+      await _ch.invokeMethod<void>('setAutoDetect', {'enabled': enabled});
+    } on PlatformException {
+      // non-fatal
+    } on MissingPluginException {
+      // non-fatal
+    }
+  }
+
+  /// Android FLAG_SECURE: hides the app in recent apps and blocks screenshots.
+  Future<void> setSecure(bool on) async {
+    if (!supported) return;
+    try {
+      await _ch.invokeMethod<void>('setSecure', {'enabled': on});
+    } on PlatformException {
+      // non-fatal
+    } on MissingPluginException {
+      // non-fatal
+    }
+  }
+
+  /// "inbox" if the app was opened from a transaction notification.
+  Future<String?> consumeLaunchAction() async {
+    if (!supported) return null;
+    try {
+      return await _ch.invokeMethod<String>('consumeLaunchAction');
+    } on PlatformException {
+      return null;
+    } on MissingPluginException {
+      return null;
+    }
+  }
+
   Future<List<({String sender, String body, DateTime receivedAt})>> readInbox({
     required DateTime since,
     int limit = 500,

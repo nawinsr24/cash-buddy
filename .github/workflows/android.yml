@@ -29,6 +29,25 @@ jobs:
       - run: dart run build_runner build --delete-conflicting-outputs
       - run: flutter analyze
       - run: flutter test
+      - name: Restore release signing key (if configured)
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            {
+              echo "CB_KEYSTORE_PATH=$RUNNER_TEMP/release.jks"
+              echo "CB_KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD"
+              echo "CB_KEY_ALIAS=$KEY_ALIAS"
+              echo "CB_KEY_PASSWORD=$KEY_PASSWORD"
+            } >> "$GITHUB_ENV"
+            echo "Signing with the release key"
+          else
+            echo "No release key configured: debug-signed build (updates will not install over older builds)"
+          fi
       - run: flutter build apk --release
       - name: Name the APK
         run: cp build/app/outputs/flutter-apk/app-release.apk cash-buddy.apk
@@ -43,5 +62,5 @@ jobs:
           gh release delete latest --yes --cleanup-tag || true
           gh release create latest cash-buddy.apk \
             --title "Cash Buddy (latest build)" \
-            --notes "Build of ${GITHUB_SHA::7}. Debug-signed test build: allow installs from this source on your phone." \
+            --notes "Build of ${GITHUB_SHA::7}. Allow installs from this source on your phone." \
             --prerelease

@@ -14,6 +14,9 @@ class Notifications {
   bool _ready = false;
   bool get ready => _ready;
 
+  /// Bumped when the user taps one of our notifications; the shell opens the Inbox.
+  final ValueNotifier<int> openInboxRequests = ValueNotifier(0);
+
   /// Last init/schedule failure, shown to the user instead of failing silently.
   String? lastError;
 
@@ -32,8 +35,16 @@ class Notifications {
             requestSoundPermission: false,
           ),
         ),
+        onDidReceiveNotificationResponse: (r) {
+          if (r.payload == 'inbox') openInboxRequests.value++;
+        },
       );
       _ready = true;
+      final launch = await _plugin.getNotificationAppLaunchDetails();
+      if ((launch?.didNotificationLaunchApp ?? false) &&
+          launch?.notificationResponse?.payload == 'inbox') {
+        openInboxRequests.value++;
+      }
     } catch (e) {
       debugPrint('Notifications init failed: $e');
       lastError = 'Notifications could not start: $e';
@@ -65,10 +76,19 @@ class Notifications {
     }
   }
 
-  /// Daily at [hour]:[minute] local time.
-  Future<void> scheduleDailyReview(int hour, int minute) async {
+  /// Schedules the next review reminder at [hour]:[minute] (today if still
+  /// ahead, else tomorrow) showing the *current* number of pending items.
+  /// It is a one-shot that the app re-schedules whenever the count changes
+  /// (app open, scan, confirm/discard), so the text is never stale. With
+  /// nothing to review the reminder is cancelled instead of nagging.
+  Future<void> scheduleReview(int hour, int minute, int pending) async {
+    lastError = null;
     if (!_ready) return;
     try {
+      if (pending <= 0) {
+        await _plugin.cancel(id: _id);
+        return;
+      }
       final now = tz.TZDateTime.now(tz.local);
       var at = tz.TZDateTime(
         tz.local,
@@ -82,19 +102,23 @@ class Notifications {
       await _plugin.zonedSchedule(
         id: _id,
         title: 'Cash Buddy',
-        body: 'Review your detected transactions',
+        body: pending == 1
+            ? '1 transaction is waiting for your review'
+            : '$pending transactions are waiting for your review',
         scheduledDate: at,
+        payload: 'inbox',
         notificationDetails: const NotificationDetails(
           android: AndroidNotificationDetails(
             'sms_review',
             'Transaction review',
             channelDescription:
                 'Daily reminder to review detected transactions',
+            importance: Importance.high,
+            priority: Priority.high,
           ),
           iOS: DarwinNotificationDetails(),
         ),
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-        matchDateTimeComponents: DateTimeComponents.time,
       );
     } catch (e) {
       debugPrint('schedule failed: $e');

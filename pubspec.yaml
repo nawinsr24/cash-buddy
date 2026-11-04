@@ -51,6 +51,7 @@ dependencies:
   flutter_timezone: ^5.1.1
   archive: ^4.6.0
   sqlite3: ^3.8.0
+  local_auth: ^3.0.2
 
 dev_dependencies:
   flutter_test:
@@ -64,6 +65,7 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   drift_dev: ^2.35.2
   build_runner: ^2.17.1
+  flutter_launcher_icons: ^0.14.4
 flutter:
 
   # The following line ensures that the Material Icons font is
@@ -101,3 +103,11 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/icon/icon.png
+  adaptive_icon_background: "#2F6BFF"
+  adaptive_icon_foreground: assets/icon/foreground.png
+  remove_alpha_ios: true

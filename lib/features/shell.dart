@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../platform/notifications.dart';
+import '../platform/reminders.dart';
 import '../platform/sms_reader.dart';
 import '../providers.dart';
 import 'dashboard.dart';
@@ -22,12 +24,14 @@ class ShellState extends ConsumerState<Shell> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    Notifications.instance.openInboxRequests.addListener(_openInbox);
     _autoScan();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    Notifications.instance.openInboxRequests.removeListener(_openInbox);
     super.dispose();
   }
 
@@ -38,16 +42,36 @@ class ShellState extends ConsumerState<Shell> with WidgetsBindingObserver {
 
   /// Quietly look for new bank messages when the app opens or returns.
   Future<void> _autoScan() async {
-    if (!SmsReader.supported) return;
     final repo = ref.read(repoProvider);
-    if (await repo.getSetting('smsEnabled') != '1') return;
-    await scanSmsInbox(repo);
+    final enabled = await repo.getSetting('smsEnabled') == '1';
+    if (SmsReader.supported) {
+      await SmsReader.instance.setSecure(
+        await repo.getSetting('appLock') == '1',
+      );
+      await SmsReader.instance.setAutoDetect(enabled);
+      if (enabled) await scanSmsInbox(repo);
+      // opened from a "new transaction" notification
+      if (await SmsReader.instance.consumeLaunchAction() == 'inbox') {
+        _openInbox();
+      }
+    }
+    await refreshReminder(repo);
+  }
+
+  void _openInbox() {
+    if (!mounted) return;
+    final i = _indexOf('Inbox');
+    if (ref.read(settingsProvider).value?.smsEnabled ?? false) _select(i);
   }
 
   @override
   Widget build(BuildContext context) {
     final settings = ref.watch(settingsProvider).value;
     final pending = ref.watch(pendingSmsProvider).value?.length ?? 0;
+    ref.listen(
+      pendingSmsProvider,
+      (_, _) => refreshReminder(ref.read(repoProvider)),
+    );
     final showInbox = settings?.smsEnabled ?? false;
     // Inbox tab only exists while the SMS assistant is on.
     final tabs = <_Tab>[

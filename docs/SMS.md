@@ -1,21 +1,19 @@
 # SMS assistant
 
-## Android (sideloaded build)
-* Turning the SMS assistant on shows the system **READ_SMS** permission dialog.
-  Denied -> the toggle stays off. Granted -> the inbox is scanned (first scan: last 30 days).
-* `MainActivity.kt` reads `content://sms/inbox` on-device and passes messages to the
-  Dart parser. Nothing is uploaded. Re-scans happen on app open/resume and via
-  "Scan messages". Incremental, deduplicated.
-* Only transaction-looking messages from bank-like senders become *candidates*;
-  the user confirms or discards each one. OTPs, promos, failed/pending and
-  balance-only messages are ignored.
-* Google Play restricts READ_SMS. This build is distributed as a direct APK, so it
-  is fine; a Play Store release would need a permissions declaration or a
-  different approach (user-initiated import only).
+## Android (sideloaded APK)
+* Turning the assistant on shows the system **SMS** permission dialog (READ_SMS + RECEIVE_SMS).
+  Denied -> stays off. Granted -> the last 30 days are scanned.
+* **Real time:** `SmsReceiver.kt` fires when an SMS arrives. If it looks like an executed
+  transaction it posts a "New transaction detected" notification; tapping it opens the Inbox.
+  Nothing is stored or uploaded by the receiver.
+* **Scanning:** on app open/resume (and "Scan messages") `MainActivity.kt` reads
+  `content://sms/inbox`; Dart applies the real parser + dedup and queues *candidates*.
+  Only you confirm or discard. OTP / promo / failed / pending / balance-only are ignored.
+* Daily review reminder: set time in Settings; shows "N transactions are waiting" and is
+  rescheduled whenever the count changes; nothing is shown when nothing is pending.
+  "Send a test notification" verifies permission.
+* Google Play restricts SMS permissions: this is a direct-APK build. A Play release would
+  need a permissions declaration or a user-initiated-only design.
 
 ## iOS / web
-No inbox access exists. Use paste import in the Inbox tab.
-
-## Daily review reminder
-Settings > SMS assistant > Daily review reminder asks for notification permission,
-schedules the reminder and reports failures. "Send a test notification" verifies it.
+No inbox access exists. Paste import is available in the Inbox tab as a fallback only.

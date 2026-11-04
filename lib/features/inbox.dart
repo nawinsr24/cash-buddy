@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart'
-    show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -33,11 +31,13 @@ class InboxPage extends ConsumerWidget {
               icon: const Icon(Icons.manage_search),
               onPressed: () => scanAndReport(context, ref),
             ),
-          IconButton(
-            tooltip: 'Import messages',
-            icon: const Icon(Icons.content_paste),
-            onPressed: () => showSheet(context, (_) => const ImportSheet()),
-          ),
+          // Paste import is only a fallback where the app cannot read SMS (iOS / web).
+          if (!SmsReader.supported)
+            IconButton(
+              tooltip: 'Import messages',
+              icon: const Icon(Icons.content_paste),
+              onPressed: () => showSheet(context, (_) => const ImportSheet()),
+            ),
         ],
       ),
       body: pending.when(
@@ -49,15 +49,24 @@ class InboxPage extends ConsumerWidget {
             return EmptyState(
               icon: Icons.mark_email_read_outlined,
               title: 'All caught up',
-              body: defaultTargetPlatform == TargetPlatform.iOS
-                  ? 'iOS does not let apps read your messages. Copy a bank SMS and import it, or use the share sheet.'
-                  : 'Import bank messages to find transactions. You approve each one before it is added.',
-              action: FilledButton.icon(
-                style: FilledButton.styleFrom(minimumSize: const Size(200, 48)),
-                icon: const Icon(Icons.content_paste),
-                label: const Text('Import messages'),
-                onPressed: () => showSheet(context, (_) => const ImportSheet()),
-              ),
+              body: SmsReader.supported
+                  ? 'New bank transactions are detected automatically and appear here for you to confirm or discard.'
+                  : 'This device cannot read your messages. Copy a bank SMS and import it to review it here.',
+              action: SmsReader.supported
+                  ? OutlinedButton.icon(
+                      icon: const Icon(Icons.manage_search),
+                      label: const Text('Scan messages now'),
+                      onPressed: () => scanAndReport(context, ref),
+                    )
+                  : FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size(200, 48),
+                      ),
+                      icon: const Icon(Icons.content_paste),
+                      label: const Text('Import messages'),
+                      onPressed: () =>
+                          showSheet(context, (_) => const ImportSheet()),
+                    ),
             );
           }
           return ListView(

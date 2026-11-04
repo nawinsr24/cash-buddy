@@ -7,7 +7,9 @@ import 'package:intl/intl.dart';
 import '../data/db.dart';
 import '../data/repo.dart';
 import '../domain/money.dart';
+import '../platform/app_lock.dart';
 import '../platform/notifications.dart';
+import '../platform/reminders.dart';
 import '../platform/sms_reader.dart';
 import '../providers.dart';
 import '../sync/backup.dart';
@@ -225,22 +227,18 @@ class SettingsPage extends ConsumerWidget {
                             }
                             return;
                           }
-                          final t = s.reminderTime.split(':');
-                          await Notifications.instance.scheduleDailyReview(
-                            int.parse(t[0]),
-                            int.parse(t[1]),
-                          );
+                          await repo.setSetting('reminderEnabled', '1');
+                          await refreshReminder(repo);
                           if (Notifications.instance.lastError != null) {
                             if (context.mounted) {
                               toast(context, Notifications.instance.lastError!);
                             }
                             return;
                           }
-                          await repo.setSetting('reminderEnabled', '1');
                           if (context.mounted) {
                             toast(
                               context,
-                              'Reminder set for ${s.reminderTime} every day',
+                              'Reminder set for ${s.reminderTime} every day (shown when something is waiting)',
                             );
                           }
                         } else {
@@ -286,10 +284,7 @@ class SettingsPage extends ConsumerWidget {
                             final v =
                                 '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
                             await repo.setSetting('reminderTime', v);
-                            await Notifications.instance.scheduleDailyReview(
-                              picked.hour,
-                              picked.minute,
-                            );
+                            await refreshReminder(repo);
                           }
                         },
                       ),
@@ -306,6 +301,18 @@ class SettingsPage extends ConsumerWidget {
                     ),
                   ],
                 ],
+              ),
+            ),
+            const _Group('Security'),
+            Card(
+              child: SwitchListTile.adaptive(
+                secondary: const Icon(Icons.lock_outline),
+                title: const Text('App lock'),
+                subtitle: const Text(
+                  'Require fingerprint, face or your phone PIN to open Cash Buddy. Also hides the app in the recent-apps view.',
+                ),
+                value: s.appLock,
+                onChanged: (v) => _toggleLock(context, ref, v),
               ),
             ),
             const _Group('Appearance'),
@@ -374,10 +381,33 @@ class SettingsPage extends ConsumerWidget {
     );
   }
 
+  Future<void> _toggleLock(BuildContext context, WidgetRef ref, bool on) async {
+    final repo = ref.read(repoProvider);
+    final auth = ref.read(authenticatorProvider);
+    if (on && !await auth.available) {
+      if (context.mounted) {
+        toast(
+          context,
+          'Set up a screen lock (PIN, pattern or fingerprint) in your phone settings first.',
+        );
+      }
+      return;
+    }
+    // Prove it is the owner both when enabling and when disabling.
+    final ok = await auth.authenticate(
+      on ? 'Turn on app lock' : 'Turn off app lock',
+    );
+    if (!ok) return;
+    await repo.setSetting('appLock', on ? '1' : '0');
+    await SmsReader.instance.setSecure(on);
+  }
+
   Future<void> _toggleSms(BuildContext context, WidgetRef ref, bool on) async {
     final repo = ref.read(repoProvider);
     if (!on) {
       await repo.setSetting('smsEnabled', '0');
+      await SmsReader.instance.setAutoDetect(false);
+      await refreshReminder(repo);
       return;
     }
     if (SmsReader.supported) {
@@ -393,6 +423,7 @@ class SettingsPage extends ConsumerWidget {
         return;
       }
       await repo.setSetting('smsEnabled', '1');
+      await SmsReader.instance.setAutoDetect(true);
       if (context.mounted) await scanAndReport(context, ref);
     } else {
       await repo.setSetting('smsEnabled', '1');

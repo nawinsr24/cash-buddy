@@ -33,6 +33,7 @@ class AppSettings {
   final bool reminderEnabled;
   final String reminderTime; // HH:mm
   final String themeMode; // system | light | dark
+  final bool appLock;
   final String? lastSyncAt;
   final String? lastSyncError;
   const AppSettings({
@@ -44,6 +45,7 @@ class AppSettings {
     this.reminderEnabled = false,
     this.reminderTime = '08:00',
     this.themeMode = 'system',
+    this.appLock = false,
     this.lastSyncAt,
     this.lastSyncError,
   });
@@ -65,6 +67,7 @@ final settingsProvider = FutureProvider.autoDispose<AppSettings>((ref) async {
     reminderEnabled: await g('reminderEnabled') == '1',
     reminderTime: await g('reminderTime') ?? '08:00',
     themeMode: await g('themeMode') ?? 'system',
+    appLock: await g('appLock') == '1',
     lastSyncAt: await g('lastSyncAt'),
     lastSyncError: (err == null || err.isEmpty) ? null : err,
   );

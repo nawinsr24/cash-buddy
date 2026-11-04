@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'features/onboarding.dart';
 import 'features/shell.dart';
+import 'platform/app_lock.dart';
 import 'providers.dart';
 import 'ui/theme.dart';
 
@@ -28,7 +29,9 @@ class CashBuddyApp extends ConsumerWidget {
           body: Center(child: CircularProgressIndicator.adaptive()),
         ),
         error: (e, _) => Scaffold(body: Center(child: Text('$e'))),
-        data: (v) => v.onboarded ? const Shell() : const OnboardingPage(),
+        data: (v) => v.onboarded
+            ? const AppLockGate(child: Shell())
+            : const OnboardingPage(),
       ),
     );
   }
