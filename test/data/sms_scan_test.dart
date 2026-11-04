@@ -25,7 +25,7 @@ class FakeReader implements SmsReader {
 
 void main() {
   final now = DateTime.now();
-  Msg(String s, String b, {int minsAgo = 5}) => (
+  msg(String s, String b, {int minsAgo = 5}) => (
     sender: s,
     body: b,
     receivedAt: now.subtract(Duration(minutes: minsAgo)),
