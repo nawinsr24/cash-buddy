@@ -1,5 +1,5 @@
-import 'dart:io' show Platform;
-
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -9,6 +9,7 @@ import '../data/repo.dart';
 import '../domain/money.dart';
 import '../platform/notifications.dart';
 import '../providers.dart';
+import '../sync/backup.dart';
 import '../sync/sync_service.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
@@ -108,7 +109,12 @@ class SettingsPage extends ConsumerWidget {
                     onTap: () async {
                       final path = await createBackup(repo);
                       if (context.mounted) {
-                        toast(context, 'Backup saved: ${path.split('/').last}');
+                        toast(
+                          context,
+                          path == null
+                              ? 'Backups are not available in the browser'
+                              : 'Backup saved: ${path.split('/').last}',
+                        );
                       }
                     },
                   ),
@@ -179,7 +185,7 @@ class SettingsPage extends ConsumerWidget {
                     secondary: const Icon(Icons.sms_outlined),
                     title: const Text('Detect transactions in bank messages'),
                     subtitle: Text(
-                      Platform.isIOS
+                      defaultTargetPlatform == TargetPlatform.iOS
                           ? 'iOS cannot read your messages. Import by paste or share; nothing is added until you confirm.'
                           : 'Import messages and approve each one. Parsed on this device only.',
                     ),

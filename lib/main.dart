@@ -12,7 +12,7 @@ import 'providers.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final db = AppDatabase.file();
+  final db = AppDatabase.open();
   // Device id: stable per install, used to break HLC ties.
   final bootstrap = Repo(db, Hlc('boot'));
   var device = await bootstrap.getSetting('deviceId');

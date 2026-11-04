@@ -1,9 +1,6 @@
-import 'dart:io';
-
 import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
+
+import 'db_open.dart';
 
 part 'db.g.dart';
 
@@ -143,14 +140,8 @@ class Settings extends Table {
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
-  static AppDatabase file() => AppDatabase(
-    LazyDatabase(() async {
-      final dir = await getApplicationDocumentsDirectory();
-      return NativeDatabase.createInBackground(
-        File(p.join(dir.path, 'cash_buddy.sqlite')),
-      );
-    }),
-  );
+  /// Native file on mobile, WASM/IndexedDB in the browser (see db_open.dart).
+  static AppDatabase open() => AppDatabase(openAppDatabase());
 
   @override
   int get schemaVersion => 1;

@@ -1,5 +1,5 @@
-import 'dart:io' show Platform;
-
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -41,7 +41,7 @@ class InboxPage extends ConsumerWidget {
             return EmptyState(
               icon: Icons.mark_email_read_outlined,
               title: 'All caught up',
-              body: Platform.isIOS
+              body: defaultTargetPlatform == TargetPlatform.iOS
                   ? 'iOS does not let apps read your messages. Copy a bank SMS and import it, or use the share sheet.'
                   : 'Import bank messages to find transactions. You approve each one before it is added.',
               action: FilledButton.icon(

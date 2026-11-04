@@ -14,6 +14,7 @@ class Notifications {
   bool _ready = false;
 
   Future<void> init() async {
+    if (kIsWeb) return; // no local notifications in the browser build
     try {
       tz_data.initializeTimeZones();
       final name = await FlutterTimezone.getLocalTimezone();

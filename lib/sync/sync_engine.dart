@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io' show gzip;
 
 import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
@@ -7,6 +6,7 @@ import 'package:drift/drift.dart';
 import '../data/db.dart';
 import '../data/repo.dart';
 import '../domain/hlc.dart';
+import 'gzip_codec.dart';
 
 /// Minimal immutable-object store (Google Drive appDataFolder in production,
 /// in-memory in tests). Files are write-once: no remote file is ever rewritten.
@@ -160,7 +160,7 @@ class SyncEngine {
       'payload': payload,
     });
     final name = 'seg/$deviceId/${seq.toString().padLeft(8, '0')}.json.gz';
-    await remote.write(name, gzip.encode(utf8.encode(envelope)));
+    await remote.write(name, gzipEncode(utf8.encode(envelope)));
     // Only advance the cursor after the upload succeeded.
     await repo.setSetting('segSeq', '$seq');
     await repo.setSetting('lastPushedHlc', maxHlc);
@@ -182,7 +182,7 @@ class SyncEngine {
       }
       final bytes = await remote.read(name);
       final env =
-          jsonDecode(utf8.decode(gzip.decode(bytes))) as Map<String, dynamic>;
+          jsonDecode(utf8.decode(gzipDecode(bytes))) as Map<String, dynamic>;
       final payload = env['payload'] as String;
       if (sha256.convert(utf8.encode(payload)).toString() != env['sha256']) {
         throw StateError('Corrupt segment $name (checksum mismatch)');
