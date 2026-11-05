@@ -24,9 +24,9 @@ class CashColors extends ThemeExtension<CashColors> {
   });
 
   static const light = CashColors(
-    income: Color(0xFF0E9F6E),
-    spending: Color(0xFFE11D48),
-    debtIn: Color(0xFFD97706),
+    income: Color(0xFF0B8A5F),
+    spending: Color(0xFFD91A45),
+    debtIn: Color(0xFFB45309),
     liability: Color(0xFF7C3AED),
     surfaceRaised: Color(0xFFFFFFFF),
     textMuted: Color(0xFF596070),
