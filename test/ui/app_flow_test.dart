@@ -330,6 +330,9 @@ void main() {
         );
       }
     });
+    // the banner is checked on app start / resume, not on every data change
+    ProviderScope.containerOf(tester.element(find.byType(Scaffold).first))
+        .invalidate(bannerTitleProvider);
     await settle(tester);
     expect(find.text('October title is ready'), findsOneWidget);
     await tapText(tester, 'October title is ready');
@@ -345,6 +348,10 @@ void main() {
     await tester.tap(find.byTooltip('Dismiss'));
     await settle(tester);
     expect(find.text('October title is ready'), findsNothing);
+    expect(
+      await tester.runAsync(() => env.repo.getSetting('titleBannerDismissed')),
+      '2026-10',
+    );
   });
 
   testWidgets('home shows the Money Grade and the insights strip', (

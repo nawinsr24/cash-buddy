@@ -42,7 +42,10 @@ class TitleBanner extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final b = ref.watch(bannerTitleProvider).value;
-    if (b == null) return const SizedBox.shrink();
+    final dismissed = ref.watch(dismissedBannersProvider);
+    if (b == null || dismissed.contains(b.month)) {
+      return const SizedBox.shrink();
+    }
     final colors = titleColors(b.id);
     return TweenAnimationBuilder<double>(
       key: ValueKey(b.month),
@@ -111,8 +114,11 @@ class TitleBanner extends ConsumerWidget {
                     color: Colors.white70,
                     size: 20,
                   ),
-                  onPressed: () =>
-                      ref.read(repoProvider).dismissTitleBanner(b.month),
+                  onPressed: () async {
+                    // hide at once, then remember it for next time
+                    ref.read(dismissedBannersProvider.notifier).add(b.month);
+                    await ref.read(repoProvider).dismissTitleBanner(b.month);
+                  },
                 ),
               ],
             ),

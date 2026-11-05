@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'data/db.dart';
@@ -38,6 +40,7 @@ class AppSettings {
   final bool appLock;
   final bool investReducesBalance, lendReducesBalance;
   final bool smsLearnDigits;
+  final String? lastScanInfo;
   final String? lastSyncAt;
   final String? lastSyncError;
   const AppSettings({
@@ -52,6 +55,7 @@ class AppSettings {
     this.investReducesBalance = true,
     this.lendReducesBalance = true,
     this.smsLearnDigits = false,
+    this.lastScanInfo,
     this.lastSyncAt,
     this.lastSyncError,
   });
@@ -70,6 +74,7 @@ final settingsProvider = FutureProvider.autoDispose<AppSettings>((ref) async {
     dataMode: await g('dataMode') ?? 'offline',
     smsEnabled: await g('smsEnabled') == '1',
     smsLearnDigits: await g('smsLearnDigits') == '1',
+    lastScanInfo: await g('lastScanInfo'),
     investReducesBalance: (await g('investReducesBalance') ?? '1') == '1',
     lendReducesBalance: (await g('lendReducesBalance') ?? '1') == '1',
     reminderEnabled: await g('reminderEnabled') == '1',
@@ -168,30 +173,67 @@ final pendingSmsProvider = FutureProvider.autoDispose<List<SmsInboxData>>((
   return _tick(ref, () => ref.watch(repoProvider).pendingSms());
 });
 
+/// Like [changesProvider] but settles first: a burst of writes (an SMS scan,
+/// a sync) triggers one refresh of the heavy cards instead of dozens.
+final slowChangesProvider = StreamProvider<int>((ref) {
+  final repo = ref.watch(repoProvider);
+  final out = StreamController<int>();
+  Timer? timer;
+  var i = 0;
+  out.add(0);
+  final sub = repo.changes.listen((_) {
+    timer?.cancel();
+    timer = Timer(const Duration(milliseconds: 1200), () {
+      if (!out.isClosed) out.add(++i);
+    });
+  });
+  ref.onDispose(() {
+    timer?.cancel();
+    sub.cancel();
+    out.close();
+  });
+  return out.stream;
+});
+
+T _tickSlow<T>(Ref ref, T Function() f) {
+  ref.watch(slowChangesProvider);
+  return f();
+}
+
 final insightsProvider = FutureProvider.autoDispose<InsightsData>((ref) {
-  return _tick(ref, () => ref.watch(repoProvider).insights());
+  return _tickSlow(ref, () => ref.watch(repoProvider).insights());
 });
 
 final monthStatsProvider = FutureProvider.autoDispose<MonthStats>((ref) {
   final now = ref.watch(repoProvider).today;
-  return _tick(
+  return _tickSlow(
     ref,
     () => ref.watch(repoProvider).monthStats(now.year, now.month),
   );
 });
 
-final bannerTitleProvider = FutureProvider.autoDispose<MonthTitle?>((ref) {
-  return _tick(ref, () => ref.watch(repoProvider).bannerTitle());
+/// Months whose banner was dismissed this session (the choice is also saved).
+class DismissedBanners extends Notifier<Set<String>> {
+  @override
+  Set<String> build() => {};
+  void add(String month) => state = {...state, month};
+}
+
+final dismissedBannersProvider =
+    NotifierProvider<DismissedBanners, Set<String>>(DismissedBanners.new);
+
+/// Checked once (and when invalidated on app resume or dismiss), never on
+/// every data change: it looks back over a year of months.
+final bannerTitleProvider = FutureProvider<MonthTitle?>((ref) {
+  return ref.watch(repoProvider).bannerTitle();
 });
 
 final titleHistoryProvider = FutureProvider.autoDispose<List<MonthTitle>>((
   ref,
-) {
-  return _tick(ref, () async {
-    final r = ref.watch(repoProvider);
-    await r.ensureMonthTitles();
-    return r.titleHistory();
-  });
+) async {
+  final r = ref.watch(repoProvider);
+  await r.ensureMonthTitles();
+  return r.titleHistory();
 });
 
 final roastModeProvider = FutureProvider.autoDispose<bool>((ref) {

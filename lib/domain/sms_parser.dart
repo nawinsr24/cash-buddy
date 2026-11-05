@@ -170,7 +170,19 @@ class SmsParser {
     return bankLikeHeaders && m != null && _bankLike.hasMatch(body);
   }
 
+  /// Never throws: a message the parser cannot handle is simply rejected, so
+  /// one odd SMS can never abort a whole inbox scan.
   SmsParseResult parse(String sender, String body, DateTime receivedAt) {
+    // Real bank alerts are short; very long text is spam or junk.
+    if (body.length > 1500) return const SmsParseResult.rejected('too_long');
+    try {
+      return _parse(sender, body, receivedAt);
+    } catch (_) {
+      return const SmsParseResult.rejected('parse_error');
+    }
+  }
+
+  SmsParseResult _parse(String sender, String body, DateTime receivedAt) {
     if (!_recognisedSender(sender)) {
       return const SmsParseResult.rejected('unknown_sender');
     }
@@ -242,6 +254,8 @@ class SmsParser {
 
   static int _toMinor(String s) {
     final clean = s.replaceAll(',', '');
+    // an absurd number (over 12 digits) is not a real amount
+    if (clean.split('.').first.length > 12) return 0;
     final parts = clean.split('.');
     final frac = parts.length > 1
         ? parts[1].padRight(2, '0').substring(0, 2)

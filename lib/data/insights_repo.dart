@@ -228,6 +228,16 @@ extension InsightsRepo on Repo {
       final d = Dates.addMonths(Dates.day(now.year, now.month, 1), -k);
       final key = monthKey(d.year, d.month);
       if (await getSetting('title_$key') != null) continue;
+      // cheap check first: months with no entries need no full calculation
+      final r = _monthRange(d.year, d.month);
+      final any = await db
+          .customSelect(
+            'SELECT COUNT(*) AS n FROM transactions WHERE deleted_at IS NULL AND date BETWEEN ? AND ?',
+            variables: [Variable(r.startStr), Variable(r.endStr)],
+            readsFrom: {db.transactions},
+          )
+          .getSingle();
+      if (any.read<int>('n') == 0) continue;
       final s = await monthStats(d.year, d.month);
       if (s.txnCount == 0 && s.spending == 0 && s.income == 0) continue;
       await setSetting('title_$key', pickTitle(s).name);

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cash_buddy/platform/sms_reader.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -7,6 +9,7 @@ class FakeReader implements SmsReader {
   bool granted;
   List<({String sender, String body, DateTime receivedAt})> inbox;
   DateTime? lastSince;
+  bool hang = false;
   FakeReader(this.granted, this.inbox);
 
   @override
@@ -25,6 +28,12 @@ class FakeReader implements SmsReader {
     int limit = 500,
   }) async {
     lastSince = since;
+    if (hang) {
+      return Completer<
+            List<({String sender, String body, DateTime receivedAt})>
+          >()
+          .future;
+    }
     return inbox.where((m) => m.receivedAt.isAfter(since)).toList();
   }
 }
@@ -101,4 +110,57 @@ void main() {
     await scanSmsInbox((await newEnv()).repo, reader: fresh);
     expect(fresh.lastSince, DateTime(now.year, now.month, now.day));
   });
+
+  test('one unparseable message never aborts the scan', () async {
+    final e = await newEnv();
+    final reader = FakeReader(true, [
+      msg('VM-HDFCBK', 'Rs.${'9' * 40} debited from a/c XX1234 at SHOP'),
+      msg('VM-HDFCBK', 'x' * 5000),
+      msg(
+        'VM-HDFCBK',
+        'Rs.500.00 debited from a/c XX1234 on 03-11-26 at SWIGGY. Ref 9000011111',
+      ),
+    ]);
+    final r = await scanSmsInbox(e.repo, reader: reader);
+    expect(r.ok, isTrue);
+    expect(r.added, 1); // the good one still comes through
+    expect(await e.repo.pendingSmsCount(), 1);
+  });
+
+  test('last scan result is recorded for Diagnostics', () async {
+    final e = await newEnv();
+    await scanSmsInbox(
+      e.repo,
+      reader: FakeReader(true, [
+        msg(
+          'VM-HDFCBK',
+          'Rs.500.00 debited from a/c XX1234 on 03-11-26 at SWIGGY. Ref 9000011111',
+        ),
+      ]),
+    );
+    final info = await e.repo.getSetting('lastScanInfo');
+    expect(info, contains('1 messages'));
+    expect(info, contains('1 new'));
+    await scanSmsInbox(e.repo, reader: FakeReader(false, []));
+    expect(await e.repo.getSetting('lastScanInfo'), contains('permission'));
+  });
+
+  test(
+    'a stuck inbox read times out instead of blocking scans forever',
+    () async {
+      final e = await newEnv();
+      final stuck = FakeReader(true, [])..hang = true;
+      final r = await scanSmsInbox(
+        e.repo,
+        reader: stuck,
+        readTimeout: const Duration(milliseconds: 50),
+      );
+      expect(r.ok, isFalse);
+      expect(r.error, contains('too long'));
+      // and the next scan works normally
+      final ok = await scanSmsInbox(e.repo, reader: FakeReader(true, []));
+      expect(ok.busy, isFalse);
+      expect(ok.ok, isTrue);
+    },
+  );
 }

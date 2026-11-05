@@ -231,8 +231,10 @@ class SettingsPage extends ConsumerWidget {
                     ListTile(
                       leading: const Icon(Icons.manage_search),
                       title: const Text('Scan messages now'),
-                      subtitle: const Text(
-                        'Reads recent bank messages on this phone',
+                      subtitle: Text(
+                        s.lastScanInfo == null
+                            ? 'Reads recent bank messages on this phone'
+                            : 'Last: ${s.lastScanInfo}',
                       ),
                       onTap: () => scanAndReport(context, ref),
                     ),
@@ -977,6 +979,10 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage>
 Future<void> scanAndReport(BuildContext context, WidgetRef ref) async {
   final r = await scanSmsInbox(ref.read(repoProvider));
   if (!context.mounted) return;
+  if (r.busy) {
+    toast(context, 'Already checking your messages. One moment.');
+    return;
+  }
   toast(
     context,
     r.ok

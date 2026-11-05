@@ -42,8 +42,19 @@ class ShellState extends ConsumerState<Shell> with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) _autoScan();
   }
 
+  DateTime? _lastAutoScan;
+
   /// Quietly look for new bank messages when the app opens or returns.
+  /// Rate-limited, so quick back-and-forth (a permission dialog, a share
+  /// sheet) never fires scan after scan.
   Future<void> _autoScan() async {
+    final nowT = DateTime.now();
+    if (_lastAutoScan != null &&
+        nowT.difference(_lastAutoScan!) < const Duration(seconds: 20)) {
+      return;
+    }
+    _lastAutoScan = nowT;
+    ref.invalidate(bannerTitleProvider);
     final repo = ref.read(repoProvider);
     final enabled = await repo.getSetting('smsEnabled') == '1';
     if (SmsReader.supported) {
