@@ -27,7 +27,9 @@ class DriveRemote implements RemoteStore {
   late final drive.DriveApi _api = drive.DriveApi(_client);
   final Map<String, String> _ids = {};
 
-  DriveRemote._(this._client);
+  /// The Google account that signed in (for display only).
+  final String? email;
+  DriveRemote._(this._client, [this.email]);
 
   /// The Google OAuth *web* client ID (Google Cloud Console). Set at build
   /// time with --dart-define=GOOGLE_SERVER_CLIENT_ID=... ; without it Google
@@ -55,7 +57,7 @@ class DriveRemote implements RemoteStore {
       await gs.initialize(serverClientId: serverClientId);
       final account = await gs.authenticate(scopeHint: [scope]);
       final authz = await account.authorizationClient.authorizeScopes([scope]);
-      return DriveRemote._(_BearerClient(authz.accessToken));
+      return DriveRemote._(_BearerClient(authz.accessToken), account.email);
     } on GoogleSignInException catch (e) {
       if (e.code == GoogleSignInExceptionCode.canceled) return null;
       throw DriveSignInException(

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -23,6 +25,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   final _cash = TextEditingController();
   final _bank = TextEditingController();
   bool _saving = false;
+  bool _signingIn = false;
+  String? _signedInAs; // Google account chosen during setup (Online Mode)
   static const _steps = 3;
 
   bool get _canNext => switch (_step) {
@@ -30,6 +34,83 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     1 => _accountMode != null,
     _ => true,
   };
+
+  /// Choosing Online Mode asks for the Google sign-in right here, so the user
+  /// is never left "online" without an account.
+  Future<void> _continueFromDataMode() async {
+    if (_dataMode != 'online') {
+      _go(1);
+      return;
+    }
+    if (_signedInAs != null) {
+      _go(1);
+      return;
+    }
+    setState(() => _signingIn = true);
+    final sync = ref.read(syncServiceProvider);
+    final r = await sync.signInForSetup();
+    if (!mounted) return;
+    setState(() => _signingIn = false);
+    if (!r.ok) {
+      final useOffline = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (c) => AlertDialog(
+          title: const Text('Could not sign in'),
+          content: Text(r.error ?? 'Google sign-in did not complete.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(c, true),
+              child: const Text('Use Offline Mode'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(c, false),
+              child: const Text('Try again'),
+            ),
+          ],
+        ),
+      );
+      if (useOffline == true && mounted) setState(() => _dataMode = 'offline');
+      return;
+    }
+    setState(() => _signedInAs = r.email ?? 'your Google account');
+    if (r.hasData) {
+      final restore = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (c) => AlertDialog(
+          title: const Text('Found your Cash++ data'),
+          content: Text(
+            'There is already Cash++ data in the Google Drive of ${r.email ?? 'this account'}. Restore it on this phone?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(c, false),
+              child: const Text('Start fresh'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(c, true),
+              child: const Text('Restore'),
+            ),
+          ],
+        ),
+      );
+      if (restore == true) {
+        if (!mounted) return;
+        setState(() => _saving = true);
+        final res = await sync.restoreFromDrive();
+        if (!mounted) return;
+        if (res.ok) {
+          ref.invalidate(settingsProvider); // opens the app, already set up
+          return;
+        }
+        setState(() => _saving = false);
+        toast(context, 'Could not restore: ${res.error}');
+        return;
+      }
+    }
+    if (mounted) _go(1);
+  }
 
   void _go(int s) {
     setState(() => _step = s);
@@ -53,6 +134,14 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             openingCashMinor: cash,
             openingBankMinor: bank,
           );
+      if (_dataMode == 'offline' && _signedInAs != null) {
+        // changed their mind after signing in: sign out again
+        await ref.read(syncServiceProvider).goOffline();
+      }
+      if (_dataMode == 'online' && _signedInAs != null) {
+        // merge with Drive in the background; the app is usable right away
+        unawaited(ref.read(syncServiceProvider).finishSetupOnline());
+      }
       ref.invalidate(settingsProvider);
     } catch (e) {
       if (mounted) {
@@ -157,14 +246,28 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                     ),
                   Expanded(
                     child: FilledButton(
-                      onPressed: !_canNext || _saving
+                      onPressed: !_canNext || _saving || _signingIn
                           ? null
                           : (_step == _steps - 1
                                 ? _finish
-                                : () => _go(_step + 1)),
-                      child: Text(
-                        _step == _steps - 1 ? 'Start using Cash++' : 'Continue',
-                      ),
+                                : (_step == 0
+                                      ? _continueFromDataMode
+                                      : () => _go(_step + 1))),
+                      child: _signingIn
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                              ),
+                            )
+                          : Text(
+                              _step == _steps - 1
+                                  ? 'Start using Cash++'
+                                  : (_step == 0 && _dataMode == 'online'
+                                        ? 'Continue with Google'
+                                        : 'Continue'),
+                            ),
                     ),
                   ),
                 ],

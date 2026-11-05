@@ -127,6 +127,7 @@ class ShellState extends ConsumerState<Shell> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(syncServiceProvider); // keeps Online Mode syncing from launch
     final settings = ref.watch(settingsProvider).value;
     final pending = ref.watch(pendingSmsProvider).value?.length ?? 0;
     // only when the number waiting actually changes, not on every refresh

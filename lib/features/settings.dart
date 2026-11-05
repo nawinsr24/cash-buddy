@@ -17,18 +17,10 @@ import '../platform/sms_reader.dart';
 import '../providers.dart';
 import '../sync/backup.dart';
 import '../sync/drive_remote.dart';
-import '../sync/sync_service.dart';
 import '../ui/motion.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
 import 'grade_ui.dart';
-
-final syncServiceProvider = Provider<SyncService>((ref) {
-  final s = SyncService(ref.watch(repoProvider));
-  s.start();
-  ref.onDispose(s.dispose);
-  return s;
-});
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -37,7 +29,6 @@ class SettingsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(settingsProvider);
     final repo = ref.watch(repoProvider);
-    ref.watch(syncServiceProvider); // start the sync service
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: async.when(

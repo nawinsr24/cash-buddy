@@ -9,7 +9,17 @@ import 'data/invest_repo.dart';
 import 'data/repo.dart';
 import 'domain/budget.dart';
 import 'domain/dates.dart';
+import 'sync/sync_service.dart';
 import 'domain/grade.dart';
+
+/// Online Mode's sync, started once for the whole app (not only when
+/// Settings is opened). It does nothing in Offline Mode.
+final syncServiceProvider = Provider<SyncService>((ref) {
+  final s = SyncService(ref.watch(repoProvider));
+  s.start();
+  ref.onDispose(s.dispose);
+  return s;
+});
 
 /// Overridden in main() with the real repository (and in tests).
 final repoProvider = Provider<Repo>(
