@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'data/db.dart';
+import 'data/budget_repo.dart';
 import 'data/insights_repo.dart';
 import 'data/invest_repo.dart';
 import 'data/repo.dart';
+import 'domain/budget.dart';
 import 'domain/dates.dart';
 import 'domain/grade.dart';
 
@@ -234,6 +236,21 @@ final titleHistoryProvider = FutureProvider.autoDispose<List<MonthTitle>>((
   final r = ref.watch(repoProvider);
   await r.ensureMonthTitles();
   return r.titleHistory();
+});
+
+final budgetStatusProvider = FutureProvider.autoDispose<BudgetStatus?>((ref) {
+  final now = ref.watch(repoProvider).today;
+  // cheap (a few queries), and the user is watching it change: no debounce
+  return _tick(
+    ref,
+    () => ref.watch(repoProvider).budgetStatus(now.year, now.month),
+  );
+});
+
+final budgetHistoryProvider = FutureProvider.autoDispose<List<BudgetMonth>>((
+  ref,
+) {
+  return _tick(ref, () => ref.watch(repoProvider).budgetHistory());
 });
 
 final roastModeProvider = FutureProvider.autoDispose<bool>((ref) {

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../data/repo.dart';
 import '../domain/sms_parser.dart';
+import 'diag.dart';
 
 /// Android-only bridge to the on-device SMS inbox (see MainActivity.kt).
 /// On iOS / web there is no inbox access, so every call reports "unsupported".
@@ -39,9 +40,14 @@ class SmsReader {
     }
   }
 
+  bool? _autoDetectSent, _secureSent;
+
   /// Tells the native receiver whether it may alert on incoming transaction SMS.
+  /// Only calls the phone when the value actually changed.
   Future<void> setAutoDetect(bool enabled) async {
-    if (!supported) return;
+    if (!supported || _autoDetectSent == enabled) return;
+    _autoDetectSent = enabled;
+    Diag.instance.log('native setAutoDetect($enabled)');
     try {
       await _ch.invokeMethod<void>('setAutoDetect', {'enabled': enabled});
     } on PlatformException {
@@ -53,7 +59,9 @@ class SmsReader {
 
   /// Android FLAG_SECURE: hides the app in recent apps and blocks screenshots.
   Future<void> setSecure(bool on) async {
-    if (!supported) return;
+    if (!supported || _secureSent == on) return;
+    _secureSent = on;
+    Diag.instance.log('native setSecure($on)');
     try {
       await _ch.invokeMethod<void>('setSecure', {'enabled': on});
     } on PlatformException {
@@ -142,8 +150,14 @@ Future<SmsScanResult> _scan(
 ) async {
   final r = reader ?? SmsReader.instance;
   final sw = Stopwatch()..start();
+  Diag.instance.log('scan start');
   Future<SmsScanResult> done(SmsScanResult res) async {
     // Kept for the Diagnostics line in Settings, so a problem can be seen.
+    Diag.instance.log(
+      res.ok
+          ? 'scan done: ${res.scanned} msgs, ${res.added} new, ${sw.elapsedMilliseconds} ms'
+          : 'scan failed: ${res.error}',
+    );
     try {
       await repo.setSetting(
         'lastScanInfo',

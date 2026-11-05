@@ -49,7 +49,12 @@ class SyncService with WidgetsBindingObserver {
 
   /// Interactive: sign in, take a safety backup, enable Online Mode and merge.
   Future<SyncResult> goOnline() async {
-    final remote = await DriveRemote.signIn();
+    final DriveRemote? remote;
+    try {
+      remote = await DriveRemote.signIn();
+    } on DriveSignInException catch (e) {
+      return SyncResult(0, 0, 0, e.message);
+    }
     if (remote == null) return const SyncResult(0, 0, 0, 'Sign-in cancelled');
     await createBackup(repo);
     _remote = remote;

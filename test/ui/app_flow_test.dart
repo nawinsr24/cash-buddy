@@ -354,13 +354,68 @@ void main() {
     );
   });
 
+  testWidgets('budget: set it, spend past it, see under / exactly / over', (
+    tester,
+  ) async {
+    final env = await pump(tester, opening: 10000000);
+    expect(find.text('Set your monthly budget'), findsOneWidget);
+    await tapText(tester, 'Set your monthly budget');
+    expect(find.text('No budget yet'), findsOneWidget);
+    await tapText(tester, 'Set my budget');
+    await tester.enterText(find.byType(TextField).first, '5000');
+    await tapText(tester, 'Save budget');
+    expect(find.text('Under budget'), findsOneWidget);
+    await tester.runAsync(
+      () => env.repo.addTransaction(
+        type: 'debit',
+        amountMinor: 500000,
+        categoryId: 'cat_food_groceries',
+        date: Dates.fromLocal(env.repo.now()),
+      ),
+    );
+    await settle(tester);
+    await tester.pump(const Duration(seconds: 2));
+    await settle(tester);
+    expect(find.text('Exactly on budget'), findsOneWidget);
+    await tester.runAsync(
+      () => env.repo.addTransaction(
+        type: 'debit',
+        amountMinor: 1000,
+        date: Dates.fromLocal(env.repo.now()),
+      ),
+    );
+    await tester.pump(const Duration(seconds: 2));
+    await settle(tester);
+    expect(find.text('Over budget'), findsOneWidget);
+  });
+
+  testWidgets('online mode says clearly that Google sign-in is not set up', (
+    tester,
+  ) async {
+    await pump(tester);
+    await tapText(tester, 'Settings', last: true);
+    await tester.tap(find.widgetWithText(ListTile, 'Offline Mode').first);
+    await settle(tester);
+    // either the switch or the tile; look for the dialog
+    if (find.text('Online Mode is not available yet').evaluate().isEmpty) {
+      await tester.tap(find.byType(Switch).first);
+      await settle(tester);
+    }
+    expect(find.text('Online Mode is not available yet'), findsOneWidget);
+  });
+
   testWidgets('home shows the Money Grade and the insights strip', (
     tester,
   ) async {
     await pump(tester, opening: 1000000);
     expect(find.text('Money Grade'), findsOneWidget);
-    expect(find.text('Insights'), findsOneWidget);
     expect(find.text('Building your grade…'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Insights'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('Insights'), findsOneWidget);
   });
 
   testWidgets('settings: switch to split accounts keeps total balance', (

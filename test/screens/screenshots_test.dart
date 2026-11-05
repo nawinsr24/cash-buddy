@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:cash_buddy/app.dart';
+import 'package:cash_buddy/data/budget_repo.dart';
 import 'package:cash_buddy/data/invest_repo.dart';
 import 'package:cash_buddy/domain/dates.dart';
 import 'package:cash_buddy/domain/sms_parser.dart';
@@ -230,6 +231,13 @@ void main() {
           amountMinor: 50000,
           periodKey: 0,
         );
+        // a monthly budget with splits; transport is over its split but the
+        // overall budget still holds
+        await r.setBudget(3000000);
+        await r.setBudgetSplit('cat_food', 400000);
+        await r.setBudgetSplit('cat_entertainment', 200000);
+        await r.setBudgetSplit('cat_transport', 50000);
+        await r.setBudgetSplit('cat_health', 100000);
         // last month, so the monthly title and its banner have something to say
         await t(
           'credit',
@@ -290,8 +298,10 @@ void main() {
       await shot(tester, '$p-2d-grade');
       await tester.tap(find.byTooltip('Back'));
       await settle(tester);
-      await tapText(tester, 'Total Spending');
-      await shot(tester, '$p-3-spending-detail');
+      await tapText(tester, 'Budget · Under budget');
+      await shot(tester, '$p-2e-budget');
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, -500));
+      await shot(tester, '$p-2f-budget-splits');
       await tester.tap(find.byTooltip('Back'));
       await settle(tester);
       await tapText(tester, 'Activity', last: true);

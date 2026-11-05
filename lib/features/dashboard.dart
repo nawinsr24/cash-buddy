@@ -10,6 +10,7 @@ import '../domain/money.dart';
 import '../providers.dart';
 import '../ui/motion.dart';
 import '../ui/theme.dart';
+import 'budget.dart';
 import 'cash_move.dart';
 import 'grade_ui.dart';
 import 'invest.dart';
@@ -57,6 +58,8 @@ class DashboardPage extends ConsumerWidget {
               total: d.totalBalance,
               split: settings?.split ?? false,
             ),
+            const SizedBox(height: Sp.x3),
+            const BudgetCard(),
             const SizedBox(height: Sp.x3),
             const GradeCard(),
             const SizedBox(height: Sp.x3),

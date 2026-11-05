@@ -76,8 +76,11 @@ class MainActivity : FlutterFragmentActivity() {
             "setSecure" -> {
                 val on = call.argument<Boolean>("enabled") ?: false
                 runOnUiThread {
-                    if (on) window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
-                    else window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                    // Touch the window only when the flag really changes:
+                    // flipping window flags can flicker on some phones.
+                    val has = (window.attributes.flags and WindowManager.LayoutParams.FLAG_SECURE) != 0
+                    if (on && !has) window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                    else if (!on && has) window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
                 }
                 result.success(null)
             }

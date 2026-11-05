@@ -10,11 +10,13 @@ import '../data/invest_repo.dart';
 import '../data/repo.dart';
 import '../domain/money.dart';
 import '../platform/app_lock.dart';
+import '../platform/diag.dart';
 import '../platform/notifications.dart';
 import '../platform/reminders.dart';
 import '../platform/sms_reader.dart';
 import '../providers.dart';
 import '../sync/backup.dart';
+import '../sync/drive_remote.dart';
 import '../sync/sync_service.dart';
 import '../ui/motion.dart';
 import '../ui/theme.dart';
@@ -427,33 +429,49 @@ class SettingsPage extends ConsumerWidget {
             ),
             const _Group('Diagnostics'),
             Card(
-              child: ListTile(
-                leading: const Icon(Icons.health_and_safety_outlined),
-                title: const Text('Run integrity check'),
-                subtitle: const Text('Verifies balances and debt postings'),
-                onTap: () async {
-                  final problems = await repo.checkInvariants();
-                  if (!context.mounted) return;
-                  showDialog<void>(
-                    context: context,
-                    builder: (c) => AlertDialog(
-                      title: Text(
-                        problems.isEmpty ? 'All good' : 'Problems found',
-                      ),
-                      content: Text(
-                        problems.isEmpty
-                            ? 'No inconsistencies were found.'
-                            : problems.join('\n'),
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(c),
-                          child: const Text('OK'),
-                        ),
-                      ],
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.bug_report_outlined),
+                    title: const Text('Event log'),
+                    subtitle: const Text(
+                      'What the app has been doing. Copy it if something looks wrong.',
                     ),
-                  );
-                },
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () =>
+                        Navigator.of(context)
+                            .push(softRoute(const EventLogPage())),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.health_and_safety_outlined),
+                    title: const Text('Run integrity check'),
+                    subtitle: const Text('Verifies balances and debt postings'),
+                    onTap: () async {
+                      final problems = await repo.checkInvariants();
+                      if (!context.mounted) return;
+                      showDialog<void>(
+                        context: context,
+                        builder: (c) => AlertDialog(
+                          title: Text(
+                            problems.isEmpty ? 'All good' : 'Problems found',
+                          ),
+                          content: Text(
+                            problems.isEmpty
+                                ? 'No inconsistencies were found.'
+                                : problems.join('\n'),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(c),
+                              child: const Text('OK'),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ],
               ),
             ),
           ],
@@ -512,6 +530,23 @@ class SettingsPage extends ConsumerWidget {
   }
 
   Future<void> _goOnline(BuildContext context, WidgetRef ref) async {
+    if (!DriveRemote.configured) {
+      // Say so up front instead of failing silently.
+      await showDialog<void>(
+        context: context,
+        builder: (c) => AlertDialog(
+          title: const Text('Online Mode is not available yet'),
+          content: const Text(DriveRemote.notConfiguredMessage),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(c),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
     final ok = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
@@ -991,4 +1026,48 @@ Future<void> scanAndReport(BuildContext context, WidgetRef ref) async {
               : 'Scanned ${r.scanned} messages, nothing new to review.')
         : 'Scan failed: ${r.error}',
   );
+}
+
+/// The last ~200 things the app did, for diagnosing a problem on a real phone.
+class EventLogPage extends StatelessWidget {
+  const EventLogPage({super.key});
+  @override
+  Widget build(BuildContext context) {
+    final diag = Diag.instance;
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Event log'),
+        actions: [
+          IconButton(
+            tooltip: 'Copy',
+            icon: const Icon(Icons.copy),
+            onPressed: () async {
+              await Clipboard.setData(ClipboardData(text: diag.dump()));
+              if (context.mounted) toast(context, 'Copied. Paste it to share.');
+            },
+          ),
+        ],
+      ),
+      body: ValueListenableBuilder<int>(
+        valueListenable: diag.changed,
+        builder: (context, _, _) {
+          final lines = diag.lines.reversed.toList();
+          if (lines.isEmpty) {
+            return const EmptyState(
+              icon: Icons.bug_report_outlined,
+              title: 'Nothing logged yet',
+            );
+          }
+          return ListView.builder(
+            padding: const EdgeInsets.all(Sp.x3),
+            itemCount: lines.length,
+            itemBuilder: (_, i) => Text(
+              lines[i],
+              style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+            ),
+          );
+        },
+      ),
+    );
+  }
 }

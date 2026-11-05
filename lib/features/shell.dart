@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../platform/diag.dart';
 import '../platform/notifications.dart';
 import '../platform/reminders.dart';
 import '../platform/sms_reader.dart';
@@ -22,16 +25,40 @@ class Shell extends ConsumerStatefulWidget {
 class ShellState extends ConsumerState<Shell> with WidgetsBindingObserver {
   int _index = 0;
 
+  StreamSubscription<void>? _writeSub;
+  int _writesThisSecond = 0;
+  Timer? _writeTimer;
+
+  /// Automatic scans in the last minute, app-wide. A safety net: if anything
+  /// ever makes scans repeat, they stop instead of looping.
+  static final _scanTimes = <DateTime>[];
+  static DateTime? _pausedUntil;
+
   @override
   void initState() {
     super.initState();
+    Diag.instance.log('Shell created');
     WidgetsBinding.instance.addObserver(this);
     Notifications.instance.openInboxRequests.addListener(_openInbox);
+    // record how fast the database changes, to spot runaway writes
+    _writeSub = ref
+        .read(repoProvider)
+        .changes
+        .listen((_) => _writesThisSecond++);
+    _writeTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (_writesThisSecond >= 4) {
+        Diag.instance.log('database changes: $_writesThisSecond in 1s');
+      }
+      _writesThisSecond = 0;
+    });
     _autoScan();
   }
 
   @override
   void dispose() {
+    Diag.instance.log('Shell disposed');
+    _writeSub?.cancel();
+    _writeTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     Notifications.instance.openInboxRequests.removeListener(_openInbox);
     super.dispose();
@@ -39,6 +66,7 @@ class ShellState extends ConsumerState<Shell> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    Diag.instance.log('lifecycle: ${state.name}');
     if (state == AppLifecycleState.resumed) _autoScan();
   }
 
@@ -49,10 +77,24 @@ class ShellState extends ConsumerState<Shell> with WidgetsBindingObserver {
   /// sheet) never fires scan after scan.
   Future<void> _autoScan() async {
     final nowT = DateTime.now();
+    if (_pausedUntil != null && nowT.isBefore(_pausedUntil!)) return;
     if (_lastAutoScan != null &&
         nowT.difference(_lastAutoScan!) < const Duration(seconds: 20)) {
+      Diag.instance.log('auto-scan skipped (too soon)');
       return;
     }
+    _scanTimes.removeWhere(
+      (t) => nowT.difference(t) > const Duration(minutes: 1),
+    );
+    _scanTimes.add(nowT);
+    if (_scanTimes.length > 4) {
+      _pausedUntil = nowT.add(const Duration(minutes: 10));
+      Diag.instance.log(
+        'auto-scan PAUSED 10 min: ${_scanTimes.length} in a minute',
+      );
+      return;
+    }
+    Diag.instance.log('auto-scan');
     _lastAutoScan = nowT;
     ref.invalidate(bannerTitleProvider);
     final repo = ref.read(repoProvider);
@@ -87,10 +129,12 @@ class ShellState extends ConsumerState<Shell> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     final settings = ref.watch(settingsProvider).value;
     final pending = ref.watch(pendingSmsProvider).value?.length ?? 0;
-    ref.listen(
-      pendingSmsProvider,
-      (_, _) => refreshReminder(ref.read(repoProvider)),
-    );
+    // only when the number waiting actually changes, not on every refresh
+    ref.listen(pendingSmsProvider, (prev, next) {
+      if (prev?.value?.length != next.value?.length) {
+        refreshReminder(ref.read(repoProvider));
+      }
+    });
     final tabs = <_Tab>[
       _Tab(
         'Home',

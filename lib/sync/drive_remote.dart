@@ -12,6 +12,13 @@ import 'sync_engine.dart';
 /// NOTE: requires an OAuth client configured in Google Cloud Console
 /// (see docs/SETUP_GOOGLE_DRIVE.md). Not exercised by the automated tests,
 /// which use [InMemoryRemote]; verify on a device before relying on it.
+class DriveSignInException implements Exception {
+  final String message;
+  DriveSignInException(this.message);
+  @override
+  String toString() => message;
+}
+
 class DriveRemote implements RemoteStore {
   static const scope = 'https://www.googleapis.com/auth/drive.appdata';
   final http.Client _client;
@@ -20,24 +27,43 @@ class DriveRemote implements RemoteStore {
 
   DriveRemote._(this._client);
 
-  /// Interactive sign-in + scope grant. Returns null if the user cancels.
+  /// The Google OAuth *web* client ID (Google Cloud Console). Set at build
+  /// time with --dart-define=GOOGLE_SERVER_CLIENT_ID=... ; without it Google
+  /// sign-in cannot work on Android.
+  static const serverClientId = String.fromEnvironment(
+    'GOOGLE_SERVER_CLIENT_ID',
+  );
+  static bool get configured => serverClientId.isNotEmpty;
+
+  static const notConfiguredMessage =
+      'Google sign-in is not set up in this version of the app yet, so Online Mode cannot start. Your data stays safely on this phone in Offline Mode.';
+
+  /// Interactive sign-in + scope grant. Returns null if the user cancels;
+  /// throws a readable [DriveSignInException] for any other failure.
   static Future<DriveRemote?> signIn() async {
+    if (!configured) throw DriveSignInException(notConfiguredMessage);
     final gs = GoogleSignIn.instance;
-    await gs.initialize();
     try {
+      await gs.initialize(serverClientId: serverClientId);
       final account = await gs.authenticate(scopeHint: [scope]);
       final authz = await account.authorizationClient.authorizeScopes([scope]);
       return DriveRemote._(_BearerClient(authz.accessToken));
-    } on GoogleSignInException {
-      return null;
+    } on GoogleSignInException catch (e) {
+      if (e.code == GoogleSignInExceptionCode.canceled) return null;
+      throw DriveSignInException(
+        'Google sign-in failed (${e.code.name}). ${e.description ?? ''}'.trim(),
+      );
+    } catch (e) {
+      throw DriveSignInException('Google sign-in failed: $e');
     }
   }
 
   /// Silent re-authentication on app start; null if the user must sign in again.
   static Future<DriveRemote?> restore() async {
     try {
+      if (!configured) return null;
       final gs = GoogleSignIn.instance;
-      await gs.initialize();
+      await gs.initialize(serverClientId: serverClientId);
       final account = await gs.attemptLightweightAuthentication();
       if (account == null) return null;
       final authz = await account.authorizationClient.authorizationForScopes([
