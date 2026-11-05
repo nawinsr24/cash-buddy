@@ -7,6 +7,8 @@ import '../data/repo.dart';
 import '../domain/dates.dart';
 import '../domain/money.dart';
 import '../providers.dart';
+import '../ui/art.dart';
+import '../ui/emoji.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
 
@@ -15,7 +17,17 @@ class TransactionsPage extends ConsumerStatefulWidget {
   /// button and applies [initial] locally instead of the shared tab filter.
   final bool standalone;
   final TxnFilter? initial;
-  const TransactionsPage({super.key, this.standalone = false, this.initial});
+
+  /// Shown as a toolbar button (with a count) when the SMS assistant is on.
+  final VoidCallback? onOpenInbox;
+  final int inboxBadge;
+  const TransactionsPage({
+    super.key,
+    this.standalone = false,
+    this.initial,
+    this.onOpenInbox,
+    this.inboxBadge = 0,
+  });
   @override
   ConsumerState<TransactionsPage> createState() => _TransactionsPageState();
 }
@@ -63,6 +75,16 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
         appBar: AppBar(
           title: const Text('Transactions'),
           actions: [
+            if (widget.onOpenInbox != null)
+              IconButton(
+                tooltip: 'Detected from messages',
+                icon: Badge(
+                  isLabelVisible: widget.inboxBadge > 0,
+                  label: Text('${widget.inboxBadge}'),
+                  child: const Icon(Icons.inbox_outlined),
+                ),
+                onPressed: widget.onOpenInbox,
+              ),
             IconButton(
               tooltip: 'Filters',
               icon: Badge(
@@ -105,12 +127,14 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
           child: const Icon(Icons.add),
         ),
         body: txns.when(
+          skipLoadingOnReload: true,
           loading: () =>
               const Center(child: CircularProgressIndicator.adaptive()),
           error: (e, _) => ErrorState(e),
           data: (list) {
             if (list.isEmpty) {
               return EmptyState(
+                art: Art.receipt,
                 icon: Icons.receipt_long_outlined,
                 title: active
                     ? 'No matching transactions'
@@ -206,7 +230,7 @@ class _DayHeader extends StatelessWidget {
         : DateFormat('EEE, d MMM y').format(d);
     var net = 0;
     for (final t in txns) {
-      if (t.source == 'debt') continue;
+      if (t.source == 'debt' || t.source == 'invest') continue;
       if (t.type == 'credit') net += t.amountMinor;
       if (t.type == 'debit') net -= t.amountMinor;
     }
@@ -258,14 +282,21 @@ class _TxnTile extends ConsumerWidget {
     final c = context.cash;
     final isCredit = txn.type == 'credit';
     final isTransfer = txn.type == 'transfer';
-    final managed = txn.source == 'debt' || txn.source == 'interest';
+    final managed =
+        txn.source == 'debt' ||
+        txn.source == 'interest' ||
+        txn.source == 'invest';
     final color = isTransfer
         ? context.scheme.primary
         : (isCredit ? c.income : c.spending);
     final catName = isTransfer
         ? 'Transfer'
         : category == null
-        ? (txn.source == 'debt' ? 'Debt' : 'Uncategorised')
+        ? (txn.source == 'debt'
+              ? 'Debt'
+              : txn.source == 'invest'
+              ? 'Investment'
+              : 'Uncategorised')
         : (parent != null
               ? '${parent!.name} › ${category!.name}'
               : category!.name);
@@ -285,15 +316,22 @@ class _TxnTile extends ConsumerWidget {
         backgroundColor:
             (category != null ? colorOf(category!.colorValue) : color)
                 .withValues(alpha: 0.16),
-        child: Icon(
-          isTransfer
-              ? Icons.swap_horiz
-              : (managed
-                    ? Icons.handshake_outlined
-                    : (isCredit ? Icons.south_west : Icons.north_east)),
-          color: category != null ? colorOf(category!.colorValue) : color,
-          size: 20,
-        ),
+        child: category != null
+            ? Text(
+                emojiForCategory(category!.name, parent?.name),
+                style: const TextStyle(fontSize: 20),
+              )
+            : txn.source == 'invest'
+            ? const Text('📈', style: TextStyle(fontSize: 20))
+            : Icon(
+                isTransfer
+                    ? Icons.swap_horiz
+                    : (managed
+                          ? Icons.handshake_outlined
+                          : (isCredit ? Icons.south_west : Icons.north_east)),
+                color: color,
+                size: 20,
+              ),
       ),
       title: Text(
         txn.note.isNotEmpty ? txn.note : catName,
@@ -461,6 +499,7 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
                 ('Manual', 'manual'),
                 ('SMS', 'sms'),
                 ('Debt', 'debt'),
+                ('Invest', 'invest'),
                 ('Interest', 'interest'),
               ],
               f.source,

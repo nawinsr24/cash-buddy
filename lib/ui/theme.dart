@@ -124,7 +124,7 @@ class AppTheme {
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
           TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-          TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
+          TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
         },
       ),
       appBarTheme: AppBarTheme(
@@ -163,7 +163,8 @@ class AppTheme {
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: colors.surfaceRaised,
-        indicatorColor: scheme.primary.withValues(alpha: 0.14),
+        indicatorColor: scheme.primary.withValues(alpha: 0.18),
+        height: 68,
         labelTextStyle: WidgetStatePropertyAll(base.textTheme.labelMedium),
       ),
       chipTheme: base.chipTheme.copyWith(
@@ -179,6 +180,12 @@ class AppTheme {
             borderRadius: BorderRadius.circular(Sp.rField),
           ),
         ),
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: scheme.primary,
+        foregroundColor: scheme.onPrimary,
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
       snackBarTheme: const SnackBarThemeData(
         behavior: SnackBarBehavior.floating,

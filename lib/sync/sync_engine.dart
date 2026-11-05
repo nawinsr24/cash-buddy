@@ -88,6 +88,8 @@ class SyncEngine {
     'transactions',
     'debts',
     'debt_events',
+    'investments',
+    'investment_entries',
   ];
 
   Future<SyncResult> sync() async {
@@ -132,6 +134,12 @@ class SyncEngine {
     await grab('transactions', db.transactions, db.transactions.hlc);
     await grab('debts', db.debts, db.debts.hlc);
     await grab('debt_events', db.debtEvents, db.debtEvents.hlc);
+    await grab('investments', db.investments, db.investments.hlc);
+    await grab(
+      'investment_entries',
+      db.investmentEntries,
+      db.investmentEntries.hlc,
+    );
     return out;
   }
 
@@ -249,6 +257,14 @@ class SyncEngine {
         local = (await (db.select(
           db.debtEvents,
         )..where((t) => t.id.equals(id))).getSingleOrNull())?.hlc;
+      case 'investments':
+        local = (await (db.select(
+          db.investments,
+        )..where((t) => t.id.equals(id))).getSingleOrNull())?.hlc;
+      case 'investment_entries':
+        local = (await (db.select(
+          db.investmentEntries,
+        )..where((t) => t.id.equals(id))).getSingleOrNull())?.hlc;
     }
     if (local != null && local.compareTo(incoming) >= 0) return false;
     switch (table) {
@@ -271,6 +287,14 @@ class SyncEngine {
         final e = DebtEvent.fromJson(json);
         await db.into(db.debtEvents).insertOnConflictUpdate(e);
         touchedDebts.add(e.debtId);
+      case 'investments':
+        await db
+            .into(db.investments)
+            .insertOnConflictUpdate(Investment.fromJson(json));
+      case 'investment_entries':
+        await db
+            .into(db.investmentEntries)
+            .insertOnConflictUpdate(InvestmentEntry.fromJson(json));
     }
     return true;
   }

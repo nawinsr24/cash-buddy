@@ -8,6 +8,7 @@ import '../domain/dates.dart';
 import '../domain/interest.dart';
 import '../domain/money.dart';
 import '../providers.dart';
+import '../ui/art.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
 
@@ -75,6 +76,7 @@ class _DebtList extends ConsumerWidget {
       data: (items) {
         if (items.isEmpty) {
           return EmptyState(
+            art: Art.handshake,
             icon: rec ? Icons.call_received : Icons.call_made,
             title: rec ? 'Nobody owes you money' : 'You owe nobody',
             body: rec

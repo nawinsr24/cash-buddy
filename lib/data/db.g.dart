@@ -3489,6 +3489,1765 @@ class DebtEventsCompanion extends UpdateCompanion<DebtEvent> {
   }
 }
 
+class $InvestmentsTable extends Investments
+    with TableInfo<$InvestmentsTable, Investment> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $InvestmentsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _accountIdMeta = const VerificationMeta(
+    'accountId',
+  );
+  @override
+  late final GeneratedColumn<String> accountId = GeneratedColumn<String>(
+    'account_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _startDateMeta = const VerificationMeta(
+    'startDate',
+  );
+  @override
+  late final GeneratedColumn<String> startDate = GeneratedColumn<String>(
+    'start_date',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _expectedGrowthBpsMeta = const VerificationMeta(
+    'expectedGrowthBps',
+  );
+  @override
+  late final GeneratedColumn<int> expectedGrowthBps = GeneratedColumn<int>(
+    'expected_growth_bps',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _currentValueMinorMeta = const VerificationMeta(
+    'currentValueMinor',
+  );
+  @override
+  late final GeneratedColumn<int> currentValueMinor = GeneratedColumn<int>(
+    'current_value_minor',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _valueUpdatedOnMeta = const VerificationMeta(
+    'valueUpdatedOn',
+  );
+  @override
+  late final GeneratedColumn<String> valueUpdatedOn = GeneratedColumn<String>(
+    'value_updated_on',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _unitsMeta = const VerificationMeta('units');
+  @override
+  late final GeneratedColumn<double> units = GeneratedColumn<double>(
+    'units',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _buyPriceMinorMeta = const VerificationMeta(
+    'buyPriceMinor',
+  );
+  @override
+  late final GeneratedColumn<int> buyPriceMinor = GeneratedColumn<int>(
+    'buy_price_minor',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sipMinorMeta = const VerificationMeta(
+    'sipMinor',
+  );
+  @override
+  late final GeneratedColumn<int> sipMinor = GeneratedColumn<int>(
+    'sip_minor',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _chitValueMinorMeta = const VerificationMeta(
+    'chitValueMinor',
+  );
+  @override
+  late final GeneratedColumn<int> chitValueMinor = GeneratedColumn<int>(
+    'chit_value_minor',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _tenureMonthsMeta = const VerificationMeta(
+    'tenureMonths',
+  );
+  @override
+  late final GeneratedColumn<int> tenureMonths = GeneratedColumn<int>(
+    'tenure_months',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _membersMeta = const VerificationMeta(
+    'members',
+  );
+  @override
+  late final GeneratedColumn<int> members = GeneratedColumn<int>(
+    'members',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _monthlyMinorMeta = const VerificationMeta(
+    'monthlyMinor',
+  );
+  @override
+  late final GeneratedColumn<int> monthlyMinor = GeneratedColumn<int>(
+    'monthly_minor',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _commissionBpsMeta = const VerificationMeta(
+    'commissionBps',
+  );
+  @override
+  late final GeneratedColumn<int> commissionBps = GeneratedColumn<int>(
+    'commission_bps',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _organiserMeta = const VerificationMeta(
+    'organiser',
+  );
+  @override
+  late final GeneratedColumn<String> organiser = GeneratedColumn<String>(
+    'organiser',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _hlcMeta = const VerificationMeta('hlc');
+  @override
+  late final GeneratedColumn<String> hlc = GeneratedColumn<String>(
+    'hlc',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<String> deletedAt = GeneratedColumn<String>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    kind,
+    name,
+    accountId,
+    startDate,
+    expectedGrowthBps,
+    currentValueMinor,
+    valueUpdatedOn,
+    units,
+    buyPriceMinor,
+    sipMinor,
+    chitValueMinor,
+    tenureMonths,
+    members,
+    monthlyMinor,
+    commissionBps,
+    organiser,
+    note,
+    hlc,
+    deletedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'investments';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Investment> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('account_id')) {
+      context.handle(
+        _accountIdMeta,
+        accountId.isAcceptableOrUnknown(data['account_id']!, _accountIdMeta),
+      );
+    }
+    if (data.containsKey('start_date')) {
+      context.handle(
+        _startDateMeta,
+        startDate.isAcceptableOrUnknown(data['start_date']!, _startDateMeta),
+      );
+    }
+    if (data.containsKey('expected_growth_bps')) {
+      context.handle(
+        _expectedGrowthBpsMeta,
+        expectedGrowthBps.isAcceptableOrUnknown(
+          data['expected_growth_bps']!,
+          _expectedGrowthBpsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('current_value_minor')) {
+      context.handle(
+        _currentValueMinorMeta,
+        currentValueMinor.isAcceptableOrUnknown(
+          data['current_value_minor']!,
+          _currentValueMinorMeta,
+        ),
+      );
+    }
+    if (data.containsKey('value_updated_on')) {
+      context.handle(
+        _valueUpdatedOnMeta,
+        valueUpdatedOn.isAcceptableOrUnknown(
+          data['value_updated_on']!,
+          _valueUpdatedOnMeta,
+        ),
+      );
+    }
+    if (data.containsKey('units')) {
+      context.handle(
+        _unitsMeta,
+        units.isAcceptableOrUnknown(data['units']!, _unitsMeta),
+      );
+    }
+    if (data.containsKey('buy_price_minor')) {
+      context.handle(
+        _buyPriceMinorMeta,
+        buyPriceMinor.isAcceptableOrUnknown(
+          data['buy_price_minor']!,
+          _buyPriceMinorMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sip_minor')) {
+      context.handle(
+        _sipMinorMeta,
+        sipMinor.isAcceptableOrUnknown(data['sip_minor']!, _sipMinorMeta),
+      );
+    }
+    if (data.containsKey('chit_value_minor')) {
+      context.handle(
+        _chitValueMinorMeta,
+        chitValueMinor.isAcceptableOrUnknown(
+          data['chit_value_minor']!,
+          _chitValueMinorMeta,
+        ),
+      );
+    }
+    if (data.containsKey('tenure_months')) {
+      context.handle(
+        _tenureMonthsMeta,
+        tenureMonths.isAcceptableOrUnknown(
+          data['tenure_months']!,
+          _tenureMonthsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('members')) {
+      context.handle(
+        _membersMeta,
+        members.isAcceptableOrUnknown(data['members']!, _membersMeta),
+      );
+    }
+    if (data.containsKey('monthly_minor')) {
+      context.handle(
+        _monthlyMinorMeta,
+        monthlyMinor.isAcceptableOrUnknown(
+          data['monthly_minor']!,
+          _monthlyMinorMeta,
+        ),
+      );
+    }
+    if (data.containsKey('commission_bps')) {
+      context.handle(
+        _commissionBpsMeta,
+        commissionBps.isAcceptableOrUnknown(
+          data['commission_bps']!,
+          _commissionBpsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('organiser')) {
+      context.handle(
+        _organiserMeta,
+        organiser.isAcceptableOrUnknown(data['organiser']!, _organiserMeta),
+      );
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    if (data.containsKey('hlc')) {
+      context.handle(
+        _hlcMeta,
+        hlc.isAcceptableOrUnknown(data['hlc']!, _hlcMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_hlcMeta);
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Investment map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Investment(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      accountId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}account_id'],
+      ),
+      startDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}start_date'],
+      ),
+      expectedGrowthBps: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}expected_growth_bps'],
+      ),
+      currentValueMinor: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}current_value_minor'],
+      ),
+      valueUpdatedOn: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}value_updated_on'],
+      ),
+      units: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}units'],
+      ),
+      buyPriceMinor: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}buy_price_minor'],
+      ),
+      sipMinor: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sip_minor'],
+      ),
+      chitValueMinor: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}chit_value_minor'],
+      ),
+      tenureMonths: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}tenure_months'],
+      ),
+      members: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}members'],
+      ),
+      monthlyMinor: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}monthly_minor'],
+      ),
+      commissionBps: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}commission_bps'],
+      ),
+      organiser: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}organiser'],
+      ),
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      )!,
+      hlc: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}hlc'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}deleted_at'],
+      ),
+    );
+  }
+
+  @override
+  $InvestmentsTable createAlias(String alias) {
+    return $InvestmentsTable(attachedDatabase, alias);
+  }
+}
+
+class Investment extends DataClass implements Insertable<Investment> {
+  final String id;
+  final String kind;
+  final String name;
+  final String? accountId;
+  final String? startDate;
+  final int? expectedGrowthBps;
+  final int? currentValueMinor;
+  final String? valueUpdatedOn;
+  final double? units;
+  final int? buyPriceMinor;
+  final int? sipMinor;
+  final int? chitValueMinor;
+  final int? tenureMonths;
+  final int? members;
+  final int? monthlyMinor;
+  final int? commissionBps;
+  final String? organiser;
+  final String note;
+  final String hlc;
+  final String? deletedAt;
+  const Investment({
+    required this.id,
+    required this.kind,
+    required this.name,
+    this.accountId,
+    this.startDate,
+    this.expectedGrowthBps,
+    this.currentValueMinor,
+    this.valueUpdatedOn,
+    this.units,
+    this.buyPriceMinor,
+    this.sipMinor,
+    this.chitValueMinor,
+    this.tenureMonths,
+    this.members,
+    this.monthlyMinor,
+    this.commissionBps,
+    this.organiser,
+    required this.note,
+    required this.hlc,
+    this.deletedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['kind'] = Variable<String>(kind);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || accountId != null) {
+      map['account_id'] = Variable<String>(accountId);
+    }
+    if (!nullToAbsent || startDate != null) {
+      map['start_date'] = Variable<String>(startDate);
+    }
+    if (!nullToAbsent || expectedGrowthBps != null) {
+      map['expected_growth_bps'] = Variable<int>(expectedGrowthBps);
+    }
+    if (!nullToAbsent || currentValueMinor != null) {
+      map['current_value_minor'] = Variable<int>(currentValueMinor);
+    }
+    if (!nullToAbsent || valueUpdatedOn != null) {
+      map['value_updated_on'] = Variable<String>(valueUpdatedOn);
+    }
+    if (!nullToAbsent || units != null) {
+      map['units'] = Variable<double>(units);
+    }
+    if (!nullToAbsent || buyPriceMinor != null) {
+      map['buy_price_minor'] = Variable<int>(buyPriceMinor);
+    }
+    if (!nullToAbsent || sipMinor != null) {
+      map['sip_minor'] = Variable<int>(sipMinor);
+    }
+    if (!nullToAbsent || chitValueMinor != null) {
+      map['chit_value_minor'] = Variable<int>(chitValueMinor);
+    }
+    if (!nullToAbsent || tenureMonths != null) {
+      map['tenure_months'] = Variable<int>(tenureMonths);
+    }
+    if (!nullToAbsent || members != null) {
+      map['members'] = Variable<int>(members);
+    }
+    if (!nullToAbsent || monthlyMinor != null) {
+      map['monthly_minor'] = Variable<int>(monthlyMinor);
+    }
+    if (!nullToAbsent || commissionBps != null) {
+      map['commission_bps'] = Variable<int>(commissionBps);
+    }
+    if (!nullToAbsent || organiser != null) {
+      map['organiser'] = Variable<String>(organiser);
+    }
+    map['note'] = Variable<String>(note);
+    map['hlc'] = Variable<String>(hlc);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<String>(deletedAt);
+    }
+    return map;
+  }
+
+  InvestmentsCompanion toCompanion(bool nullToAbsent) {
+    return InvestmentsCompanion(
+      id: Value(id),
+      kind: Value(kind),
+      name: Value(name),
+      accountId: accountId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(accountId),
+      startDate: startDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(startDate),
+      expectedGrowthBps: expectedGrowthBps == null && nullToAbsent
+          ? const Value.absent()
+          : Value(expectedGrowthBps),
+      currentValueMinor: currentValueMinor == null && nullToAbsent
+          ? const Value.absent()
+          : Value(currentValueMinor),
+      valueUpdatedOn: valueUpdatedOn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(valueUpdatedOn),
+      units: units == null && nullToAbsent
+          ? const Value.absent()
+          : Value(units),
+      buyPriceMinor: buyPriceMinor == null && nullToAbsent
+          ? const Value.absent()
+          : Value(buyPriceMinor),
+      sipMinor: sipMinor == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sipMinor),
+      chitValueMinor: chitValueMinor == null && nullToAbsent
+          ? const Value.absent()
+          : Value(chitValueMinor),
+      tenureMonths: tenureMonths == null && nullToAbsent
+          ? const Value.absent()
+          : Value(tenureMonths),
+      members: members == null && nullToAbsent
+          ? const Value.absent()
+          : Value(members),
+      monthlyMinor: monthlyMinor == null && nullToAbsent
+          ? const Value.absent()
+          : Value(monthlyMinor),
+      commissionBps: commissionBps == null && nullToAbsent
+          ? const Value.absent()
+          : Value(commissionBps),
+      organiser: organiser == null && nullToAbsent
+          ? const Value.absent()
+          : Value(organiser),
+      note: Value(note),
+      hlc: Value(hlc),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+    );
+  }
+
+  factory Investment.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Investment(
+      id: serializer.fromJson<String>(json['id']),
+      kind: serializer.fromJson<String>(json['kind']),
+      name: serializer.fromJson<String>(json['name']),
+      accountId: serializer.fromJson<String?>(json['accountId']),
+      startDate: serializer.fromJson<String?>(json['startDate']),
+      expectedGrowthBps: serializer.fromJson<int?>(json['expectedGrowthBps']),
+      currentValueMinor: serializer.fromJson<int?>(json['currentValueMinor']),
+      valueUpdatedOn: serializer.fromJson<String?>(json['valueUpdatedOn']),
+      units: serializer.fromJson<double?>(json['units']),
+      buyPriceMinor: serializer.fromJson<int?>(json['buyPriceMinor']),
+      sipMinor: serializer.fromJson<int?>(json['sipMinor']),
+      chitValueMinor: serializer.fromJson<int?>(json['chitValueMinor']),
+      tenureMonths: serializer.fromJson<int?>(json['tenureMonths']),
+      members: serializer.fromJson<int?>(json['members']),
+      monthlyMinor: serializer.fromJson<int?>(json['monthlyMinor']),
+      commissionBps: serializer.fromJson<int?>(json['commissionBps']),
+      organiser: serializer.fromJson<String?>(json['organiser']),
+      note: serializer.fromJson<String>(json['note']),
+      hlc: serializer.fromJson<String>(json['hlc']),
+      deletedAt: serializer.fromJson<String?>(json['deletedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'kind': serializer.toJson<String>(kind),
+      'name': serializer.toJson<String>(name),
+      'accountId': serializer.toJson<String?>(accountId),
+      'startDate': serializer.toJson<String?>(startDate),
+      'expectedGrowthBps': serializer.toJson<int?>(expectedGrowthBps),
+      'currentValueMinor': serializer.toJson<int?>(currentValueMinor),
+      'valueUpdatedOn': serializer.toJson<String?>(valueUpdatedOn),
+      'units': serializer.toJson<double?>(units),
+      'buyPriceMinor': serializer.toJson<int?>(buyPriceMinor),
+      'sipMinor': serializer.toJson<int?>(sipMinor),
+      'chitValueMinor': serializer.toJson<int?>(chitValueMinor),
+      'tenureMonths': serializer.toJson<int?>(tenureMonths),
+      'members': serializer.toJson<int?>(members),
+      'monthlyMinor': serializer.toJson<int?>(monthlyMinor),
+      'commissionBps': serializer.toJson<int?>(commissionBps),
+      'organiser': serializer.toJson<String?>(organiser),
+      'note': serializer.toJson<String>(note),
+      'hlc': serializer.toJson<String>(hlc),
+      'deletedAt': serializer.toJson<String?>(deletedAt),
+    };
+  }
+
+  Investment copyWith({
+    String? id,
+    String? kind,
+    String? name,
+    Value<String?> accountId = const Value.absent(),
+    Value<String?> startDate = const Value.absent(),
+    Value<int?> expectedGrowthBps = const Value.absent(),
+    Value<int?> currentValueMinor = const Value.absent(),
+    Value<String?> valueUpdatedOn = const Value.absent(),
+    Value<double?> units = const Value.absent(),
+    Value<int?> buyPriceMinor = const Value.absent(),
+    Value<int?> sipMinor = const Value.absent(),
+    Value<int?> chitValueMinor = const Value.absent(),
+    Value<int?> tenureMonths = const Value.absent(),
+    Value<int?> members = const Value.absent(),
+    Value<int?> monthlyMinor = const Value.absent(),
+    Value<int?> commissionBps = const Value.absent(),
+    Value<String?> organiser = const Value.absent(),
+    String? note,
+    String? hlc,
+    Value<String?> deletedAt = const Value.absent(),
+  }) => Investment(
+    id: id ?? this.id,
+    kind: kind ?? this.kind,
+    name: name ?? this.name,
+    accountId: accountId.present ? accountId.value : this.accountId,
+    startDate: startDate.present ? startDate.value : this.startDate,
+    expectedGrowthBps: expectedGrowthBps.present
+        ? expectedGrowthBps.value
+        : this.expectedGrowthBps,
+    currentValueMinor: currentValueMinor.present
+        ? currentValueMinor.value
+        : this.currentValueMinor,
+    valueUpdatedOn: valueUpdatedOn.present
+        ? valueUpdatedOn.value
+        : this.valueUpdatedOn,
+    units: units.present ? units.value : this.units,
+    buyPriceMinor: buyPriceMinor.present
+        ? buyPriceMinor.value
+        : this.buyPriceMinor,
+    sipMinor: sipMinor.present ? sipMinor.value : this.sipMinor,
+    chitValueMinor: chitValueMinor.present
+        ? chitValueMinor.value
+        : this.chitValueMinor,
+    tenureMonths: tenureMonths.present ? tenureMonths.value : this.tenureMonths,
+    members: members.present ? members.value : this.members,
+    monthlyMinor: monthlyMinor.present ? monthlyMinor.value : this.monthlyMinor,
+    commissionBps: commissionBps.present
+        ? commissionBps.value
+        : this.commissionBps,
+    organiser: organiser.present ? organiser.value : this.organiser,
+    note: note ?? this.note,
+    hlc: hlc ?? this.hlc,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+  );
+  Investment copyWithCompanion(InvestmentsCompanion data) {
+    return Investment(
+      id: data.id.present ? data.id.value : this.id,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      name: data.name.present ? data.name.value : this.name,
+      accountId: data.accountId.present ? data.accountId.value : this.accountId,
+      startDate: data.startDate.present ? data.startDate.value : this.startDate,
+      expectedGrowthBps: data.expectedGrowthBps.present
+          ? data.expectedGrowthBps.value
+          : this.expectedGrowthBps,
+      currentValueMinor: data.currentValueMinor.present
+          ? data.currentValueMinor.value
+          : this.currentValueMinor,
+      valueUpdatedOn: data.valueUpdatedOn.present
+          ? data.valueUpdatedOn.value
+          : this.valueUpdatedOn,
+      units: data.units.present ? data.units.value : this.units,
+      buyPriceMinor: data.buyPriceMinor.present
+          ? data.buyPriceMinor.value
+          : this.buyPriceMinor,
+      sipMinor: data.sipMinor.present ? data.sipMinor.value : this.sipMinor,
+      chitValueMinor: data.chitValueMinor.present
+          ? data.chitValueMinor.value
+          : this.chitValueMinor,
+      tenureMonths: data.tenureMonths.present
+          ? data.tenureMonths.value
+          : this.tenureMonths,
+      members: data.members.present ? data.members.value : this.members,
+      monthlyMinor: data.monthlyMinor.present
+          ? data.monthlyMinor.value
+          : this.monthlyMinor,
+      commissionBps: data.commissionBps.present
+          ? data.commissionBps.value
+          : this.commissionBps,
+      organiser: data.organiser.present ? data.organiser.value : this.organiser,
+      note: data.note.present ? data.note.value : this.note,
+      hlc: data.hlc.present ? data.hlc.value : this.hlc,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Investment(')
+          ..write('id: $id, ')
+          ..write('kind: $kind, ')
+          ..write('name: $name, ')
+          ..write('accountId: $accountId, ')
+          ..write('startDate: $startDate, ')
+          ..write('expectedGrowthBps: $expectedGrowthBps, ')
+          ..write('currentValueMinor: $currentValueMinor, ')
+          ..write('valueUpdatedOn: $valueUpdatedOn, ')
+          ..write('units: $units, ')
+          ..write('buyPriceMinor: $buyPriceMinor, ')
+          ..write('sipMinor: $sipMinor, ')
+          ..write('chitValueMinor: $chitValueMinor, ')
+          ..write('tenureMonths: $tenureMonths, ')
+          ..write('members: $members, ')
+          ..write('monthlyMinor: $monthlyMinor, ')
+          ..write('commissionBps: $commissionBps, ')
+          ..write('organiser: $organiser, ')
+          ..write('note: $note, ')
+          ..write('hlc: $hlc, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    kind,
+    name,
+    accountId,
+    startDate,
+    expectedGrowthBps,
+    currentValueMinor,
+    valueUpdatedOn,
+    units,
+    buyPriceMinor,
+    sipMinor,
+    chitValueMinor,
+    tenureMonths,
+    members,
+    monthlyMinor,
+    commissionBps,
+    organiser,
+    note,
+    hlc,
+    deletedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Investment &&
+          other.id == this.id &&
+          other.kind == this.kind &&
+          other.name == this.name &&
+          other.accountId == this.accountId &&
+          other.startDate == this.startDate &&
+          other.expectedGrowthBps == this.expectedGrowthBps &&
+          other.currentValueMinor == this.currentValueMinor &&
+          other.valueUpdatedOn == this.valueUpdatedOn &&
+          other.units == this.units &&
+          other.buyPriceMinor == this.buyPriceMinor &&
+          other.sipMinor == this.sipMinor &&
+          other.chitValueMinor == this.chitValueMinor &&
+          other.tenureMonths == this.tenureMonths &&
+          other.members == this.members &&
+          other.monthlyMinor == this.monthlyMinor &&
+          other.commissionBps == this.commissionBps &&
+          other.organiser == this.organiser &&
+          other.note == this.note &&
+          other.hlc == this.hlc &&
+          other.deletedAt == this.deletedAt);
+}
+
+class InvestmentsCompanion extends UpdateCompanion<Investment> {
+  final Value<String> id;
+  final Value<String> kind;
+  final Value<String> name;
+  final Value<String?> accountId;
+  final Value<String?> startDate;
+  final Value<int?> expectedGrowthBps;
+  final Value<int?> currentValueMinor;
+  final Value<String?> valueUpdatedOn;
+  final Value<double?> units;
+  final Value<int?> buyPriceMinor;
+  final Value<int?> sipMinor;
+  final Value<int?> chitValueMinor;
+  final Value<int?> tenureMonths;
+  final Value<int?> members;
+  final Value<int?> monthlyMinor;
+  final Value<int?> commissionBps;
+  final Value<String?> organiser;
+  final Value<String> note;
+  final Value<String> hlc;
+  final Value<String?> deletedAt;
+  final Value<int> rowid;
+  const InvestmentsCompanion({
+    this.id = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.name = const Value.absent(),
+    this.accountId = const Value.absent(),
+    this.startDate = const Value.absent(),
+    this.expectedGrowthBps = const Value.absent(),
+    this.currentValueMinor = const Value.absent(),
+    this.valueUpdatedOn = const Value.absent(),
+    this.units = const Value.absent(),
+    this.buyPriceMinor = const Value.absent(),
+    this.sipMinor = const Value.absent(),
+    this.chitValueMinor = const Value.absent(),
+    this.tenureMonths = const Value.absent(),
+    this.members = const Value.absent(),
+    this.monthlyMinor = const Value.absent(),
+    this.commissionBps = const Value.absent(),
+    this.organiser = const Value.absent(),
+    this.note = const Value.absent(),
+    this.hlc = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  InvestmentsCompanion.insert({
+    required String id,
+    required String kind,
+    required String name,
+    this.accountId = const Value.absent(),
+    this.startDate = const Value.absent(),
+    this.expectedGrowthBps = const Value.absent(),
+    this.currentValueMinor = const Value.absent(),
+    this.valueUpdatedOn = const Value.absent(),
+    this.units = const Value.absent(),
+    this.buyPriceMinor = const Value.absent(),
+    this.sipMinor = const Value.absent(),
+    this.chitValueMinor = const Value.absent(),
+    this.tenureMonths = const Value.absent(),
+    this.members = const Value.absent(),
+    this.monthlyMinor = const Value.absent(),
+    this.commissionBps = const Value.absent(),
+    this.organiser = const Value.absent(),
+    this.note = const Value.absent(),
+    required String hlc,
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       kind = Value(kind),
+       name = Value(name),
+       hlc = Value(hlc);
+  static Insertable<Investment> custom({
+    Expression<String>? id,
+    Expression<String>? kind,
+    Expression<String>? name,
+    Expression<String>? accountId,
+    Expression<String>? startDate,
+    Expression<int>? expectedGrowthBps,
+    Expression<int>? currentValueMinor,
+    Expression<String>? valueUpdatedOn,
+    Expression<double>? units,
+    Expression<int>? buyPriceMinor,
+    Expression<int>? sipMinor,
+    Expression<int>? chitValueMinor,
+    Expression<int>? tenureMonths,
+    Expression<int>? members,
+    Expression<int>? monthlyMinor,
+    Expression<int>? commissionBps,
+    Expression<String>? organiser,
+    Expression<String>? note,
+    Expression<String>? hlc,
+    Expression<String>? deletedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (kind != null) 'kind': kind,
+      if (name != null) 'name': name,
+      if (accountId != null) 'account_id': accountId,
+      if (startDate != null) 'start_date': startDate,
+      if (expectedGrowthBps != null) 'expected_growth_bps': expectedGrowthBps,
+      if (currentValueMinor != null) 'current_value_minor': currentValueMinor,
+      if (valueUpdatedOn != null) 'value_updated_on': valueUpdatedOn,
+      if (units != null) 'units': units,
+      if (buyPriceMinor != null) 'buy_price_minor': buyPriceMinor,
+      if (sipMinor != null) 'sip_minor': sipMinor,
+      if (chitValueMinor != null) 'chit_value_minor': chitValueMinor,
+      if (tenureMonths != null) 'tenure_months': tenureMonths,
+      if (members != null) 'members': members,
+      if (monthlyMinor != null) 'monthly_minor': monthlyMinor,
+      if (commissionBps != null) 'commission_bps': commissionBps,
+      if (organiser != null) 'organiser': organiser,
+      if (note != null) 'note': note,
+      if (hlc != null) 'hlc': hlc,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  InvestmentsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? kind,
+    Value<String>? name,
+    Value<String?>? accountId,
+    Value<String?>? startDate,
+    Value<int?>? expectedGrowthBps,
+    Value<int?>? currentValueMinor,
+    Value<String?>? valueUpdatedOn,
+    Value<double?>? units,
+    Value<int?>? buyPriceMinor,
+    Value<int?>? sipMinor,
+    Value<int?>? chitValueMinor,
+    Value<int?>? tenureMonths,
+    Value<int?>? members,
+    Value<int?>? monthlyMinor,
+    Value<int?>? commissionBps,
+    Value<String?>? organiser,
+    Value<String>? note,
+    Value<String>? hlc,
+    Value<String?>? deletedAt,
+    Value<int>? rowid,
+  }) {
+    return InvestmentsCompanion(
+      id: id ?? this.id,
+      kind: kind ?? this.kind,
+      name: name ?? this.name,
+      accountId: accountId ?? this.accountId,
+      startDate: startDate ?? this.startDate,
+      expectedGrowthBps: expectedGrowthBps ?? this.expectedGrowthBps,
+      currentValueMinor: currentValueMinor ?? this.currentValueMinor,
+      valueUpdatedOn: valueUpdatedOn ?? this.valueUpdatedOn,
+      units: units ?? this.units,
+      buyPriceMinor: buyPriceMinor ?? this.buyPriceMinor,
+      sipMinor: sipMinor ?? this.sipMinor,
+      chitValueMinor: chitValueMinor ?? this.chitValueMinor,
+      tenureMonths: tenureMonths ?? this.tenureMonths,
+      members: members ?? this.members,
+      monthlyMinor: monthlyMinor ?? this.monthlyMinor,
+      commissionBps: commissionBps ?? this.commissionBps,
+      organiser: organiser ?? this.organiser,
+      note: note ?? this.note,
+      hlc: hlc ?? this.hlc,
+      deletedAt: deletedAt ?? this.deletedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (accountId.present) {
+      map['account_id'] = Variable<String>(accountId.value);
+    }
+    if (startDate.present) {
+      map['start_date'] = Variable<String>(startDate.value);
+    }
+    if (expectedGrowthBps.present) {
+      map['expected_growth_bps'] = Variable<int>(expectedGrowthBps.value);
+    }
+    if (currentValueMinor.present) {
+      map['current_value_minor'] = Variable<int>(currentValueMinor.value);
+    }
+    if (valueUpdatedOn.present) {
+      map['value_updated_on'] = Variable<String>(valueUpdatedOn.value);
+    }
+    if (units.present) {
+      map['units'] = Variable<double>(units.value);
+    }
+    if (buyPriceMinor.present) {
+      map['buy_price_minor'] = Variable<int>(buyPriceMinor.value);
+    }
+    if (sipMinor.present) {
+      map['sip_minor'] = Variable<int>(sipMinor.value);
+    }
+    if (chitValueMinor.present) {
+      map['chit_value_minor'] = Variable<int>(chitValueMinor.value);
+    }
+    if (tenureMonths.present) {
+      map['tenure_months'] = Variable<int>(tenureMonths.value);
+    }
+    if (members.present) {
+      map['members'] = Variable<int>(members.value);
+    }
+    if (monthlyMinor.present) {
+      map['monthly_minor'] = Variable<int>(monthlyMinor.value);
+    }
+    if (commissionBps.present) {
+      map['commission_bps'] = Variable<int>(commissionBps.value);
+    }
+    if (organiser.present) {
+      map['organiser'] = Variable<String>(organiser.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (hlc.present) {
+      map['hlc'] = Variable<String>(hlc.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<String>(deletedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('InvestmentsCompanion(')
+          ..write('id: $id, ')
+          ..write('kind: $kind, ')
+          ..write('name: $name, ')
+          ..write('accountId: $accountId, ')
+          ..write('startDate: $startDate, ')
+          ..write('expectedGrowthBps: $expectedGrowthBps, ')
+          ..write('currentValueMinor: $currentValueMinor, ')
+          ..write('valueUpdatedOn: $valueUpdatedOn, ')
+          ..write('units: $units, ')
+          ..write('buyPriceMinor: $buyPriceMinor, ')
+          ..write('sipMinor: $sipMinor, ')
+          ..write('chitValueMinor: $chitValueMinor, ')
+          ..write('tenureMonths: $tenureMonths, ')
+          ..write('members: $members, ')
+          ..write('monthlyMinor: $monthlyMinor, ')
+          ..write('commissionBps: $commissionBps, ')
+          ..write('organiser: $organiser, ')
+          ..write('note: $note, ')
+          ..write('hlc: $hlc, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $InvestmentEntriesTable extends InvestmentEntries
+    with TableInfo<$InvestmentEntriesTable, InvestmentEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $InvestmentEntriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _investmentIdMeta = const VerificationMeta(
+    'investmentId',
+  );
+  @override
+  late final GeneratedColumn<String> investmentId = GeneratedColumn<String>(
+    'investment_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  @override
+  late final GeneratedColumn<String> type = GeneratedColumn<String>(
+    'type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _amountMinorMeta = const VerificationMeta(
+    'amountMinor',
+  );
+  @override
+  late final GeneratedColumn<int> amountMinor = GeneratedColumn<int>(
+    'amount_minor',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dateMeta = const VerificationMeta('date');
+  @override
+  late final GeneratedColumn<String> date = GeneratedColumn<String>(
+    'date',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _periodKeyMeta = const VerificationMeta(
+    'periodKey',
+  );
+  @override
+  late final GeneratedColumn<int> periodKey = GeneratedColumn<int>(
+    'period_key',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _postToBalanceMeta = const VerificationMeta(
+    'postToBalance',
+  );
+  @override
+  late final GeneratedColumn<bool> postToBalance = GeneratedColumn<bool>(
+    'post_to_balance',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("post_to_balance" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _hlcMeta = const VerificationMeta('hlc');
+  @override
+  late final GeneratedColumn<String> hlc = GeneratedColumn<String>(
+    'hlc',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<String> deletedAt = GeneratedColumn<String>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    investmentId,
+    type,
+    amountMinor,
+    date,
+    periodKey,
+    postToBalance,
+    note,
+    hlc,
+    deletedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'investment_entries';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<InvestmentEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('investment_id')) {
+      context.handle(
+        _investmentIdMeta,
+        investmentId.isAcceptableOrUnknown(
+          data['investment_id']!,
+          _investmentIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_investmentIdMeta);
+    }
+    if (data.containsKey('type')) {
+      context.handle(
+        _typeMeta,
+        type.isAcceptableOrUnknown(data['type']!, _typeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_typeMeta);
+    }
+    if (data.containsKey('amount_minor')) {
+      context.handle(
+        _amountMinorMeta,
+        amountMinor.isAcceptableOrUnknown(
+          data['amount_minor']!,
+          _amountMinorMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_amountMinorMeta);
+    }
+    if (data.containsKey('date')) {
+      context.handle(
+        _dateMeta,
+        date.isAcceptableOrUnknown(data['date']!, _dateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dateMeta);
+    }
+    if (data.containsKey('period_key')) {
+      context.handle(
+        _periodKeyMeta,
+        periodKey.isAcceptableOrUnknown(data['period_key']!, _periodKeyMeta),
+      );
+    }
+    if (data.containsKey('post_to_balance')) {
+      context.handle(
+        _postToBalanceMeta,
+        postToBalance.isAcceptableOrUnknown(
+          data['post_to_balance']!,
+          _postToBalanceMeta,
+        ),
+      );
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    if (data.containsKey('hlc')) {
+      context.handle(
+        _hlcMeta,
+        hlc.isAcceptableOrUnknown(data['hlc']!, _hlcMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_hlcMeta);
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  InvestmentEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return InvestmentEntry(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      investmentId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}investment_id'],
+      )!,
+      type: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}type'],
+      )!,
+      amountMinor: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}amount_minor'],
+      )!,
+      date: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}date'],
+      )!,
+      periodKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}period_key'],
+      ),
+      postToBalance: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}post_to_balance'],
+      )!,
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      )!,
+      hlc: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}hlc'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}deleted_at'],
+      ),
+    );
+  }
+
+  @override
+  $InvestmentEntriesTable createAlias(String alias) {
+    return $InvestmentEntriesTable(attachedDatabase, alias);
+  }
+}
+
+class InvestmentEntry extends DataClass implements Insertable<InvestmentEntry> {
+  final String id;
+  final String investmentId;
+  final String type;
+  final int amountMinor;
+  final String date;
+  final int? periodKey;
+  final bool postToBalance;
+  final String note;
+  final String hlc;
+  final String? deletedAt;
+  const InvestmentEntry({
+    required this.id,
+    required this.investmentId,
+    required this.type,
+    required this.amountMinor,
+    required this.date,
+    this.periodKey,
+    required this.postToBalance,
+    required this.note,
+    required this.hlc,
+    this.deletedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['investment_id'] = Variable<String>(investmentId);
+    map['type'] = Variable<String>(type);
+    map['amount_minor'] = Variable<int>(amountMinor);
+    map['date'] = Variable<String>(date);
+    if (!nullToAbsent || periodKey != null) {
+      map['period_key'] = Variable<int>(periodKey);
+    }
+    map['post_to_balance'] = Variable<bool>(postToBalance);
+    map['note'] = Variable<String>(note);
+    map['hlc'] = Variable<String>(hlc);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<String>(deletedAt);
+    }
+    return map;
+  }
+
+  InvestmentEntriesCompanion toCompanion(bool nullToAbsent) {
+    return InvestmentEntriesCompanion(
+      id: Value(id),
+      investmentId: Value(investmentId),
+      type: Value(type),
+      amountMinor: Value(amountMinor),
+      date: Value(date),
+      periodKey: periodKey == null && nullToAbsent
+          ? const Value.absent()
+          : Value(periodKey),
+      postToBalance: Value(postToBalance),
+      note: Value(note),
+      hlc: Value(hlc),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+    );
+  }
+
+  factory InvestmentEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return InvestmentEntry(
+      id: serializer.fromJson<String>(json['id']),
+      investmentId: serializer.fromJson<String>(json['investmentId']),
+      type: serializer.fromJson<String>(json['type']),
+      amountMinor: serializer.fromJson<int>(json['amountMinor']),
+      date: serializer.fromJson<String>(json['date']),
+      periodKey: serializer.fromJson<int?>(json['periodKey']),
+      postToBalance: serializer.fromJson<bool>(json['postToBalance']),
+      note: serializer.fromJson<String>(json['note']),
+      hlc: serializer.fromJson<String>(json['hlc']),
+      deletedAt: serializer.fromJson<String?>(json['deletedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'investmentId': serializer.toJson<String>(investmentId),
+      'type': serializer.toJson<String>(type),
+      'amountMinor': serializer.toJson<int>(amountMinor),
+      'date': serializer.toJson<String>(date),
+      'periodKey': serializer.toJson<int?>(periodKey),
+      'postToBalance': serializer.toJson<bool>(postToBalance),
+      'note': serializer.toJson<String>(note),
+      'hlc': serializer.toJson<String>(hlc),
+      'deletedAt': serializer.toJson<String?>(deletedAt),
+    };
+  }
+
+  InvestmentEntry copyWith({
+    String? id,
+    String? investmentId,
+    String? type,
+    int? amountMinor,
+    String? date,
+    Value<int?> periodKey = const Value.absent(),
+    bool? postToBalance,
+    String? note,
+    String? hlc,
+    Value<String?> deletedAt = const Value.absent(),
+  }) => InvestmentEntry(
+    id: id ?? this.id,
+    investmentId: investmentId ?? this.investmentId,
+    type: type ?? this.type,
+    amountMinor: amountMinor ?? this.amountMinor,
+    date: date ?? this.date,
+    periodKey: periodKey.present ? periodKey.value : this.periodKey,
+    postToBalance: postToBalance ?? this.postToBalance,
+    note: note ?? this.note,
+    hlc: hlc ?? this.hlc,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+  );
+  InvestmentEntry copyWithCompanion(InvestmentEntriesCompanion data) {
+    return InvestmentEntry(
+      id: data.id.present ? data.id.value : this.id,
+      investmentId: data.investmentId.present
+          ? data.investmentId.value
+          : this.investmentId,
+      type: data.type.present ? data.type.value : this.type,
+      amountMinor: data.amountMinor.present
+          ? data.amountMinor.value
+          : this.amountMinor,
+      date: data.date.present ? data.date.value : this.date,
+      periodKey: data.periodKey.present ? data.periodKey.value : this.periodKey,
+      postToBalance: data.postToBalance.present
+          ? data.postToBalance.value
+          : this.postToBalance,
+      note: data.note.present ? data.note.value : this.note,
+      hlc: data.hlc.present ? data.hlc.value : this.hlc,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('InvestmentEntry(')
+          ..write('id: $id, ')
+          ..write('investmentId: $investmentId, ')
+          ..write('type: $type, ')
+          ..write('amountMinor: $amountMinor, ')
+          ..write('date: $date, ')
+          ..write('periodKey: $periodKey, ')
+          ..write('postToBalance: $postToBalance, ')
+          ..write('note: $note, ')
+          ..write('hlc: $hlc, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    investmentId,
+    type,
+    amountMinor,
+    date,
+    periodKey,
+    postToBalance,
+    note,
+    hlc,
+    deletedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is InvestmentEntry &&
+          other.id == this.id &&
+          other.investmentId == this.investmentId &&
+          other.type == this.type &&
+          other.amountMinor == this.amountMinor &&
+          other.date == this.date &&
+          other.periodKey == this.periodKey &&
+          other.postToBalance == this.postToBalance &&
+          other.note == this.note &&
+          other.hlc == this.hlc &&
+          other.deletedAt == this.deletedAt);
+}
+
+class InvestmentEntriesCompanion extends UpdateCompanion<InvestmentEntry> {
+  final Value<String> id;
+  final Value<String> investmentId;
+  final Value<String> type;
+  final Value<int> amountMinor;
+  final Value<String> date;
+  final Value<int?> periodKey;
+  final Value<bool> postToBalance;
+  final Value<String> note;
+  final Value<String> hlc;
+  final Value<String?> deletedAt;
+  final Value<int> rowid;
+  const InvestmentEntriesCompanion({
+    this.id = const Value.absent(),
+    this.investmentId = const Value.absent(),
+    this.type = const Value.absent(),
+    this.amountMinor = const Value.absent(),
+    this.date = const Value.absent(),
+    this.periodKey = const Value.absent(),
+    this.postToBalance = const Value.absent(),
+    this.note = const Value.absent(),
+    this.hlc = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  InvestmentEntriesCompanion.insert({
+    required String id,
+    required String investmentId,
+    required String type,
+    required int amountMinor,
+    required String date,
+    this.periodKey = const Value.absent(),
+    this.postToBalance = const Value.absent(),
+    this.note = const Value.absent(),
+    required String hlc,
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       investmentId = Value(investmentId),
+       type = Value(type),
+       amountMinor = Value(amountMinor),
+       date = Value(date),
+       hlc = Value(hlc);
+  static Insertable<InvestmentEntry> custom({
+    Expression<String>? id,
+    Expression<String>? investmentId,
+    Expression<String>? type,
+    Expression<int>? amountMinor,
+    Expression<String>? date,
+    Expression<int>? periodKey,
+    Expression<bool>? postToBalance,
+    Expression<String>? note,
+    Expression<String>? hlc,
+    Expression<String>? deletedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (investmentId != null) 'investment_id': investmentId,
+      if (type != null) 'type': type,
+      if (amountMinor != null) 'amount_minor': amountMinor,
+      if (date != null) 'date': date,
+      if (periodKey != null) 'period_key': periodKey,
+      if (postToBalance != null) 'post_to_balance': postToBalance,
+      if (note != null) 'note': note,
+      if (hlc != null) 'hlc': hlc,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  InvestmentEntriesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? investmentId,
+    Value<String>? type,
+    Value<int>? amountMinor,
+    Value<String>? date,
+    Value<int?>? periodKey,
+    Value<bool>? postToBalance,
+    Value<String>? note,
+    Value<String>? hlc,
+    Value<String?>? deletedAt,
+    Value<int>? rowid,
+  }) {
+    return InvestmentEntriesCompanion(
+      id: id ?? this.id,
+      investmentId: investmentId ?? this.investmentId,
+      type: type ?? this.type,
+      amountMinor: amountMinor ?? this.amountMinor,
+      date: date ?? this.date,
+      periodKey: periodKey ?? this.periodKey,
+      postToBalance: postToBalance ?? this.postToBalance,
+      note: note ?? this.note,
+      hlc: hlc ?? this.hlc,
+      deletedAt: deletedAt ?? this.deletedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (investmentId.present) {
+      map['investment_id'] = Variable<String>(investmentId.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<String>(type.value);
+    }
+    if (amountMinor.present) {
+      map['amount_minor'] = Variable<int>(amountMinor.value);
+    }
+    if (date.present) {
+      map['date'] = Variable<String>(date.value);
+    }
+    if (periodKey.present) {
+      map['period_key'] = Variable<int>(periodKey.value);
+    }
+    if (postToBalance.present) {
+      map['post_to_balance'] = Variable<bool>(postToBalance.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (hlc.present) {
+      map['hlc'] = Variable<String>(hlc.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<String>(deletedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('InvestmentEntriesCompanion(')
+          ..write('id: $id, ')
+          ..write('investmentId: $investmentId, ')
+          ..write('type: $type, ')
+          ..write('amountMinor: $amountMinor, ')
+          ..write('date: $date, ')
+          ..write('periodKey: $periodKey, ')
+          ..write('postToBalance: $postToBalance, ')
+          ..write('note: $note, ')
+          ..write('hlc: $hlc, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $SmsInboxTable extends SmsInbox
     with TableInfo<$SmsInboxTable, SmsInboxData> {
   @override
@@ -4417,6 +6176,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $TransactionsTable transactions = $TransactionsTable(this);
   late final $DebtsTable debts = $DebtsTable(this);
   late final $DebtEventsTable debtEvents = $DebtEventsTable(this);
+  late final $InvestmentsTable investments = $InvestmentsTable(this);
+  late final $InvestmentEntriesTable investmentEntries =
+      $InvestmentEntriesTable(this);
   late final $SmsInboxTable smsInbox = $SmsInboxTable(this);
   late final $SettingsTable settings = $SettingsTable(this);
   late final Index txnDate = Index(
@@ -4439,6 +6201,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'debt_ev_debt',
     'CREATE INDEX debt_ev_debt ON debt_events (debt_id, date)',
   );
+  late final Index invEntryInv = Index(
+    'inv_entry_inv',
+    'CREATE INDEX inv_entry_inv ON investment_entries (investment_id, date)',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -4449,6 +6215,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     transactions,
     debts,
     debtEvents,
+    investments,
+    investmentEntries,
     smsInbox,
     settings,
     txnDate,
@@ -4456,6 +6224,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     txnAccDate,
     txnSourceRef,
     debtEvDebt,
+    invEntryInv,
   ];
 }
 
@@ -6150,6 +7919,835 @@ typedef $$DebtEventsTableProcessedTableManager =
       DebtEvent,
       PrefetchHooks Function()
     >;
+typedef $$InvestmentsTableCreateCompanionBuilder =
+    InvestmentsCompanion Function({
+      required String id,
+      required String kind,
+      required String name,
+      Value<String?> accountId,
+      Value<String?> startDate,
+      Value<int?> expectedGrowthBps,
+      Value<int?> currentValueMinor,
+      Value<String?> valueUpdatedOn,
+      Value<double?> units,
+      Value<int?> buyPriceMinor,
+      Value<int?> sipMinor,
+      Value<int?> chitValueMinor,
+      Value<int?> tenureMonths,
+      Value<int?> members,
+      Value<int?> monthlyMinor,
+      Value<int?> commissionBps,
+      Value<String?> organiser,
+      Value<String> note,
+      required String hlc,
+      Value<String?> deletedAt,
+      Value<int> rowid,
+    });
+typedef $$InvestmentsTableUpdateCompanionBuilder =
+    InvestmentsCompanion Function({
+      Value<String> id,
+      Value<String> kind,
+      Value<String> name,
+      Value<String?> accountId,
+      Value<String?> startDate,
+      Value<int?> expectedGrowthBps,
+      Value<int?> currentValueMinor,
+      Value<String?> valueUpdatedOn,
+      Value<double?> units,
+      Value<int?> buyPriceMinor,
+      Value<int?> sipMinor,
+      Value<int?> chitValueMinor,
+      Value<int?> tenureMonths,
+      Value<int?> members,
+      Value<int?> monthlyMinor,
+      Value<int?> commissionBps,
+      Value<String?> organiser,
+      Value<String> note,
+      Value<String> hlc,
+      Value<String?> deletedAt,
+      Value<int> rowid,
+    });
+
+class $$InvestmentsTableFilterComposer
+    extends Composer<_$AppDatabase, $InvestmentsTable> {
+  $$InvestmentsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get accountId => $composableBuilder(
+    column: $table.accountId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get startDate => $composableBuilder(
+    column: $table.startDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get expectedGrowthBps => $composableBuilder(
+    column: $table.expectedGrowthBps,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get currentValueMinor => $composableBuilder(
+    column: $table.currentValueMinor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get valueUpdatedOn => $composableBuilder(
+    column: $table.valueUpdatedOn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get units => $composableBuilder(
+    column: $table.units,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get buyPriceMinor => $composableBuilder(
+    column: $table.buyPriceMinor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sipMinor => $composableBuilder(
+    column: $table.sipMinor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get chitValueMinor => $composableBuilder(
+    column: $table.chitValueMinor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get tenureMonths => $composableBuilder(
+    column: $table.tenureMonths,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get members => $composableBuilder(
+    column: $table.members,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get monthlyMinor => $composableBuilder(
+    column: $table.monthlyMinor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get commissionBps => $composableBuilder(
+    column: $table.commissionBps,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get organiser => $composableBuilder(
+    column: $table.organiser,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get hlc => $composableBuilder(
+    column: $table.hlc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$InvestmentsTableOrderingComposer
+    extends Composer<_$AppDatabase, $InvestmentsTable> {
+  $$InvestmentsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get accountId => $composableBuilder(
+    column: $table.accountId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get startDate => $composableBuilder(
+    column: $table.startDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get expectedGrowthBps => $composableBuilder(
+    column: $table.expectedGrowthBps,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get currentValueMinor => $composableBuilder(
+    column: $table.currentValueMinor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get valueUpdatedOn => $composableBuilder(
+    column: $table.valueUpdatedOn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get units => $composableBuilder(
+    column: $table.units,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get buyPriceMinor => $composableBuilder(
+    column: $table.buyPriceMinor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sipMinor => $composableBuilder(
+    column: $table.sipMinor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get chitValueMinor => $composableBuilder(
+    column: $table.chitValueMinor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get tenureMonths => $composableBuilder(
+    column: $table.tenureMonths,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get members => $composableBuilder(
+    column: $table.members,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get monthlyMinor => $composableBuilder(
+    column: $table.monthlyMinor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get commissionBps => $composableBuilder(
+    column: $table.commissionBps,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get organiser => $composableBuilder(
+    column: $table.organiser,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get hlc => $composableBuilder(
+    column: $table.hlc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$InvestmentsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $InvestmentsTable> {
+  $$InvestmentsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get accountId =>
+      $composableBuilder(column: $table.accountId, builder: (column) => column);
+
+  GeneratedColumn<String> get startDate =>
+      $composableBuilder(column: $table.startDate, builder: (column) => column);
+
+  GeneratedColumn<int> get expectedGrowthBps => $composableBuilder(
+    column: $table.expectedGrowthBps,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get currentValueMinor => $composableBuilder(
+    column: $table.currentValueMinor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get valueUpdatedOn => $composableBuilder(
+    column: $table.valueUpdatedOn,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get units =>
+      $composableBuilder(column: $table.units, builder: (column) => column);
+
+  GeneratedColumn<int> get buyPriceMinor => $composableBuilder(
+    column: $table.buyPriceMinor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get sipMinor =>
+      $composableBuilder(column: $table.sipMinor, builder: (column) => column);
+
+  GeneratedColumn<int> get chitValueMinor => $composableBuilder(
+    column: $table.chitValueMinor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get tenureMonths => $composableBuilder(
+    column: $table.tenureMonths,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get members =>
+      $composableBuilder(column: $table.members, builder: (column) => column);
+
+  GeneratedColumn<int> get monthlyMinor => $composableBuilder(
+    column: $table.monthlyMinor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get commissionBps => $composableBuilder(
+    column: $table.commissionBps,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get organiser =>
+      $composableBuilder(column: $table.organiser, builder: (column) => column);
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<String> get hlc =>
+      $composableBuilder(column: $table.hlc, builder: (column) => column);
+
+  GeneratedColumn<String> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+}
+
+class $$InvestmentsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $InvestmentsTable,
+          Investment,
+          $$InvestmentsTableFilterComposer,
+          $$InvestmentsTableOrderingComposer,
+          $$InvestmentsTableAnnotationComposer,
+          $$InvestmentsTableCreateCompanionBuilder,
+          $$InvestmentsTableUpdateCompanionBuilder,
+          (
+            Investment,
+            BaseReferences<_$AppDatabase, $InvestmentsTable, Investment>,
+          ),
+          Investment,
+          PrefetchHooks Function()
+        > {
+  $$InvestmentsTableTableManager(_$AppDatabase db, $InvestmentsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$InvestmentsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$InvestmentsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$InvestmentsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String?> accountId = const Value.absent(),
+                Value<String?> startDate = const Value.absent(),
+                Value<int?> expectedGrowthBps = const Value.absent(),
+                Value<int?> currentValueMinor = const Value.absent(),
+                Value<String?> valueUpdatedOn = const Value.absent(),
+                Value<double?> units = const Value.absent(),
+                Value<int?> buyPriceMinor = const Value.absent(),
+                Value<int?> sipMinor = const Value.absent(),
+                Value<int?> chitValueMinor = const Value.absent(),
+                Value<int?> tenureMonths = const Value.absent(),
+                Value<int?> members = const Value.absent(),
+                Value<int?> monthlyMinor = const Value.absent(),
+                Value<int?> commissionBps = const Value.absent(),
+                Value<String?> organiser = const Value.absent(),
+                Value<String> note = const Value.absent(),
+                Value<String> hlc = const Value.absent(),
+                Value<String?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => InvestmentsCompanion(
+                id: id,
+                kind: kind,
+                name: name,
+                accountId: accountId,
+                startDate: startDate,
+                expectedGrowthBps: expectedGrowthBps,
+                currentValueMinor: currentValueMinor,
+                valueUpdatedOn: valueUpdatedOn,
+                units: units,
+                buyPriceMinor: buyPriceMinor,
+                sipMinor: sipMinor,
+                chitValueMinor: chitValueMinor,
+                tenureMonths: tenureMonths,
+                members: members,
+                monthlyMinor: monthlyMinor,
+                commissionBps: commissionBps,
+                organiser: organiser,
+                note: note,
+                hlc: hlc,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String kind,
+                required String name,
+                Value<String?> accountId = const Value.absent(),
+                Value<String?> startDate = const Value.absent(),
+                Value<int?> expectedGrowthBps = const Value.absent(),
+                Value<int?> currentValueMinor = const Value.absent(),
+                Value<String?> valueUpdatedOn = const Value.absent(),
+                Value<double?> units = const Value.absent(),
+                Value<int?> buyPriceMinor = const Value.absent(),
+                Value<int?> sipMinor = const Value.absent(),
+                Value<int?> chitValueMinor = const Value.absent(),
+                Value<int?> tenureMonths = const Value.absent(),
+                Value<int?> members = const Value.absent(),
+                Value<int?> monthlyMinor = const Value.absent(),
+                Value<int?> commissionBps = const Value.absent(),
+                Value<String?> organiser = const Value.absent(),
+                Value<String> note = const Value.absent(),
+                required String hlc,
+                Value<String?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => InvestmentsCompanion.insert(
+                id: id,
+                kind: kind,
+                name: name,
+                accountId: accountId,
+                startDate: startDate,
+                expectedGrowthBps: expectedGrowthBps,
+                currentValueMinor: currentValueMinor,
+                valueUpdatedOn: valueUpdatedOn,
+                units: units,
+                buyPriceMinor: buyPriceMinor,
+                sipMinor: sipMinor,
+                chitValueMinor: chitValueMinor,
+                tenureMonths: tenureMonths,
+                members: members,
+                monthlyMinor: monthlyMinor,
+                commissionBps: commissionBps,
+                organiser: organiser,
+                note: note,
+                hlc: hlc,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$InvestmentsTable, Investment>(table),
+                  BaseReferences<_$AppDatabase, $InvestmentsTable, Investment>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$InvestmentsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $InvestmentsTable,
+      Investment,
+      $$InvestmentsTableFilterComposer,
+      $$InvestmentsTableOrderingComposer,
+      $$InvestmentsTableAnnotationComposer,
+      $$InvestmentsTableCreateCompanionBuilder,
+      $$InvestmentsTableUpdateCompanionBuilder,
+      (
+        Investment,
+        BaseReferences<_$AppDatabase, $InvestmentsTable, Investment>,
+      ),
+      Investment,
+      PrefetchHooks Function()
+    >;
+typedef $$InvestmentEntriesTableCreateCompanionBuilder =
+    InvestmentEntriesCompanion Function({
+      required String id,
+      required String investmentId,
+      required String type,
+      required int amountMinor,
+      required String date,
+      Value<int?> periodKey,
+      Value<bool> postToBalance,
+      Value<String> note,
+      required String hlc,
+      Value<String?> deletedAt,
+      Value<int> rowid,
+    });
+typedef $$InvestmentEntriesTableUpdateCompanionBuilder =
+    InvestmentEntriesCompanion Function({
+      Value<String> id,
+      Value<String> investmentId,
+      Value<String> type,
+      Value<int> amountMinor,
+      Value<String> date,
+      Value<int?> periodKey,
+      Value<bool> postToBalance,
+      Value<String> note,
+      Value<String> hlc,
+      Value<String?> deletedAt,
+      Value<int> rowid,
+    });
+
+class $$InvestmentEntriesTableFilterComposer
+    extends Composer<_$AppDatabase, $InvestmentEntriesTable> {
+  $$InvestmentEntriesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get investmentId => $composableBuilder(
+    column: $table.investmentId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get amountMinor => $composableBuilder(
+    column: $table.amountMinor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get periodKey => $composableBuilder(
+    column: $table.periodKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get postToBalance => $composableBuilder(
+    column: $table.postToBalance,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get hlc => $composableBuilder(
+    column: $table.hlc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$InvestmentEntriesTableOrderingComposer
+    extends Composer<_$AppDatabase, $InvestmentEntriesTable> {
+  $$InvestmentEntriesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get investmentId => $composableBuilder(
+    column: $table.investmentId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get amountMinor => $composableBuilder(
+    column: $table.amountMinor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get date => $composableBuilder(
+    column: $table.date,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get periodKey => $composableBuilder(
+    column: $table.periodKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get postToBalance => $composableBuilder(
+    column: $table.postToBalance,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get hlc => $composableBuilder(
+    column: $table.hlc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$InvestmentEntriesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $InvestmentEntriesTable> {
+  $$InvestmentEntriesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get investmentId => $composableBuilder(
+    column: $table.investmentId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumn<int> get amountMinor => $composableBuilder(
+    column: $table.amountMinor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get date =>
+      $composableBuilder(column: $table.date, builder: (column) => column);
+
+  GeneratedColumn<int> get periodKey =>
+      $composableBuilder(column: $table.periodKey, builder: (column) => column);
+
+  GeneratedColumn<bool> get postToBalance => $composableBuilder(
+    column: $table.postToBalance,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<String> get hlc =>
+      $composableBuilder(column: $table.hlc, builder: (column) => column);
+
+  GeneratedColumn<String> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+}
+
+class $$InvestmentEntriesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $InvestmentEntriesTable,
+          InvestmentEntry,
+          $$InvestmentEntriesTableFilterComposer,
+          $$InvestmentEntriesTableOrderingComposer,
+          $$InvestmentEntriesTableAnnotationComposer,
+          $$InvestmentEntriesTableCreateCompanionBuilder,
+          $$InvestmentEntriesTableUpdateCompanionBuilder,
+          (
+            InvestmentEntry,
+            BaseReferences<
+              _$AppDatabase,
+              $InvestmentEntriesTable,
+              InvestmentEntry
+            >,
+          ),
+          InvestmentEntry,
+          PrefetchHooks Function()
+        > {
+  $$InvestmentEntriesTableTableManager(
+    _$AppDatabase db,
+    $InvestmentEntriesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$InvestmentEntriesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$InvestmentEntriesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$InvestmentEntriesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> investmentId = const Value.absent(),
+                Value<String> type = const Value.absent(),
+                Value<int> amountMinor = const Value.absent(),
+                Value<String> date = const Value.absent(),
+                Value<int?> periodKey = const Value.absent(),
+                Value<bool> postToBalance = const Value.absent(),
+                Value<String> note = const Value.absent(),
+                Value<String> hlc = const Value.absent(),
+                Value<String?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => InvestmentEntriesCompanion(
+                id: id,
+                investmentId: investmentId,
+                type: type,
+                amountMinor: amountMinor,
+                date: date,
+                periodKey: periodKey,
+                postToBalance: postToBalance,
+                note: note,
+                hlc: hlc,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String investmentId,
+                required String type,
+                required int amountMinor,
+                required String date,
+                Value<int?> periodKey = const Value.absent(),
+                Value<bool> postToBalance = const Value.absent(),
+                Value<String> note = const Value.absent(),
+                required String hlc,
+                Value<String?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => InvestmentEntriesCompanion.insert(
+                id: id,
+                investmentId: investmentId,
+                type: type,
+                amountMinor: amountMinor,
+                date: date,
+                periodKey: periodKey,
+                postToBalance: postToBalance,
+                note: note,
+                hlc: hlc,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$InvestmentEntriesTable, InvestmentEntry>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $InvestmentEntriesTable,
+                    InvestmentEntry
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$InvestmentEntriesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $InvestmentEntriesTable,
+      InvestmentEntry,
+      $$InvestmentEntriesTableFilterComposer,
+      $$InvestmentEntriesTableOrderingComposer,
+      $$InvestmentEntriesTableAnnotationComposer,
+      $$InvestmentEntriesTableCreateCompanionBuilder,
+      $$InvestmentEntriesTableUpdateCompanionBuilder,
+      (
+        InvestmentEntry,
+        BaseReferences<_$AppDatabase, $InvestmentEntriesTable, InvestmentEntry>,
+      ),
+      InvestmentEntry,
+      PrefetchHooks Function()
+    >;
 typedef $$SmsInboxTableCreateCompanionBuilder = SmsInboxCompanion Function({
   required String id,
   required String fingerprint,
@@ -6646,6 +9244,10 @@ class $AppDatabaseManager {
       $$DebtsTableTableManager(_db, _db.debts);
   $$DebtEventsTableTableManager get debtEvents =>
       $$DebtEventsTableTableManager(_db, _db.debtEvents);
+  $$InvestmentsTableTableManager get investments =>
+      $$InvestmentsTableTableManager(_db, _db.investments);
+  $$InvestmentEntriesTableTableManager get investmentEntries =>
+      $$InvestmentEntriesTableTableManager(_db, _db.investmentEntries);
   $$SmsInboxTableTableManager get smsInbox =>
       $$SmsInboxTableTableManager(_db, _db.smsInbox);
   $$SettingsTableTableManager get settings =>

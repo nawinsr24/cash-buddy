@@ -3,11 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../data/invest_repo.dart';
 import '../data/repo.dart';
 import '../domain/dates.dart';
 import '../domain/money.dart';
 import '../providers.dart';
+import '../ui/motion.dart';
 import '../ui/theme.dart';
+import 'invest.dart';
 import '../ui/widgets.dart';
 import 'transactions.dart';
 
@@ -15,13 +18,19 @@ enum Pillar { spending, income, incoming, liabilities }
 
 class DashboardPage extends ConsumerWidget {
   final VoidCallback onOpenInbox;
-  const DashboardPage({super.key, required this.onOpenInbox});
+  final VoidCallback? onOpenInvest;
+  const DashboardPage({
+    super.key,
+    required this.onOpenInbox,
+    this.onOpenInvest,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final data = ref.watch(dashboardProvider);
     final settings = ref.watch(settingsProvider).value;
     final pending = ref.watch(pendingSmsProvider).value?.length ?? 0;
+    final invest = ref.watch(investSummariesProvider).value ?? const [];
     return Scaffold(
       appBar: AppBar(title: const Text('Cash Buddy')),
       floatingActionButton: FloatingActionButton.extended(
@@ -30,6 +39,7 @@ class DashboardPage extends ConsumerWidget {
         label: const Text('Add'),
       ),
       body: data.when(
+        skipLoadingOnReload: true,
         loading: () =>
             const Center(child: CircularProgressIndicator.adaptive()),
         error: (e, _) => ErrorState(e),
@@ -67,6 +77,13 @@ class DashboardPage extends ConsumerWidget {
                 PillarCard(pillar: Pillar.liabilities, data: d),
               ],
             ),
+            if (invest.isNotEmpty) ...[
+              const SizedBox(height: Sp.x3),
+              InvestHero(
+                totals: ref.read(repoProvider).investTotals(invest),
+                onTap: onOpenInvest,
+              ),
+            ],
             const SectionTitle('Where your money went'),
             CategoryDonut(
               slices: d.spendingByCategory,
@@ -94,7 +111,7 @@ class _SmsBanner extends StatelessWidget {
         title: Text(
           '$count detected transaction${count == 1 ? '' : 's'} to review',
         ),
-        subtitle: const Text('Confirm or discard with one tap'),
+        subtitle: const Text('Review each and add it'),
         trailing: const Icon(Icons.chevron_right),
         onTap: onTap,
       ),
@@ -176,49 +193,75 @@ class _BalanceCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final accounts = ref.watch(accountsProvider).value ?? const [];
     final bal = ref.watch(balancesProvider).value ?? const {};
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(Sp.x5),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Total balance',
-              style: context.text.labelLarge?.copyWith(
-                color: context.cash.textMuted,
-              ),
-            ),
-            const SizedBox(height: Sp.x1),
-            TweenAnimationBuilder<double>(
-              tween: Tween(end: total.toDouble()),
-              duration: const Duration(milliseconds: 500),
-              curve: Curves.easeOutCubic,
-              builder: (_, v, _) => MoneyText(
-                v.round(),
+    return Container(
+      padding: const EdgeInsets.all(Sp.x5),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(Sp.rCard + 4),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF2F6BFF), Color(0xFF7C3AED), Color(0xFFEC4899)],
+          stops: [0, 0.6, 1],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF2F6BFF).withValues(alpha: 0.3),
+            blurRadius: 26,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Total balance',
+            style: context.text.labelLarge?.copyWith(color: Colors.white70),
+          ),
+          const SizedBox(height: Sp.x1),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: CountUp(
+              value: total,
+              builder: (v) => MoneyText(
+                v,
+                color: Colors.white,
                 style: context.text.headlineLarge?.copyWith(
                   fontWeight: FontWeight.w800,
                 ),
               ),
             ),
-            if (split && accounts.isNotEmpty) ...[
-              const SizedBox(height: Sp.x3),
-              Wrap(
-                spacing: Sp.x2,
-                runSpacing: Sp.x2,
-                children: [
-                  for (final a in accounts)
-                    Chip(
-                      avatar: CircleAvatar(
-                        backgroundColor: colorOf(a.colorValue),
-                        radius: 6,
-                      ),
-                      label: Text('${a.name}  ${Money.format(bal[a.id] ?? 0)}'),
+          ),
+          if (split && accounts.isNotEmpty) ...[
+            const SizedBox(height: Sp.x3),
+            Wrap(
+              spacing: Sp.x2,
+              runSpacing: Sp.x2,
+              children: [
+                for (final a in accounts)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
                     ),
-                ],
-              ),
-            ],
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      '${a.name}  ${Money.format(bal[a.id] ?? 0)}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12.5,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -283,15 +326,20 @@ class PillarCard extends StatelessWidget {
       label:
           '$title ${Money.format(amount)}${delta != null ? ', $delta' : ''}. Tap for details.',
       child: Card(
+        color: Color.alphaBlend(
+          color.withValues(alpha: 0.09),
+          context.cash.surfaceRaised,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(Sp.rCard),
+          side: BorderSide(color: color.withValues(alpha: 0.28)),
+        ),
         child: InkWell(
           borderRadius: BorderRadius.circular(Sp.rCard),
           onTap: () {
             haptic();
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => PillarDetailPage(pillar: pillar),
-              ),
-            );
+            Navigator.of(context)
+                .push(softRoute(PillarDetailPage(pillar: pillar)));
           },
           child: Padding(
             padding: const EdgeInsets.all(Sp.x4),

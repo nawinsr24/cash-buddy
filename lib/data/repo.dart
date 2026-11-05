@@ -650,6 +650,11 @@ class Repo {
     if (t.deletedAt != null) {
       throw ValidationException('Transaction was deleted');
     }
+    if (t.source == 'invest') {
+      throw ValidationException(
+        'This entry is managed by an investment; edit it from the Invest tab',
+      );
+    }
     if (t.source == 'debt' || t.source == 'interest') {
       throw ValidationException(
         'This entry is managed by a debt; edit it from the Debts tab',
@@ -687,6 +692,11 @@ class Repo {
 
   Future<void> deleteTransaction(String id) async {
     final t = await getTransaction(id);
+    if (t.source == 'invest') {
+      throw ValidationException(
+        'This entry is managed by an investment; edit it from the Invest tab',
+      );
+    }
     if (t.source == 'debt' || t.source == 'interest') {
       throw ValidationException(
         'This entry is managed by a debt; edit it from the Debts tab',
@@ -1050,10 +1060,14 @@ class Repo {
 
     // 3) ledger legs: at most one row per (event, leg), keyed by source_ref
     final isRec = debt.direction == 'receivable';
+    // Setting: money lent out may be left out of the balance entirely.
+    final principalLegs =
+        !isRec || (await getSetting('lendReducesBalance') ?? '1') == '1';
     final legs = <String, _Leg>{};
     if (debtLive) {
       for (final e in live) {
         if (e.type == 'issue') {
+          if (!principalLegs) continue;
           legs['ev:${e.id}:p'] = _Leg(
             isRec ? 'debit' : 'credit',
             e.amountMinor,
@@ -1064,7 +1078,7 @@ class Repo {
         } else if (e.type == 'repayment') {
           final a = state.allocations[e.id];
           if (a == null) continue;
-          if (a.principalMinor > 0) {
+          if (a.principalMinor > 0 && principalLegs) {
             legs['ev:${e.id}:p'] = _Leg(
               isRec ? 'credit' : 'debit',
               a.principalMinor,
@@ -1130,6 +1144,7 @@ class Repo {
           ),
           source: Value(l.source),
           sourceRef: Value(entry.key),
+          deletedAt: const Value(null),
         ),
       );
     }
@@ -1193,7 +1208,7 @@ class Repo {
   Future<int> _sum(String type, DateRange r) async {
     final row = await db
         .customSelect(
-          "SELECT COALESCE(SUM(amount_minor),0) AS s FROM transactions WHERE type = ? AND source != 'debt' AND deleted_at IS NULL AND date BETWEEN ? AND ?",
+          "SELECT COALESCE(SUM(amount_minor),0) AS s FROM transactions WHERE type = ? AND source NOT IN ('debt','invest') AND deleted_at IS NULL AND date BETWEEN ? AND ?",
           variables: [Variable(type), Variable(r.startStr), Variable(r.endStr)],
           readsFrom: {db.transactions},
         )
@@ -1210,7 +1225,7 @@ class Repo {
       FROM transactions t
       LEFT JOIN categories c ON c.id = t.category_id
       LEFT JOIN categories p ON p.id = c.parent_id
-      WHERE t.type = ? AND t.source != 'debt' AND t.deleted_at IS NULL AND t.date BETWEEN ? AND ?
+      WHERE t.type = ? AND t.source NOT IN ('debt','invest') AND t.deleted_at IS NULL AND t.date BETWEEN ? AND ?
       GROUP BY COALESCE(p.id, c.id, '_none') ORDER BY s DESC''',
           variables: [Variable(type), Variable(r.startStr), Variable(r.endStr)],
           readsFrom: {db.transactions, db.categories},
@@ -1230,7 +1245,7 @@ class Repo {
   Future<Map<String, int>> _daily(String type, DateRange r) async {
     final rows = await db
         .customSelect(
-          "SELECT date AS d, SUM(amount_minor) AS s FROM transactions WHERE type = ? AND source != 'debt' AND deleted_at IS NULL AND date BETWEEN ? AND ? GROUP BY date ORDER BY date",
+          "SELECT date AS d, SUM(amount_minor) AS s FROM transactions WHERE type = ? AND source NOT IN ('debt','invest') AND deleted_at IS NULL AND date BETWEEN ? AND ? GROUP BY date ORDER BY date",
           variables: [Variable(type), Variable(r.startStr), Variable(r.endStr)],
           readsFrom: {db.transactions},
         )
@@ -1252,14 +1267,14 @@ class Repo {
     };
     final perAcc = await db
         .customSelect(
-          "SELECT account_id AS a, SUM(amount_minor) AS s FROM transactions WHERE type='debit' AND source != 'debt' AND deleted_at IS NULL AND date BETWEEN ? AND ? GROUP BY account_id ORDER BY s DESC",
+          "SELECT account_id AS a, SUM(amount_minor) AS s FROM transactions WHERE type='debit' AND source NOT IN ('debt','invest') AND deleted_at IS NULL AND date BETWEEN ? AND ? GROUP BY account_id ORDER BY s DESC",
           variables: [Variable(r.startStr), Variable(r.endStr)],
           readsFrom: {db.transactions},
         )
         .get();
     final byPm = await db
         .customSelect(
-          "SELECT COALESCE(payment_method,'') AS m, SUM(amount_minor) AS s FROM transactions WHERE type='debit' AND source != 'debt' AND deleted_at IS NULL AND date BETWEEN ? AND ? GROUP BY payment_method",
+          "SELECT COALESCE(payment_method,'') AS m, SUM(amount_minor) AS s FROM transactions WHERE type='debit' AND source NOT IN ('debt','invest') AND deleted_at IS NULL AND date BETWEEN ? AND ? GROUP BY payment_method",
           variables: [Variable(r.startStr), Variable(r.endStr)],
           readsFrom: {db.transactions},
         )

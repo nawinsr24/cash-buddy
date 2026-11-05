@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:cash_buddy/data/invest_repo.dart';
 import 'package:cash_buddy/data/repo.dart';
 import 'package:cash_buddy/domain/dates.dart';
 import 'package:cash_buddy/domain/sms_parser.dart';
@@ -41,6 +42,8 @@ Future<String> dump(Repo r) async {
     't': rows(await r.db.select(r.db.transactions).get()),
     'd': rows(await r.db.select(r.db.debts).get()),
     'e': rows(await r.db.select(r.db.debtEvents).get()),
+    'i': rows(await r.db.select(r.db.investments).get()),
+    'ie': rows(await r.db.select(r.db.investmentEntries).get()),
   });
 }
 
@@ -320,5 +323,29 @@ void main() {
     final w = remote.writes;
     await syncAll(devs, rounds: 2);
     expect(remote.writes, w);
+  });
+
+  test('investments and their entries converge across devices', () async {
+    final remote = InMemoryRemote();
+    final a = await dev('A', remote);
+    final b = await dev('B', remote);
+    await syncAll([a, b]);
+    final id = await a.repo.createInvestment(kind: 'chit', name: 'Chit');
+    await a.repo.addInvestmentEntry(
+      id,
+      type: 'contribute',
+      amountMinor: 5000,
+      periodKey: 0,
+    );
+    await syncAll([a, b]);
+    expect((await b.repo.investments()).single.name, 'Chit');
+    expect(await b.repo.totalBalance(), await a.repo.totalBalance());
+    // B deletes the entry; A converges
+    final en = (await b.repo.investmentEntries(id)).single;
+    await b.repo.deleteInvestmentEntry(en.id);
+    await syncAll([a, b]);
+    expect(await a.repo.investmentEntries(id), isEmpty);
+    expect(await dump(a.repo), await dump(b.repo));
+    expect(await a.repo.checkInvariants(), isEmpty);
   });
 }

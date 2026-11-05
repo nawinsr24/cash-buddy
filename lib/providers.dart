@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'data/db.dart';
+import 'data/invest_repo.dart';
 import 'data/repo.dart';
 import 'domain/dates.dart';
 
@@ -34,6 +35,7 @@ class AppSettings {
   final String reminderTime; // HH:mm
   final String themeMode; // system | light | dark
   final bool appLock;
+  final bool investReducesBalance, lendReducesBalance;
   final String? lastSyncAt;
   final String? lastSyncError;
   const AppSettings({
@@ -46,6 +48,8 @@ class AppSettings {
     this.reminderTime = '08:00',
     this.themeMode = 'system',
     this.appLock = false,
+    this.investReducesBalance = true,
+    this.lendReducesBalance = true,
     this.lastSyncAt,
     this.lastSyncError,
   });
@@ -64,6 +68,8 @@ final settingsProvider = FutureProvider.autoDispose<AppSettings>((ref) async {
     dataMode: await g('dataMode') ?? 'offline',
     cashCard: await g('cashCard') == '1',
     smsEnabled: await g('smsEnabled') == '1',
+    investReducesBalance: (await g('investReducesBalance') ?? '1') == '1',
+    lendReducesBalance: (await g('lendReducesBalance') ?? '1') == '1',
     reminderEnabled: await g('reminderEnabled') == '1',
     reminderTime: await g('reminderTime') ?? '08:00',
     themeMode: await g('themeMode') ?? 'system',
@@ -159,6 +165,12 @@ final pendingSmsProvider = FutureProvider.autoDispose<List<SmsInboxData>>((
 ) {
   return _tick(ref, () => ref.watch(repoProvider).pendingSms());
 });
+
+final investSummariesProvider = FutureProvider.autoDispose<List<InvestSummary>>(
+  (ref) {
+    return _tick(ref, () => ref.watch(repoProvider).investSummaries());
+  },
+);
 
 class TxnQuery {
   final TxnFilter filter;

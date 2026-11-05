@@ -6,9 +6,11 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:cash_buddy/app.dart';
+import 'package:cash_buddy/data/invest_repo.dart';
 import 'package:cash_buddy/domain/dates.dart';
 import 'package:cash_buddy/domain/sms_parser.dart';
 import 'package:cash_buddy/providers.dart';
+import 'package:cash_buddy/ui/art.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart' show FontLoader;
@@ -50,6 +52,7 @@ Future<void> shot(WidgetTester tester, String name) async {
 }
 
 void main() {
+  artGallery();
   for (final dark in [false, true]) {
     testWidgets('screens ${dark ? 'dark' : 'light'}', (tester) async {
       await tester.runAsync(loadFonts);
@@ -174,6 +177,53 @@ void main() {
           dueOn: d.add(const Duration(days: 30)),
           accountId: 'acc_bank',
         );
+        final mf = await r.createInvestment(
+          kind: 'mutual_fund',
+          name: 'Nifty 50 Index Fund',
+          sipMinor: 500000,
+          expectedGrowthBps: 1200,
+          currentValueMinor: 1620000,
+        );
+        for (var k = 0; k < 3; k++) {
+          await r.addInvestmentEntry(
+            mf,
+            type: 'contribute',
+            amountMinor: 500000,
+            date: d.subtract(Duration(days: 60 - k * 28)),
+          );
+        }
+        await r.createInvestment(
+          kind: 'stock',
+          name: 'TCS',
+          units: 4,
+          currentValueMinor: 1480000,
+        );
+        final chit = await r.createInvestment(
+          kind: 'chit',
+          name: 'Family Chit 2026',
+          chitValueMinor: 10000000,
+          tenureMonths: 12,
+          members: 12,
+          monthlyMinor: 800000,
+          commissionBps: 500,
+          organiser: 'Murugan',
+          startDate: d.subtract(const Duration(days: 75)),
+        );
+        for (var k = 0; k < 3; k++) {
+          await r.addInvestmentEntry(
+            chit,
+            type: 'contribute',
+            amountMinor: 800000,
+            periodKey: k,
+            date: d.subtract(Duration(days: 75 - k * 30)),
+          );
+        }
+        await r.addInvestmentEntry(
+          chit,
+          type: 'dividend',
+          amountMinor: 60000,
+          periodKey: 1,
+        );
         await r.ingestSms([
           (
             sender: 'VM-HDFCBK',
@@ -213,11 +263,52 @@ void main() {
       await shot(tester, '$p-4-transactions');
       await tapText(tester, 'Debts', last: true);
       await shot(tester, '$p-5-debts');
-      await tapText(tester, 'Inbox', last: true);
-      await shot(tester, '$p-6-inbox');
+      await tapText(tester, 'Invest', last: true);
+      await shot(tester, '$p-6-invest');
+      await tapText(tester, 'Family Chit 2026');
+      await shot(tester, '$p-7-chit');
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, -500));
+      await shot(tester, '$p-8-chit-schedule');
+      await tester.tap(find.byTooltip('Back'));
+      await settle(tester);
+      await tapText(tester, 'Home', last: true);
+      await tapText(tester, '2 detected transactions to review');
+      await shot(tester, '$p-9-inbox');
+      await tester.tap(find.byTooltip('Back'));
+      await settle(tester);
       await tapText(tester, 'Settings', last: true);
-      await shot(tester, '$p-7-settings');
+      await shot(tester, '$p-10-settings');
       await tester.runAsync(() => env.db.close());
     });
   }
+}
+
+/// Renders every illustration so the artwork can be checked without a device.
+void artGallery() {
+  testWidgets('art gallery', (tester) async {
+    tester.view.physicalSize = const Size(780, 1500);
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      RepaintBoundary(
+        key: _key,
+        child: MaterialApp(
+          theme: ThemeData(colorSchemeSeed: const Color(0xFF2F6BFF)),
+          home: Scaffold(
+            body: GridView.count(
+              crossAxisCount: 2,
+              children: [
+                for (final a in Art.values)
+                  Illustration(a, height: 170, animate: false),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 300)),
+    );
+    await shot(tester, 'art-gallery');
+  });
 }

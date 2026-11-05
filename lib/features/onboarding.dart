@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../domain/money.dart';
 import '../providers.dart';
+import '../ui/art.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
 
@@ -96,6 +97,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 physics: const NeverScrollableScrollPhysics(),
                 children: [
                   _choicePage(
+                    art: Art.welcome,
                     title: 'Where should your data live?',
                     body: 'You can change this later in Settings.',
                     options: [
@@ -116,6 +118,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                     onChanged: (v) => setState(() => _dataMode = v),
                   ),
                   _choicePage(
+                    art: Art.piggy,
                     title: 'How do you track your money?',
                     body: 'Switch any time without losing history.',
                     options: [
@@ -178,10 +181,11 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     );
   }
 
-  Widget _header(String title, String body) => Column(
+  Widget _header(String title, String body, {Art? art}) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      const SizedBox(height: Sp.x8),
+      if (art != null) Center(child: Illustration(art, height: 190)),
+      const SizedBox(height: Sp.x6),
       Text(
         title,
         style: context.text.headlineMedium?.copyWith(
@@ -203,10 +207,11 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     required List<_Opt> options,
     required String? value,
     required ValueChanged<String> onChanged,
+    Art? art,
   }) => ListView(
     padding: const EdgeInsets.symmetric(horizontal: Sp.x6),
     children: [
-      _header(title, body),
+      _header(title, body, art: art),
       for (final o in options)
         Padding(
           padding: const EdgeInsets.only(bottom: Sp.x3),

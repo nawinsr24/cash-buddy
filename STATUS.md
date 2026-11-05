@@ -1,6 +1,6 @@
 # Cash Buddy: status (2026-11-04)
 
-Verified by automated tests (`flutter test`: 90 pass, `flutter analyze`: clean)
+Verified by automated tests (`flutter test`: 111 pass, `flutter analyze`: clean)
 
 | Area | Evidence |
 |---|---|
@@ -12,6 +12,7 @@ Verified by automated tests (`flutter test`: 90 pass, `flutter analyze`: clean)
 | Sync engine | in-memory remote: failures, corrupt segment, LWW, tombstones, clock skew, debts converge, 3-device random simulation converges with zero loss and reaches quiescence |
 | Offline Mode | spy remote receives 0 calls |
 | UI | onboarding, dashboard, add txn, search, debts, inbox, settings, dark mode, overflow checks (320px/2x text, tablet), semantics |
+| Investments | mutual fund / stock / chit entries post one ledger leg each (never spending or income); global + per-entry balance rules; lending rule; XIRR + projection; two-device sync convergence |
 | Performance | dashboard over 100k rows: ~33 ms |
 
 NOT verified / NOT built (be honest before shipping)

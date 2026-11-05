@@ -7,7 +7,9 @@ import '../platform/sms_reader.dart';
 import '../providers.dart';
 import 'dashboard.dart';
 import 'debts.dart';
+import '../ui/motion.dart';
 import 'inbox.dart';
+import 'invest.dart';
 import 'settings.dart';
 import 'transactions.dart';
 
@@ -58,10 +60,16 @@ class ShellState extends ConsumerState<Shell> with WidgetsBindingObserver {
     await refreshReminder(repo);
   }
 
-  void _openInbox() {
-    if (!mounted) return;
-    final i = _indexOf('Inbox');
-    if (ref.read(settingsProvider).value?.smsEnabled ?? false) _select(i);
+  bool _inboxOpen = false;
+
+  /// The Inbox is a full-screen page (from the Home banner, the Activity
+  /// toolbar or a notification), not a tab, so the bar stays at five items.
+  Future<void> _openInbox() async {
+    if (!mounted || _inboxOpen) return;
+    if (!(ref.read(settingsProvider).value?.smsEnabled ?? false)) return;
+    _inboxOpen = true;
+    await Navigator.of(context).push(softRoute(const InboxPage()));
+    _inboxOpen = false;
   }
 
   @override
@@ -72,20 +80,25 @@ class ShellState extends ConsumerState<Shell> with WidgetsBindingObserver {
       pendingSmsProvider,
       (_, _) => refreshReminder(ref.read(repoProvider)),
     );
-    final showInbox = settings?.smsEnabled ?? false;
-    // Inbox tab only exists while the SMS assistant is on.
     final tabs = <_Tab>[
       _Tab(
         'Home',
         Icons.dashboard_outlined,
         Icons.dashboard,
-        DashboardPage(onOpenInbox: () => _select(_indexOf('Inbox'))),
+        DashboardPage(
+          onOpenInbox: _openInbox,
+          onOpenInvest: () => _select(_indexOf('Invest')),
+        ),
       ),
       _Tab(
         'Activity',
         Icons.receipt_long_outlined,
         Icons.receipt_long,
-        const TransactionsPage(),
+        TransactionsPage(
+          onOpenInbox: (settings?.smsEnabled ?? false) ? _openInbox : null,
+          inboxBadge: pending,
+        ),
+        badge: pending,
       ),
       _Tab(
         'Debts',
@@ -93,14 +106,12 @@ class ShellState extends ConsumerState<Shell> with WidgetsBindingObserver {
         Icons.handshake,
         const DebtsPage(),
       ),
-      if (showInbox)
-        _Tab(
-          'Inbox',
-          Icons.inbox_outlined,
-          Icons.inbox,
-          const InboxPage(),
-          badge: pending,
-        ),
+      _Tab(
+        'Invest',
+        Icons.trending_up_outlined,
+        Icons.trending_up,
+        const InvestPage(),
+      ),
       _Tab(
         'Settings',
         Icons.settings_outlined,
@@ -111,7 +122,18 @@ class ShellState extends ConsumerState<Shell> with WidgetsBindingObserver {
     final i = _index.clamp(0, tabs.length - 1);
     return Scaffold(
       body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 180),
+        duration: const Duration(milliseconds: 280),
+        switchInCurve: Curves.easeOutCubic,
+        transitionBuilder: (child, anim) => FadeTransition(
+          opacity: anim,
+          child: SlideTransition(
+            position: Tween(
+              begin: const Offset(0, 0.03),
+              end: Offset.zero,
+            ).animate(anim),
+            child: child,
+          ),
+        ),
         child: KeyedSubtree(key: ValueKey(tabs[i].label), child: tabs[i].page),
       ),
       bottomNavigationBar: NavigationBar(
@@ -130,14 +152,7 @@ class ShellState extends ConsumerState<Shell> with WidgetsBindingObserver {
   }
 
   int _indexOf(String label) {
-    final showInbox = ref.read(settingsProvider).value?.smsEnabled ?? false;
-    final labels = [
-      'Home',
-      'Activity',
-      'Debts',
-      if (showInbox) 'Inbox',
-      'Settings',
-    ];
+    const labels = ['Home', 'Activity', 'Debts', 'Invest', 'Settings'];
     return labels.indexOf(label).clamp(0, labels.length - 1);
   }
 

@@ -1,4 +1,5 @@
 import 'package:cash_buddy/app.dart';
+import 'package:cash_buddy/data/invest_repo.dart';
 import 'package:cash_buddy/data/repo.dart';
 import 'package:cash_buddy/domain/dates.dart';
 import 'package:cash_buddy/domain/sms_parser.dart';
@@ -227,7 +228,7 @@ void main() {
       find.textContaining('2 detected transactions to review'),
       findsOneWidget,
     );
-    await tapText(tester, 'Inbox', last: true);
+    await tapText(tester, '2 detected transactions to review');
     expect(find.text('SWIGGY'), findsOneWidget);
     await tester.tap(find.text('Review & add').first, warnIfMissed: false);
     await settle(tester);
@@ -251,16 +252,49 @@ void main() {
     expect(find.text('All caught up'), findsOneWidget);
   });
 
+  testWidgets('invest: add a chit, pay an instalment, balance follows', (
+    tester,
+  ) async {
+    final env = await pump(tester, opening: 1000000);
+    await tapText(tester, 'Invest', last: true);
+    expect(find.text('Grow your money'), findsOneWidget);
+    await tapText(tester, 'Add your first investment');
+    await tapText(tester, 'Chit fund');
+    await tester.enterText(find.byType(TextField).first, 'Office chit');
+    await tapText(tester, 'Add', last: true);
+    expect(find.text('Office chit'), findsOneWidget);
+    final inv = (await tester.runAsync(() => env.repo.investments()))!.single;
+    await tester.runAsync(
+      () => env.repo.addInvestmentEntry(
+        inv.id,
+        type: 'contribute',
+        amountMinor: 250000,
+      ),
+    );
+    await settle(tester);
+    expect(await tester.runAsync(() => env.repo.totalBalance()), 750000);
+    await tapText(tester, 'Office chit');
+    expect(find.text('History'), findsOneWidget);
+    expect(find.text('Added money'), findsOneWidget);
+  });
+
   testWidgets('settings: switch to split accounts keeps total balance', (
     tester,
   ) async {
     final env = await pump(tester, opening: 250000);
     await tapText(tester, 'Settings', last: true);
-    expect(find.text('Combined account'), findsOneWidget);
-    await tester.tap(
-      find.byType(Switch).at(1),
-      warnIfMissed: false,
-    ); // account mode switch
+    await tester.scrollUntilVisible(
+      find.text('Combined account'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    final sw = find.descendant(
+      of: find.widgetWithText(ListTile, 'Combined account'),
+      matching: find.byType(Switch),
+    );
+    await tester.ensureVisible(sw);
+    await settle(tester);
+    await tester.tap(sw);
     await settle(tester);
     expect(find.text('Split accounts'), findsOneWidget);
     expect(await tester.runAsync(() => env.repo.totalBalance()), 250000);
@@ -307,7 +341,7 @@ void main() {
       });
       await settle(tester);
       expect(tester.takeException(), isNull);
-      for (final tab in ['Activity', 'Debts', 'Settings', 'Home']) {
+      for (final tab in ['Activity', 'Debts', 'Invest', 'Settings', 'Home']) {
         await tapText(tester, tab, last: true);
         expect(tester.takeException(), isNull, reason: 'overflow on $tab');
       }

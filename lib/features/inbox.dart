@@ -10,6 +10,7 @@ import '../platform/sms_reader.dart';
 import '../providers.dart';
 import 'settings.dart' show scanAndReport;
 import 'transactions.dart' show showTransactionSheet;
+import '../ui/art.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
 
@@ -49,6 +50,7 @@ class InboxPage extends ConsumerWidget {
         data: (list) {
           if (list.isEmpty) {
             return EmptyState(
+              art: Art.inbox,
               icon: Icons.mark_email_read_outlined,
               title: 'All caught up',
               body: SmsReader.supported

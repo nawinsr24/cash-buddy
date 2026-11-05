@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../domain/money.dart';
+import 'art.dart';
+import 'motion.dart';
 import 'theme.dart';
 
 class MoneyText extends StatelessWidget {
@@ -87,12 +89,14 @@ class EmptyState extends StatelessWidget {
   final String title;
   final String? body;
   final Widget? action;
+  final Art? art;
   const EmptyState({
     super.key,
     required this.icon,
     required this.title,
     this.body,
     this.action,
+    this.art,
   });
   @override
   Widget build(BuildContext context) => LayoutBuilder(
@@ -105,28 +109,38 @@ class EmptyState extends StatelessWidget {
         child: Center(
           child: Padding(
             padding: const EdgeInsets.all(Sp.x8),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, size: 48, color: context.cash.textMuted),
-                const SizedBox(height: Sp.x3),
-                Text(
-                  title,
-                  style: context.text.titleMedium,
-                  textAlign: TextAlign.center,
-                ),
-                if (body != null) ...[
-                  const SizedBox(height: Sp.x2),
+            child: Reveal(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (art != null)
+                    Illustration(art!, height: 170)
+                  else
+                    Icon(icon, size: 48, color: context.cash.textMuted),
+                  const SizedBox(height: Sp.x3),
                   Text(
-                    body!,
-                    style: context.text.bodyMedium?.copyWith(
-                      color: context.cash.textMuted,
+                    title,
+                    style: context.text.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
                     ),
                     textAlign: TextAlign.center,
                   ),
+                  if (body != null) ...[
+                    const SizedBox(height: Sp.x2),
+                    Text(
+                      body!,
+                      style: context.text.bodyMedium?.copyWith(
+                        color: context.cash.textMuted,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                  if (action != null) ...[
+                    const SizedBox(height: Sp.x4),
+                    action!,
+                  ],
                 ],
-                if (action != null) ...[const SizedBox(height: Sp.x4), action!],
-              ],
+              ),
             ),
           ),
         ),

@@ -98,6 +98,51 @@ class DebtEvents extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// Something money was put into: mutual fund, stock or chit fund. Only the
+/// name and kind are required; every other field is optional.
+class Investments extends Table {
+  TextColumn get id => text()();
+  TextColumn get kind => text()(); // mutual_fund | stock | chit
+  TextColumn get name => text()();
+  TextColumn get accountId => text().nullable()(); // default paying account
+  TextColumn get startDate => text().nullable()();
+  IntColumn get expectedGrowthBps => integer().nullable()(); // per year
+  IntColumn get currentValueMinor => integer().nullable()();
+  TextColumn get valueUpdatedOn => text().nullable()();
+  RealColumn get units => real().nullable()();
+  IntColumn get buyPriceMinor => integer().nullable()();
+  IntColumn get sipMinor => integer().nullable()();
+  // chit fund
+  IntColumn get chitValueMinor => integer().nullable()();
+  IntColumn get tenureMonths => integer().nullable()();
+  IntColumn get members => integer().nullable()();
+  IntColumn get monthlyMinor => integer().nullable()();
+  IntColumn get commissionBps => integer().nullable()();
+  TextColumn get organiser => text().nullable()();
+  TextColumn get note => text().withDefault(const Constant(''))();
+  TextColumn get hlc => text()();
+  TextColumn get deletedAt => text().nullable()();
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+@TableIndex(name: 'inv_entry_inv', columns: {#investmentId, #date})
+class InvestmentEntries extends Table {
+  TextColumn get id => text()();
+  TextColumn get investmentId => text()();
+  // contribute | withdraw | dividend | payout
+  TextColumn get type => text()();
+  IntColumn get amountMinor => integer()();
+  TextColumn get date => text()();
+  IntColumn get periodKey => integer().nullable()(); // chit month index
+  BoolColumn get postToBalance => boolean().withDefault(const Constant(true))();
+  TextColumn get note => text().withDefault(const Constant(''))();
+  TextColumn get hlc => text()();
+  TextColumn get deletedAt => text().nullable()();
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 /// Device-local (never synced): SMS candidates awaiting review.
 class SmsInbox extends Table {
   TextColumn get id => text()();
@@ -133,6 +178,8 @@ class Settings extends Table {
     Transactions,
     Debts,
     DebtEvents,
+    Investments,
+    InvestmentEntries,
     SmsInbox,
     Settings,
   ],
@@ -144,11 +191,17 @@ class AppDatabase extends _$AppDatabase {
   static AppDatabase open() => AppDatabase(openAppDatabase());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) => m.createAll(),
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        await m.createTable(investments);
+        await m.createTable(investmentEntries);
+      }
+    },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
       // One ledger row per debt-event leg: retries/sync can never double-post.
