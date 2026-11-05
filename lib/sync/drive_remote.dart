@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
@@ -30,10 +32,16 @@ class DriveRemote implements RemoteStore {
   /// The Google OAuth *web* client ID (Google Cloud Console). Set at build
   /// time with --dart-define=GOOGLE_SERVER_CLIENT_ID=... ; without it Google
   /// sign-in cannot work on Android.
+  /// Not a secret: it only names the app to Google. Can be overridden at
+  /// build time with --dart-define=GOOGLE_SERVER_CLIENT_ID=...
   static const serverClientId = String.fromEnvironment(
     'GOOGLE_SERVER_CLIENT_ID',
+    defaultValue: '725839010520-lhet238be54f4iadun9sd2qoug4i2fu6.apps.googleusercontent.com',
   );
-  static bool get configured => serverClientId.isNotEmpty;
+
+  /// Google sign-in is wired for the Android app. The browser build has no
+  /// sign-in set up, so Online Mode is reported as unavailable there.
+  static bool get configured => !kIsWeb && serverClientId.isNotEmpty;
 
   static const notConfiguredMessage =
       'Google sign-in is not set up in this version of the app yet, so Online Mode cannot start. Your data stays safely on this phone in Offline Mode.';

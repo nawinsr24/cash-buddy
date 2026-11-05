@@ -389,19 +389,16 @@ void main() {
     expect(find.text('Over budget'), findsOneWidget);
   });
 
-  testWidgets('online mode says clearly that Google sign-in is not set up', (
+  testWidgets('online mode asks for confirmation before Google sign-in', (
     tester,
   ) async {
     await pump(tester);
     await tapText(tester, 'Settings', last: true);
-    await tester.tap(find.widgetWithText(ListTile, 'Offline Mode').first);
+    await tester.tap(find.byType(Switch).first);
     await settle(tester);
-    // either the switch or the tile; look for the dialog
-    if (find.text('Online Mode is not available yet').evaluate().isEmpty) {
-      await tester.tap(find.byType(Switch).first);
-      await settle(tester);
-    }
-    expect(find.text('Online Mode is not available yet'), findsOneWidget);
+    expect(find.text('Turn on Online Mode?'), findsOneWidget);
+    await tapText(tester, 'Cancel');
+    expect(find.text('Turn on Online Mode?'), findsNothing);
   });
 
   testWidgets('home shows the Money Grade and the insights strip', (
