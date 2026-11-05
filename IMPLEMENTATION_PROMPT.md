@@ -1,4 +1,4 @@
-# Cash Buddy — Implementation Prompt for Claude Code / Cursor
+# Cash++ — Implementation Prompt for Claude Code / Cursor
 
 > Paste this whole file (or point the assistant at it) as the first message of a new session in the `cash-buddy/` folder. Work in the phases of section 14. Do not skip ahead; each phase must compile, pass tests, and run on both platforms before moving on.
 
@@ -6,7 +6,7 @@
 
 ## 0. Role and Mission
 
-You are a senior mobile architect, UI/UX engineer and finance-domain engineer. Build **Cash Buddy**: an **offline-first, cross-platform (iOS + Android) personal finance app** with optional Google Drive sync, debt tracking (receivables and liabilities with interest), an optional SMS transaction assistant, and a four-pillar dashboard.
+You are a senior mobile architect, UI/UX engineer and finance-domain engineer. Build **Cash++**: an **offline-first, cross-platform (iOS + Android) personal finance app** with optional Google Drive sync, debt tracking (receivables and liabilities with interest), an optional SMS transaction assistant, and a four-pillar dashboard.
 
 Non-negotiables: **no data loss, no double-counted balances, no silent failures, local-first speed, premium UI.**
 
@@ -70,7 +70,7 @@ cash-buddy/
 All wizard choices are persisted in a `settings` table and editable later.
 
 ### 3.3 Switching modes in Settings (with safeguards)
-**Offline → Online:** sign in to Google → check Drive `appDataFolder` for an existing Cash Buddy dataset →
+**Offline → Online:** sign in to Google → check Drive `appDataFolder` for an existing Cash++ dataset →
 - none found: upload a full snapshot, then begin op-log sync;
 - found: show a **merge/replace/keep-local chooser** with record counts and last-modified dates; default to *merge*; always create a local backup file first.
 
@@ -161,7 +161,7 @@ Tabs: *Receivables* / *Liabilities*; list with progress bar (repaid %), next due
 
 ### 6.1 Platform reality (implement exactly this)
 - **Android:** read SMS via a small native module using `READ_SMS` (+ optionally `RECEIVE_SMS`) with a runtime permission request and a clear rationale screen. **Google Play restricts these permissions**; implement behind a build flavor/feature flag, document the Play Console *Permissions Declaration* requirements and the risk in `docs/SMS.md`, and ship a **fallback** (below) so the app works without the permission. Process **on-device only**; never upload raw SMS to Drive or any server.
-- **iOS:** apps **cannot read the Messages inbox**. Do not attempt private APIs. Provide user-initiated alternatives: (a) **Share Sheet / "Share to Cash Buddy"** and paste-from-clipboard import of one or many messages; (b) optional Shortcuts/App Intents action ("Add transaction from text") that users can trigger from a Messages automation; (c) bank-notification email/CSV/PDF statement import (stretch).
+- **iOS:** apps **cannot read the Messages inbox**. Do not attempt private APIs. Provide user-initiated alternatives: (a) **Share Sheet / "Share to Cash++"** and paste-from-clipboard import of one or many messages; (b) optional Shortcuts/App Intents action ("Add transaction from text") that users can trigger from a Messages automation; (c) bank-notification email/CSV/PDF statement import (stretch).
 - **Android fallback:** same paste/share import, plus optional `NotificationListenerService` (explicit user opt-in, bank-app notifications only).
 - All parsing code lives in `lib/sms/parsers` as **pure Dart** shared by every ingestion path, so behavior is identical on both platforms.
 

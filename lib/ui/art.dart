@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-/// Flat, friendly illustrations drawn for Cash Buddy (inline SVG, so they
+/// Flat, friendly illustrations drawn for Cash++ (inline SVG, so they
 /// work offline and recolour themselves to the current theme).
 enum Art { welcome, growth, inbox, handshake, piggy, receipt }
 

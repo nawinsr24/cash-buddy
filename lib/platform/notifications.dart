@@ -101,7 +101,7 @@ class Notifications {
       if (!at.isAfter(now)) at = at.add(const Duration(days: 1));
       await _plugin.zonedSchedule(
         id: _id,
-        title: 'Cash Buddy',
+        title: 'Cash++',
         body: pending == 1
             ? '1 transaction is waiting for your review'
             : '$pending transactions are waiting for your review',
@@ -135,7 +135,7 @@ class Notifications {
     try {
       await _plugin.show(
         id: _id + 1,
-        title: 'Cash Buddy',
+        title: 'Cash++',
         body: 'Test: review reminders are working',
         notificationDetails: const NotificationDetails(
           android: AndroidNotificationDetails(

@@ -9,7 +9,7 @@
     <uses-permission android:name="android.permission.READ_SMS"/>
     <uses-permission android:name="android.permission.RECEIVE_SMS"/>
     <application
-        android:label="Cash Buddy"
+        android:label="Cash++"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

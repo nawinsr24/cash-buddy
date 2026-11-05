@@ -33,7 +33,7 @@ class DashboardPage extends ConsumerWidget {
     final pending = ref.watch(pendingSmsProvider).value?.length ?? 0;
     final invest = ref.watch(investSummariesProvider).value ?? const [];
     return Scaffold(
-      appBar: AppBar(title: const Text('Cash Buddy')),
+      appBar: AppBar(title: const Text('Cash++')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => showTransactionSheet(context),
         icon: const Icon(Icons.add),

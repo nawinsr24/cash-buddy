@@ -164,7 +164,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                                 : () => _go(_step + 1)),
                       child: Text(
                         _step == _steps - 1
-                            ? 'Start using Cash Buddy'
+                            ? 'Start using Cash++'
                             : 'Continue',
                       ),
                     ),

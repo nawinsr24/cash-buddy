@@ -61,6 +61,6 @@ jobs:
         run: |
           gh release delete latest --yes --cleanup-tag || true
           gh release create latest cash-buddy.apk \
-            --title "Cash Buddy (latest build)" \
+            --title "Cash++ (latest build)" \
             --notes "Build of ${GITHUB_SHA::7}. Allow installs from this source on your phone." \
             --prerelease

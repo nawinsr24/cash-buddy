@@ -92,7 +92,7 @@ class _AppLockGateState extends ConsumerState<AppLockGate>
     _prompting = true;
     final ok = await ref
         .read(authenticatorProvider)
-        .authenticate('Unlock Cash Buddy');
+        .authenticate('Unlock Cash++');
     _prompting = false;
     if (mounted && ok) setState(() => _unlocked = true);
   }
@@ -111,7 +111,7 @@ class _AppLockGateState extends ConsumerState<AppLockGate>
             children: [
               Icon(Icons.lock_outline, size: 56, color: context.scheme.primary),
               const SizedBox(height: Sp.x4),
-              Text('Cash Buddy is locked', style: context.text.titleLarge),
+              Text('Cash++ is locked', style: context.text.titleLarge),
               const SizedBox(height: Sp.x2),
               Text(
                 'Your finances are hidden until you unlock.',

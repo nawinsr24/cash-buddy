@@ -1,4 +1,4 @@
-# Cash Buddy: status (2026-11-04)
+# Cash++: status (2026-11-04)
 
 Verified by automated tests (`flutter test`: 130 pass, `flutter analyze`: clean)
 

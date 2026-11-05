@@ -1,4 +1,4 @@
-# Cash Buddy
+# Cash++
 
 Offline-first personal finance app (Flutter, iOS + Android). Spec / build prompt: `IMPLEMENTATION_PROMPT.md`.
 

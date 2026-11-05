@@ -96,7 +96,7 @@ void main() {
       await tapText(tester, 'Continue');
       expect(find.text('Opening balance'), findsOneWidget);
       await tester.enterText(find.byType(TextField).first, '5000');
-      await tapText(tester, 'Start using Cash Buddy');
+      await tapText(tester, 'Start using Cash++');
       expect(find.text('Total balance'), findsOneWidget);
       expect(find.text('₹5,000.00'), findsWidgets);
     },

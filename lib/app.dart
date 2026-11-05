@@ -19,7 +19,7 @@ class CashBuddyApp extends ConsumerWidget {
       _ => ThemeMode.system, // follows the device appearance live
     };
     return MaterialApp(
-      title: 'Cash Buddy',
+      title: 'Cash++',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.build(Brightness.light),
       darkTheme: AppTheme.build(Brightness.dark),

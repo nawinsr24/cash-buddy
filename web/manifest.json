@@ -1,11 +1,11 @@
 {
-    "name": "cash_buddy",
-    "short_name": "cash_buddy",
+    "name": "Cash++",
+    "short_name": "Cash++",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Cash++: your personal money tracker.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

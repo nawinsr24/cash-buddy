@@ -44,7 +44,7 @@ void main() {
         ),
       );
       await settle(tester);
-      expect(find.text('Cash Buddy is locked'), findsOneWidget);
+      expect(find.text('Cash++ is locked'), findsOneWidget);
       expect(
         find.text('Total balance'),
         findsNothing,
@@ -53,7 +53,7 @@ void main() {
       // failed auth: still locked
       await tester.tap(find.text('Unlock'));
       await settle(tester);
-      expect(find.text('Cash Buddy is locked'), findsOneWidget);
+      expect(find.text('Cash++ is locked'), findsOneWidget);
       // successful auth: unlocked
       auth.result = true;
       await tester.tap(find.text('Unlock'));

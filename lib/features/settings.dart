@@ -264,7 +264,7 @@ class SettingsPage extends ConsumerWidget {
                             if (context.mounted) {
                               toast(
                                 context,
-                                Notifications.instance.lastError ?? 'Notifications are blocked. Allow them for Cash Buddy in system settings.',
+                                Notifications.instance.lastError ?? 'Notifications are blocked. Allow them for Cash++ in system settings.',
                               );
                             }
                             return;
@@ -351,7 +351,7 @@ class SettingsPage extends ConsumerWidget {
                 secondary: const Icon(Icons.lock_outline),
                 title: const Text('App lock'),
                 subtitle: const Text(
-                  'Require fingerprint, face or your phone PIN to open Cash Buddy. Also hides the app in the recent-apps view.',
+                  'Require fingerprint, face or your phone PIN to open Cash++. Also hides the app in the recent-apps view.',
                 ),
                 value: s.appLock,
                 onChanged: (v) => _toggleLock(context, ref, v),
@@ -459,7 +459,7 @@ class SettingsPage extends ConsumerWidget {
         if (context.mounted) {
           toast(
             context,
-            'SMS permission was denied. Allow "SMS" for Cash Buddy in Android Settings > Apps to enable this.',
+            'SMS permission was denied. Allow "SMS" for Cash++ in Android Settings > Apps to enable this.',
           );
         }
         return;
@@ -478,7 +478,7 @@ class SettingsPage extends ConsumerWidget {
       builder: (c) => AlertDialog(
         title: const Text('Turn on Online Mode?'),
         content: const Text(
-          'You will sign in with Google. A local backup is made first. Your data is then merged with any Cash Buddy data already in your private Drive app folder — nothing is overwritten or deleted.',
+          'You will sign in with Google. A local backup is made first. Your data is then merged with any Cash++ data already in your private Drive app folder — nothing is overwritten or deleted.',
         ),
         actions: [
           TextButton(
