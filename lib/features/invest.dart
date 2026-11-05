@@ -38,7 +38,7 @@ class InvestHero extends StatelessWidget {
         padding: const EdgeInsets.all(Sp.x5),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(Sp.rCard + 4),
-          color: dark ? const Color(0xFF191B22) : null,
+          color: dark ? CashColors.tile(2, Brightness.dark) : null,
           gradient: dark
               ? null
               : const LinearGradient(
@@ -47,7 +47,7 @@ class InvestHero extends StatelessWidget {
                   colors: [Color(0xFFEEF0FF), Color(0xFFDDE3FF)],
                 ),
           border: Border.all(
-            color: dark ? const Color(0xFF2A2D36) : const Color(0xFFC9D2FF),
+            color: dark ? const Color(0xFF3A3470) : const Color(0xFFC9D2FF),
           ),
         ),
         child: Column(

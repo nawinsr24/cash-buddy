@@ -76,19 +76,13 @@ class Notifications {
     }
   }
 
-  /// Schedules the next review reminder at [hour]:[minute] (today if still
-  /// ahead, else tomorrow) showing the *current* number of pending items.
-  /// It is a one-shot that the app re-schedules whenever the count changes
-  /// (app open, scan, confirm/discard), so the text is never stale. With
-  /// nothing to review the reminder is cancelled instead of nagging.
+  /// A real daily reminder at [hour]:[minute]: it repeats every day on its
+  /// own, even if the app is never opened again, and whether or not anything
+  /// is waiting. [pending] only changes the wording.
   Future<void> scheduleReview(int hour, int minute, int pending) async {
     lastError = null;
     if (!_ready) return;
     try {
-      if (pending <= 0) {
-        await _plugin.cancel(id: _id);
-        return;
-      }
       final now = tz.TZDateTime.now(tz.local);
       var at = tz.TZDateTime(
         tz.local,
@@ -99,27 +93,33 @@ class Notifications {
         minute,
       );
       if (!at.isAfter(now)) at = at.add(const Duration(days: 1));
-      await _plugin.zonedSchedule(
+      Future<void> go(AndroidScheduleMode mode) => _plugin.zonedSchedule(
         id: _id,
         title: 'Cash++',
-        body: pending == 1
-            ? '1 transaction is waiting for your review'
-            : '$pending transactions are waiting for your review',
+        body: pending > 0
+            ? '$pending transaction${pending == 1 ? ' is' : 's are'} waiting. Did you spend anything else today?'
+            : 'Did you spend anything today? Add it in 10 seconds.',
         scheduledDate: at,
-        payload: 'inbox',
+        payload: pending > 0 ? 'inbox' : 'home',
         notificationDetails: const NotificationDetails(
           android: AndroidNotificationDetails(
-            'sms_review',
-            'Transaction review',
-            channelDescription:
-                'Daily reminder to review detected transactions',
+            'daily_reminder',
+            'Daily reminder',
+            channelDescription: 'A daily nudge to note your spending',
             importance: Importance.high,
             priority: Priority.high,
           ),
           iOS: DarwinNotificationDetails(),
         ),
-        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        androidScheduleMode: mode,
+        matchDateTimeComponents: DateTimeComponents.time,
       );
+      try {
+        await go(AndroidScheduleMode.exactAllowWhileIdle);
+      } catch (_) {
+        // "Alarms & reminders" not allowed: a slightly less exact alarm still repeats daily
+        await go(AndroidScheduleMode.inexactAllowWhileIdle);
+      }
     } catch (e) {
       debugPrint('schedule failed: $e');
       lastError = 'Could not schedule the reminder: $e';

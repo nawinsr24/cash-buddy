@@ -278,72 +278,6 @@ class SettingsPage extends ConsumerWidget {
                   ],
                   if (s.smsEnabled) ...[
                     const Divider(height: 1),
-                    SwitchListTile.adaptive(
-                      secondary: const Icon(
-                        Icons.notifications_active_outlined,
-                      ),
-                      title: const Text('Daily review reminder'),
-                      value: s.reminderEnabled,
-                      onChanged: (v) async {
-                        if (v) {
-                          AppLockGate.holdOff();
-                          final ok = await Notifications.instance
-                              .requestPermission();
-                          if (!ok) {
-                            if (context.mounted) {
-                              toast(
-                                context,
-                                Notifications.instance.lastError ?? 'Notifications are blocked. Allow them for Cash++ in system settings.',
-                              );
-                            }
-                            return;
-                          }
-                          await repo.setSetting('reminderEnabled', '1');
-                          await refreshReminder(repo);
-                          if (Notifications.instance.lastError != null) {
-                            if (context.mounted) {
-                              toast(context, Notifications.instance.lastError!);
-                            }
-                            return;
-                          }
-                          if (context.mounted) {
-                            toast(
-                              context,
-                              'Reminder set for ${s.reminderTime} every day (shown when something is waiting)',
-                            );
-                          }
-                        } else {
-                          await repo.setSetting('reminderEnabled', '0');
-                          await Notifications.instance.cancelDailyReview();
-                        }
-                      },
-                    ),
-                    if (s.reminderEnabled)
-                      ListTile(
-                        leading: const Icon(Icons.schedule),
-                        title: const Text('Reminder time'),
-                        trailing: Text(
-                          s.reminderTime,
-                          style: context.text.titleMedium,
-                        ),
-                        onTap: () async {
-                          final t = s.reminderTime.split(':');
-                          final picked = await showTimePicker(
-                            context: context,
-                            initialTime: TimeOfDay(
-                              hour: int.parse(t[0]),
-                              minute: int.parse(t[1]),
-                            ),
-                          );
-                          if (picked != null) {
-                            final v =
-                                '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
-                            await repo.setSetting('reminderTime', v);
-                            await refreshReminder(repo);
-                          }
-                        },
-                      ),
-                    const Divider(height: 1),
                     ListTile(
                       leading: const Icon(Icons.delete_sweep_outlined),
                       title: const Text('Delete stored message text'),
@@ -360,26 +294,97 @@ class SettingsPage extends ConsumerWidget {
             ),
             const _Group('Notifications'),
             Card(
-              child: ListTile(
-                leading: const Icon(Icons.notifications_none),
-                title: const Text('Send a test notification'),
-                subtitle: const Text(
-                  'Checks that Cash++ can alert you on this phone',
-                ),
-                onTap: () async {
-                  // the permission dialog is ours: don't lock the app after it
-                  AppLockGate.holdOff();
-                  await Notifications.instance.requestPermission();
-                  final err = await Notifications.instance.testNow();
-                  if (context.mounted) {
-                    toast(
-                      context,
-                      err == null
-                          ? 'Sent. Check your notification shade.'
-                          : 'Failed: $err',
-                    );
-                  }
-                },
+              child: Column(
+                children: [
+                  SwitchListTile.adaptive(
+                    secondary: const Icon(Icons.notifications_active_outlined),
+                    title: const Text('Daily reminder'),
+                    subtitle: const Text(
+                      'Every day, even if nothing is waiting',
+                    ),
+                    value: s.reminderEnabled,
+                    onChanged: (v) async {
+                      if (v) {
+                        AppLockGate.holdOff();
+                        final ok = await Notifications.instance
+                            .requestPermission();
+                        if (!ok) {
+                          if (context.mounted) {
+                            toast(
+                              context,
+                              Notifications.instance.lastError ?? 'Notifications are blocked. Allow them for Cash++ in system settings.',
+                            );
+                          }
+                          return;
+                        }
+                        await repo.setSetting('reminderEnabled', '1');
+                        await refreshReminder(repo);
+                        if (Notifications.instance.lastError != null) {
+                          if (context.mounted) {
+                            toast(context, Notifications.instance.lastError!);
+                          }
+                          return;
+                        }
+                        if (context.mounted) {
+                          toast(
+                            context,
+                            'Reminder set for ${s.reminderTime} every day ',
+                          );
+                        }
+                      } else {
+                        await repo.setSetting('reminderEnabled', '0');
+                        await Notifications.instance.cancelDailyReview();
+                      }
+                    },
+                  ),
+                  if (s.reminderEnabled)
+                    ListTile(
+                      leading: const Icon(Icons.schedule),
+                      title: const Text('Reminder time'),
+                      trailing: Text(
+                        s.reminderTime,
+                        style: context.text.titleMedium,
+                      ),
+                      onTap: () async {
+                        final t = s.reminderTime.split(':');
+                        final picked = await showTimePicker(
+                          context: context,
+                          initialTime: TimeOfDay(
+                            hour: int.parse(t[0]),
+                            minute: int.parse(t[1]),
+                          ),
+                        );
+                        if (picked != null) {
+                          final v =
+                              '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+                          await repo.setSetting('reminderTime', v);
+                          await refreshReminder(repo);
+                        }
+                      },
+                    ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.notifications_none),
+                    title: const Text('Send a test notification'),
+                    subtitle: const Text(
+                      'Checks that Cash++ can alert you on this phone',
+                    ),
+                    onTap: () async {
+                      // the permission dialog is ours: don't lock the app after it
+                      AppLockGate.holdOff();
+                      await Notifications.instance.requestPermission();
+                      final err = await Notifications.instance.testNow();
+                      if (context.mounted) {
+                        toast(
+                          context,
+                          err == null
+                              ? 'Sent. Check your notification shade.'
+                              : 'Failed: $err',
+                        );
+                      }
+                    },
+                  ),
+                ],
               ),
             ),
             const _Group('Security'),

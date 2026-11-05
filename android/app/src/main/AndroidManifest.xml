@@ -4,6 +4,7 @@
     <!-- Daily review reminder (user-enabled) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
     <!-- SMS assistant (optional; asked at runtime when the user turns it on).
          Sideloaded builds only: Google Play restricts this permission. See docs/SMS.md -->
     <uses-permission android:name="android.permission.READ_SMS"/>

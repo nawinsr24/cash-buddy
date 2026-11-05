@@ -53,6 +53,7 @@ class DashboardPage extends ConsumerWidget {
         data: (d) => ListView(
           padding: const EdgeInsets.fromLTRB(Sp.x4, 0, Sp.x4, 96),
           children: [
+            const _Greeting(),
             const TitleBanner(),
             const LiveTitleChip(),
             const PeriodBar(),
@@ -62,6 +63,7 @@ class DashboardPage extends ConsumerWidget {
             _BalanceCard(
               total: d.totalBalance,
               split: settings?.split ?? false,
+              trend: _trend(d),
             ),
             const SizedBox(height: Sp.x3),
             const BudgetCard(),
@@ -102,6 +104,8 @@ class DashboardPage extends ConsumerWidget {
                 ),
               ],
             ),
+            const SizedBox(height: Sp.x3),
+            Reveal(index: 5, child: ReceivedSpentChart(data: d)),
             if (invest.isNotEmpty) ...[
               const SizedBox(height: Sp.x3),
               InvestHero(
@@ -228,49 +232,72 @@ class PeriodBar extends ConsumerWidget {
 class _BalanceCard extends ConsumerWidget {
   final int total;
   final bool split;
-  const _BalanceCard({required this.total, required this.split});
+  final List<double> trend;
+  const _BalanceCard({
+    required this.total,
+    required this.split,
+    this.trend = const [],
+  });
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final accounts = ref.watch(accountsProvider).value ?? const [];
     final bal = ref.watch(balancesProvider).value ?? const {};
     final dark = Theme.of(context).brightness == Brightness.dark;
-    final fg = dark ? Colors.white : const Color(0xFF14172B);
-    final fgMuted = dark ? Colors.white54 : const Color(0xFF4A5170);
+    const fg = Colors.white;
+    final fgMuted = Colors.white.withValues(alpha: 0.88);
     final banks = accounts.where((a) => a.kind == 'bank').toList();
     return TiltCard(
       child: Container(
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(Sp.rCard + 4),
-          color: dark ? const Color(0xFF191B22) : null,
-          gradient: dark
-              ? null
-              : const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFFEEF0FF), Color(0xFFDDE3FF)],
-                ),
-          border: Border.all(
-            color: dark ? const Color(0xFF2A2D36) : const Color(0xFFC9D2FF),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: dark
+                ? const [Color(0xFF4A32C8), Color(0xFF6046D8)]
+                : const [Color(0xFF5232E0), Color(0xFF6A4AE0)],
           ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF5B3DF5)
+                  .withValues(alpha: dark ? 0.18 : 0.22),
+              blurRadius: 22,
+              offset: const Offset(0, 8),
+            ),
+          ],
         ),
         child: Stack(
           children: [
-            // a soft accent glow, top right
             Positioned(
-              right: -60,
-              top: -70,
+              right: -40,
+              top: -50,
               child: Container(
-                width: 220,
-                height: 220,
+                width: 180,
+                height: 180,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      const Color(0xFF6366F1).withValues(alpha: 0.38),
-                      const Color(0xFF6366F1).withValues(alpha: 0),
+                      Colors.white.withValues(alpha: 0.18),
+                      Colors.white.withValues(alpha: 0),
                     ],
                   ),
+                ),
+              ),
+            ),
+            Positioned(
+              right: 18,
+              top: 18,
+              child: SizedBox(
+                width: 110,
+                height: 52,
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0, end: 1),
+                  duration: const Duration(milliseconds: 1100),
+                  curve: Curves.easeOutCubic,
+                  builder: (_, t, _) =>
+                      CustomPaint(painter: _SparkPainter(trend, t)),
                 ),
               ),
             ),
@@ -279,6 +306,17 @@ class _BalanceCard extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    alignment: Alignment.center,
+                    margin: const EdgeInsets.only(bottom: Sp.x3),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Text('👛', style: TextStyle(fontSize: 20)),
+                  ),
                   Text(
                     'TOTAL BALANCE',
                     style: context.text.labelSmall?.copyWith(
@@ -313,12 +351,12 @@ class _BalanceCard extends ConsumerWidget {
                           _chip(
                             'Online  ${Money.format(banks.fold<int>(0, (t, a) => t + (bal[a.id] ?? 0)))}',
                             strong: true,
-                            dark: dark,
+                            dark: true,
                           ),
                         for (final a in accounts)
                           _chip(
                             '${a.name}  ${Money.format(bal[a.id] ?? 0)}',
-                            dark: dark,
+                            dark: true,
                           ),
                       ],
                     ),
@@ -331,7 +369,7 @@ class _BalanceCard extends ConsumerWidget {
                             label: 'Withdraw cash',
                             onTap: () =>
                                 showCashMoveSheet(context, withdraw: true),
-                            dark: dark,
+                            dark: true,
                           ),
                         ),
                         const SizedBox(width: Sp.x2),
@@ -341,7 +379,7 @@ class _BalanceCard extends ConsumerWidget {
                             label: 'Deposit cash',
                             onTap: () =>
                                 showCashMoveSheet(context, withdraw: false),
-                            dark: dark,
+                            dark: true,
                           ),
                         ),
                       ],
@@ -475,6 +513,9 @@ class PillarCard extends StatelessWidget {
       Pillar.income => data.dailyIncome,
       _ => const <String, int>{},
     };
+    final lightMode = Theme.of(context).brightness == Brightness.light;
+    final goodC = lightMode ? const Color(0xFF066B49) : c.income;
+    final badC = lightMode ? const Color(0xFFB0123A) : c.spending;
     String? delta;
     var good = true;
     var up = true;
@@ -490,7 +531,10 @@ class PillarCard extends StatelessWidget {
       button: true,
       label:
           '$title ${Money.format(amount)}${delta != null ? ', $delta' : ''}. Tap for details.',
-      child: Card(
+      child: Material(
+        color: CashColors.tile(pillar.index, Theme.of(context).brightness),
+        borderRadius: BorderRadius.circular(Sp.rCard),
+        clipBehavior: Clip.antiAlias,
         child: InkWell(
           borderRadius: BorderRadius.circular(Sp.rCard),
           onTap: () {
@@ -522,6 +566,7 @@ class PillarCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    Icon(Icons.north_east, size: 16, color: c.textMuted),
                   ],
                 ),
                 const Spacer(),
@@ -545,7 +590,7 @@ class PillarCard extends StatelessWidget {
                         Icon(
                           up ? Icons.arrow_upward : Icons.arrow_downward,
                           size: 12,
-                          color: good ? c.income : c.spending,
+                          color: good ? goodC : badC,
                         ),
                       const SizedBox(width: 2),
                       Flexible(
@@ -553,7 +598,7 @@ class PillarCard extends StatelessWidget {
                           delta,
                           overflow: TextOverflow.ellipsis,
                           style: context.text.labelSmall?.copyWith(
-                            color: good ? c.income : c.spending,
+                            color: good ? goodC : badC,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -1127,4 +1172,261 @@ class _SplitBar extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Running net (income minus spending) over the period, for the hero sparkline.
+List<double> _trend(DashboardData d) {
+  final days = {...d.dailyIncome.keys, ...d.dailySpending.keys}.toList()
+    ..sort();
+  var run = 0.0;
+  final out = <double>[];
+  for (final k in days) {
+    run += (d.dailyIncome[k] ?? 0) - (d.dailySpending[k] ?? 0);
+    out.add(run);
+  }
+  return out;
+}
+
+class _SparkPainter extends CustomPainter {
+  final List<double> v;
+  final double t;
+  _SparkPainter(this.v, this.t);
+  @override
+  void paint(Canvas canvas, Size size) {
+    final pts = v.length >= 2 ? v : const [0.0, 0.3, 0.2, 0.6, 0.5, 1.0];
+    final lo = pts.reduce((a, b) => a < b ? a : b);
+    final hi = pts.reduce((a, b) => a > b ? a : b);
+    final span = (hi - lo) == 0 ? 1.0 : hi - lo;
+    final path = Path();
+    for (var i = 0; i < pts.length; i++) {
+      final x = size.width * i / (pts.length - 1);
+      final y = size.height - ((pts[i] - lo) / span) * size.height * 0.85 - 4;
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        final px = size.width * (i - 1) / (pts.length - 1);
+        final py =
+            size.height - ((pts[i - 1] - lo) / span) * size.height * 0.85 - 4;
+        path.cubicTo((px + x) / 2, py, (px + x) / 2, y, x, y);
+      }
+    }
+    final m = path.computeMetrics().first;
+    canvas.drawPath(
+      m.extractPath(0, m.length * t),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.6
+        ..strokeCap = StrokeCap.round
+        ..color = Colors.white.withValues(alpha: 0.9),
+    );
+  }
+
+  @override
+  bool shouldRepaint(_SparkPainter o) => o.t != t || o.v != v;
+}
+
+class _Greeting extends StatelessWidget {
+  const _Greeting();
+  @override
+  Widget build(BuildContext context) {
+    final h = DateTime.now().hour;
+    final hello = h < 12
+        ? 'Good morning'
+        : h < 17
+        ? 'Good afternoon'
+        : 'Good evening';
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(Sp.x1, Sp.x1, Sp.x1, Sp.x3),
+      child: Reveal(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(text: '$hello, '),
+                  TextSpan(
+                    text: 'friend 👋',
+                    style: TextStyle(color: context.scheme.primary),
+                  ),
+                ],
+              ),
+              style: context.text.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.5,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              "Here's your money overview",
+              style: context.text.bodyMedium?.copyWith(
+                color: context.cash.textMuted,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Money in vs money out, grouped into five slices of the chosen period.
+class ReceivedSpentChart extends StatelessWidget {
+  final DashboardData data;
+  const ReceivedSpentChart({super.key, required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final recvC = dark ? const Color(0xFF4FD1B8) : const Color(0xFF5ED3BC);
+    final spentC = dark ? const Color(0xFFA793FF) : const Color(0xFF7C5CF0);
+    const n = 5;
+    final days = data.range.days.clamp(1, 4000);
+    final per = (days / n).ceil();
+    final recv = List<double>.filled(n, 0);
+    final spent = List<double>.filled(n, 0);
+    for (var i = 0; i < days; i++) {
+      final k = Dates.str(data.range.start.add(Duration(days: i)));
+      final b = (i ~/ per).clamp(0, n - 1);
+      recv[b] += (data.dailyIncome[k] ?? 0) / 100;
+      spent[b] += (data.dailySpending[k] ?? 0) / 100;
+    }
+    String label(int b) {
+      final a = b * per + 1;
+      final z = ((b + 1) * per).clamp(1, days);
+      return a > days ? '' : '$a-$z';
+    }
+
+    final maxV = [...recv, ...spent].fold<double>(0, (a, b) => a > b ? a : b);
+    final c = context.cash;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(Sp.x4, Sp.x4, Sp.x4, Sp.x3),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Received vs spent',
+                    style: context.text.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                _legend(context, recvC, 'Received'),
+                const SizedBox(width: Sp.x3),
+                _legend(context, spentC, 'Spent'),
+              ],
+            ),
+            const SizedBox(height: Sp.x4),
+            SizedBox(
+              height: 170,
+              child: maxV == 0
+                  ? Center(
+                      child: Text(
+                        'Nothing to show for this period yet',
+                        style: context.text.bodySmall?.copyWith(
+                          color: c.textMuted,
+                        ),
+                      ),
+                    )
+                  : BarChart(
+                      duration: const Duration(milliseconds: 700),
+                      curve: Curves.easeOutCubic,
+                      BarChartData(
+                        maxY: maxV * 1.15,
+                        alignment: BarChartAlignment.spaceAround,
+                        gridData: FlGridData(
+                          drawVerticalLine: false,
+                          horizontalInterval: maxV * 1.15 / 4,
+                          getDrawingHorizontalLine: (_) => FlLine(
+                            color: context.scheme.outlineVariant,
+                            strokeWidth: 1,
+                            dashArray: [4, 4],
+                          ),
+                        ),
+                        borderData: FlBorderData(show: false),
+                        titlesData: FlTitlesData(
+                          topTitles: const AxisTitles(),
+                          rightTitles: const AxisTitles(),
+                          leftTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              reservedSize: 44,
+                              interval: maxV * 1.15 / 4,
+                              getTitlesWidget: (v, m) => v == m.max
+                                  ? const SizedBox.shrink()
+                                  : Text(
+                                      Money.compact((v * 100).round()),
+                                      style: TextStyle(
+                                        fontSize: 10.5,
+                                        color: c.textMuted,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              getTitlesWidget: (v, _) => Padding(
+                                padding: const EdgeInsets.only(top: 6),
+                                child: Text(
+                                  label(v.toInt()),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: c.textMuted,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        barTouchData: BarTouchData(enabled: false),
+                        barGroups: [
+                          for (var i = 0; i < n; i++)
+                            BarChartGroupData(
+                              x: i,
+                              barsSpace: 4,
+                              barRods: [
+                                BarChartRodData(
+                                  toY: recv[i],
+                                  width: 12,
+                                  color: recvC,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                BarChartRodData(
+                                  toY: spent[i],
+                                  width: 12,
+                                  color: spentC,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                              ],
+                            ),
+                        ],
+                      ),
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _legend(BuildContext context, Color color, String text) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Container(
+        width: 9,
+        height: 9,
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      ),
+      const SizedBox(width: 5),
+      Text(
+        text,
+        style: context.text.labelSmall?.copyWith(color: context.cash.textMuted),
+      ),
+    ],
+  );
 }

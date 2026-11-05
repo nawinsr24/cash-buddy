@@ -38,11 +38,27 @@ class CashColors extends ThemeExtension<CashColors> {
     spending: Color(0xFFFB7185),
     debtIn: Color(0xFFFBBF24),
     liability: Color(0xFFA78BFA),
-    surfaceRaised: Color(0xFF14161B),
+    surfaceRaised: Color(0xFF181729),
     textMuted: Color(0xFF9AA1AD),
     positiveBg: Color(0xFF0F2A21),
     negativeBg: Color(0xFF331820),
   );
+
+  /// Soft pastel tiles (peach, mint, lavender, sky) for stat cards.
+  static const _tilesLight = [
+    Color(0xFFFFE9DB),
+    Color(0xFFD8F5EC),
+    Color(0xFFE9E3FF),
+    Color(0xFFDDEEFF),
+  ];
+  static const _tilesDark = [
+    Color(0xFF3A2621),
+    Color(0xFF15332D),
+    Color(0xFF2B2650),
+    Color(0xFF172E44),
+  ];
+  static Color tile(int i, Brightness b) =>
+      (b == Brightness.dark ? _tilesDark : _tilesLight)[i % 4];
 
   @override
   CashColors copyWith({
@@ -101,19 +117,19 @@ class Sp {
 class AppTheme {
   /// Ink-and-indigo: neutral surfaces, one accent, colour only where it means
   /// something (money in, money out, status).
-  static const accentLight = Color(0xFF4F46E5);
-  static const accentDark = Color(0xFF8B93FF);
+  static const accentLight = Color(0xFF5B3FE0);
+  static const accentDark = Color(0xFFA793FF);
 
   static ThemeData build(Brightness b) {
     final dark = b == Brightness.dark;
     final accent = dark ? accentDark : accentLight;
     final ink = dark ? const Color(0xFFF4F5F7) : const Color(0xFF0F1115);
-    final bg = dark ? const Color(0xFF0B0C10) : const Color(0xFFF6F6F8);
-    final hairline = dark ? const Color(0xFF23262D) : const Color(0xFFE6E7EB);
+    final bg = dark ? const Color(0xFF0E0D16) : const Color(0xFFF5F3FF);
+    final hairline = dark ? const Color(0xFF282640) : const Color(0xFFE6E1FA);
     final scheme = ColorScheme.fromSeed(seedColor: accentLight, brightness: b)
         .copyWith(
           primary: accent,
-          onPrimary: dark ? const Color(0xFF0B0C10) : Colors.white,
+          onPrimary: dark ? const Color(0xFF0E0D16) : Colors.white,
           primaryContainer: accent.withValues(alpha: dark ? 0.22 : 0.12),
           onPrimaryContainer: ink,
           surface: bg,
@@ -269,11 +285,13 @@ class AppTheme {
         ),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: ink,
-        foregroundColor: bg,
+        backgroundColor: dark
+            ? const Color(0xFF6B4FE6)
+            : const Color(0xFF5B3DF5),
+        foregroundColor: Colors.white,
         elevation: 0,
         highlightElevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       ),
       listTileTheme: ListTileThemeData(iconColor: colors.textMuted),
       // Every popup surface is set explicitly so dialogs, sheets, menus and
