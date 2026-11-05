@@ -13,6 +13,7 @@ import '../ui/theme.dart';
 import 'budget.dart';
 import 'cash_move.dart';
 import 'grade_ui.dart';
+import 'score_ui.dart';
 import 'invest.dart';
 import '../ui/widgets.dart';
 import 'transactions.dart';
@@ -35,11 +36,19 @@ class DashboardPage extends ConsumerWidget {
     final pending = ref.watch(pendingSmsProvider).value?.length ?? 0;
     final invest = ref.watch(investSummariesProvider).value ?? const [];
     return Scaffold(
-      appBar: AppBar(title: const Text('Cash++')),
+      appBar: AppBar(
+        title: Row(
+          children: [
+            const Text('Cash'),
+            Text('++', style: TextStyle(color: context.scheme.primary)),
+          ],
+        ),
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => showTransactionSheet(context),
         icon: const Icon(Icons.add),
         label: const Text('Add'),
+        extendedPadding: const EdgeInsets.symmetric(horizontal: 22),
       ),
       body: data.when(
         skipLoadingOnReload: true,
@@ -50,6 +59,7 @@ class DashboardPage extends ConsumerWidget {
           padding: const EdgeInsets.fromLTRB(Sp.x4, 0, Sp.x4, 96),
           children: [
             const TitleBanner(),
+            const LiveTitleChip(),
             const PeriodBar(),
             const SizedBox(height: Sp.x3),
             if ((settings?.smsEnabled ?? false) && pending > 0)
@@ -61,7 +71,7 @@ class DashboardPage extends ConsumerWidget {
             const SizedBox(height: Sp.x3),
             const BudgetCard(),
             const SizedBox(height: Sp.x3),
-            const GradeCard(),
+            const PlusScoreCard(),
             const SizedBox(height: Sp.x3),
             GridView(
               shrinkWrap: true,
@@ -126,16 +136,29 @@ class _SmsBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(bottom: Sp.x3),
-    child: Card(
-      color: context.scheme.primaryContainer,
-      child: ListTile(
-        leading: const Icon(Icons.sms_outlined),
-        title: Text(
-          '$count detected transaction${count == 1 ? '' : 's'} to review',
+    child: Pressable(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: Sp.x4, vertical: Sp.x3),
+        decoration: BoxDecoration(
+          color: context.scheme.primaryContainer,
+          borderRadius: BorderRadius.circular(Sp.rCard),
         ),
-        subtitle: const Text('Review each and add it'),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: onTap,
+        child: Row(
+          children: [
+            Icon(Icons.sms_outlined, size: 20, color: context.scheme.primary),
+            const SizedBox(width: Sp.x3),
+            Expanded(
+              child: Text(
+                '$count detected transaction${count == 1 ? '' : 's'} to review',
+                style: context.text.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            const Icon(Icons.chevron_right, size: 20),
+          ],
+        ),
       ),
     ),
   );
@@ -215,98 +238,106 @@ class _BalanceCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final accounts = ref.watch(accountsProvider).value ?? const [];
     final bal = ref.watch(balancesProvider).value ?? const {};
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final banks = accounts.where((a) => a.kind == 'bank').toList();
     return Container(
-      padding: const EdgeInsets.all(Sp.x5),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(Sp.rCard + 4),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF2F6BFF), Color(0xFF7C3AED), Color(0xFFEC4899)],
-          stops: [0, 0.6, 1],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF2F6BFF).withValues(alpha: 0.3),
-            blurRadius: 26,
-            offset: const Offset(0, 12),
-          ),
-        ],
+        color: dark ? const Color(0xFF191B22) : const Color(0xFF0F1115),
+        border: dark ? Border.all(color: const Color(0xFF2A2D36)) : null,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          Text(
-            'Total balance',
-            style: context.text.labelLarge?.copyWith(color: Colors.white70),
-          ),
-          const SizedBox(height: Sp.x1),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: CountUp(
-              value: total,
-              builder: (v) => MoneyText(
-                v,
-                color: Colors.white,
-                style: context.text.headlineLarge?.copyWith(
-                  fontWeight: FontWeight.w800,
+          // a soft accent glow, top right
+          Positioned(
+            right: -60,
+            top: -70,
+            child: Container(
+              width: 220,
+              height: 220,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    const Color(0xFF6366F1).withValues(alpha: 0.38),
+                    const Color(0xFF6366F1).withValues(alpha: 0),
+                  ],
                 ),
               ),
             ),
           ),
-          if (split && accounts.isNotEmpty) ...[
-            const SizedBox(height: Sp.x3),
-            Wrap(
-              spacing: Sp.x2,
-              runSpacing: Sp.x2,
+          Padding(
+            padding: const EdgeInsets.all(Sp.x5),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // With several banks, also show the combined online total.
-                if (accounts.where((a) => a.kind == 'bank').length > 1)
-                  _chip(
-                    '🌐  Online  ${Money.format(accounts.where((a) => a.kind == 'bank').fold<int>(0, (t, a) => t + (bal[a.id] ?? 0)))}',
-                    strong: true,
+                Text(
+                  'TOTAL BALANCE',
+                  style: context.text.labelSmall?.copyWith(
+                    color: Colors.white54,
+                    letterSpacing: 1.2,
+                    fontWeight: FontWeight.w700,
                   ),
-                for (final a in accounts)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.18),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      '${a.name}  ${Money.format(bal[a.id] ?? 0)}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 12.5,
+                ),
+                const SizedBox(height: Sp.x2),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: CountUp(
+                    value: total,
+                    builder: (v) => MoneyText(
+                      v,
+                      color: Colors.white,
+                      style: context.text.headlineLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 38,
+                        letterSpacing: -1.4,
                       ),
                     ),
                   ),
+                ),
+                if (split && accounts.isNotEmpty) ...[
+                  const SizedBox(height: Sp.x4),
+                  Wrap(
+                    spacing: Sp.x2,
+                    runSpacing: Sp.x2,
+                    children: [
+                      if (banks.length > 1)
+                        _chip(
+                          'Online  ${Money.format(banks.fold<int>(0, (t, a) => t + (bal[a.id] ?? 0)))}',
+                          strong: true,
+                        ),
+                      for (final a in accounts)
+                        _chip('${a.name}  ${Money.format(bal[a.id] ?? 0)}'),
+                    ],
+                  ),
+                  const SizedBox(height: Sp.x4),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _CashButton(
+                          icon: Icons.south_west,
+                          label: 'Withdraw cash',
+                          onTap: () =>
+                              showCashMoveSheet(context, withdraw: true),
+                        ),
+                      ),
+                      const SizedBox(width: Sp.x2),
+                      Expanded(
+                        child: _CashButton(
+                          icon: Icons.north_east,
+                          label: 'Deposit cash',
+                          onTap: () =>
+                              showCashMoveSheet(context, withdraw: false),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
-            const SizedBox(height: Sp.x3),
-            Row(
-              children: [
-                Expanded(
-                  child: _CashButton(
-                    label: '🏧  Withdraw cash',
-                    onTap: () => showCashMoveSheet(context, withdraw: true),
-                  ),
-                ),
-                const SizedBox(width: Sp.x2),
-                Expanded(
-                  child: _CashButton(
-                    label: '🏦  Deposit cash',
-                    onTap: () => showCashMoveSheet(context, withdraw: false),
-                  ),
-                ),
-              ],
-            ),
-          ],
+          ),
         ],
       ),
     );
@@ -314,25 +345,30 @@ class _BalanceCard extends ConsumerWidget {
 }
 
 Widget _chip(String text, {bool strong = false}) => Container(
-  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+  padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
   decoration: BoxDecoration(
-    color: Colors.white.withValues(alpha: strong ? 0.3 : 0.18),
+    color: Colors.white.withValues(alpha: strong ? 0.2 : 0.1),
     borderRadius: BorderRadius.circular(20),
   ),
   child: Text(
     text,
     style: const TextStyle(
       color: Colors.white,
-      fontWeight: FontWeight.w700,
+      fontWeight: FontWeight.w600,
       fontSize: 12.5,
     ),
   ),
 );
 
 class _CashButton extends StatelessWidget {
+  final IconData icon;
   final String label;
   final VoidCallback onTap;
-  const _CashButton({required this.label, required this.onTap});
+  const _CashButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
   @override
   Widget build(BuildContext context) => Pressable(
     onTap: () {
@@ -340,21 +376,29 @@ class _CashButton extends StatelessWidget {
       onTap();
     },
     child: Container(
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+      padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 8),
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.2),
+        color: Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
       ),
       child: FittedBox(
         fit: BoxFit.scaleDown,
-        child: Text(
-          label,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-            fontSize: 13,
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 16, color: Colors.white),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+            ),
+          ],
         ),
       ),
     ),
@@ -420,14 +464,6 @@ class PillarCard extends StatelessWidget {
       label:
           '$title ${Money.format(amount)}${delta != null ? ', $delta' : ''}. Tap for details.',
       child: Card(
-        color: Color.alphaBlend(
-          color.withValues(alpha: 0.09),
-          context.cash.surfaceRaised,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(Sp.rCard),
-          side: BorderSide(color: color.withValues(alpha: 0.28)),
-        ),
         child: InkWell(
           borderRadius: BorderRadius.circular(Sp.rCard),
           onTap: () {
@@ -442,16 +478,21 @@ class PillarCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    CircleAvatar(
-                      radius: 14,
-                      backgroundColor: color.withValues(alpha: 0.14),
-                      child: Icon(icon, size: 16, color: color),
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: color,
+                        shape: BoxShape.circle,
+                      ),
                     ),
                     const SizedBox(width: Sp.x2),
                     Expanded(
                       child: Text(
                         title,
-                        style: context.text.labelLarge,
+                        style: context.text.labelLarge?.copyWith(
+                          color: c.textMuted,
+                        ),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -463,12 +504,14 @@ class PillarCard extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: MoneyText(
                     amount,
-                    color: color,
                     style: context.text.titleLarge?.copyWith(
                       fontWeight: FontWeight.w800,
+                      fontSize: 22,
+                      letterSpacing: -0.6,
                     ),
                   ),
                 ),
+                const SizedBox(height: 2),
                 if (delta != null)
                   Row(
                     children: [
@@ -485,6 +528,7 @@ class PillarCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: context.text.labelSmall?.copyWith(
                             color: good ? c.income : c.spending,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),

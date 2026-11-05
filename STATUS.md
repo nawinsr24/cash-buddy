@@ -1,6 +1,6 @@
 # Cash++: status (2026-11-04)
 
-Verified by automated tests (`flutter test`: 181 pass, `flutter analyze`: clean)
+Verified by automated tests (`flutter test`: 195 pass, `flutter analyze`: clean)
 
 | Area | Evidence |
 |---|---|
@@ -15,6 +15,7 @@ Verified by automated tests (`flutter test`: 181 pass, `flutter analyze`: clean)
 | Investments | mutual fund / stock / chit entries post one ledger leg each (never spending or income); global + per-entry balance rules; lending rule; XIRR + projection; two-device sync convergence |
 | Monthly title / grade | 15 titles by fixed rules in priority order; Money Grade parts add to 100; title stored once per finished month; banner first 7 days; health note always kind and pauses roasts when health is 30%+ of spend; insights (forecast, net worth, recurring bills) |
 | Budget | strictly-under / exactly-equal / over against one overall budget; category splits are a guide; spend excludes investments and lent principal; finished months frozen; Online Mode now says clearly when Google sign-in is not configured |
+| Plus Score | six parts (budget included; left out and rescaled when no budget is set), named levels, trend vs last month and 12-month history; live title decided daily; month-end celebration with last-month comparison; budget, splits and frozen results sync through Drive |
 | Performance | dashboard over 100k rows: ~33 ms |
 
 NOT verified / NOT built (be honest before shipping)

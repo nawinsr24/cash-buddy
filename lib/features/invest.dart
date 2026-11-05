@@ -39,18 +39,12 @@ class InvestHero extends StatelessWidget {
         padding: const EdgeInsets.all(Sp.x5),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(Sp.rCard + 4),
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF7C3AED), Color(0xFF2F6BFF)],
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF7C3AED).withValues(alpha: 0.28),
-              blurRadius: 24,
-              offset: const Offset(0, 10),
-            ),
-          ],
+          color: Theme.of(context).brightness == Brightness.dark
+              ? const Color(0xFF191B22)
+              : const Color(0xFF0F1115),
+          border: Theme.of(context).brightness == Brightness.dark
+              ? Border.all(color: const Color(0xFF2A2D36))
+              : null,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

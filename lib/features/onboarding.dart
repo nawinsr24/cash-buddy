@@ -5,7 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../domain/money.dart';
 import '../providers.dart';
+import '../data/repo.dart' show TxnFilter;
 import '../ui/art.dart';
+import '../ui/loaders.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
 
@@ -26,6 +28,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   final _bank = TextEditingController();
   bool _saving = false;
   bool _signingIn = false;
+  bool _restoring = false;
+  String? _welcome;
   String? _signedInAs; // Google account chosen during setup (Online Mode)
   static const _steps = 3;
 
@@ -97,14 +101,27 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       );
       if (restore == true) {
         if (!mounted) return;
-        setState(() => _saving = true);
+        setState(() => _restoring = true);
         final res = await sync.restoreFromDrive();
         if (!mounted) return;
         if (res.ok) {
+          final repo = ref.read(repoProvider);
+          final accounts = (await repo.accounts()).length;
+          final txns = (await repo.searchTransactions(
+            const TxnFilter(),
+            limit: 100000,
+          )).length;
+          if (!mounted) return;
+          setState(
+            () => _welcome =
+                '$accounts account${accounts == 1 ? '' : 's'} and $txns transaction${txns == 1 ? '' : 's'} are back.',
+          );
+          await Future<void>.delayed(const Duration(milliseconds: 1700));
+          if (!mounted) return;
           ref.invalidate(settingsProvider); // opens the app, already set up
           return;
         }
-        setState(() => _saving = false);
+        setState(() => _restoring = false);
         toast(context, 'Could not restore: ${res.error}');
         return;
       }
@@ -153,6 +170,12 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (_restoring) {
+      return RestoreScreen(
+        progress: ref.read(syncServiceProvider).progress,
+        welcome: _welcome,
+      );
+    }
     return Scaffold(
       body: SafeArea(
         child: Column(

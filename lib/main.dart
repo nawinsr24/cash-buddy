@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app.dart';
+import 'data/budget_repo.dart';
 import 'data/db.dart';
 import 'data/repo.dart';
 import 'domain/hlc.dart';
@@ -32,6 +33,7 @@ Future<void> main() async {
     final v = h.read<String?>('h');
     if (v != null) repo.clock.observe(v);
   }
+  await repo.migrateBudgetSettings();
   await Notifications.instance.init();
   runApp(
     ProviderScope(

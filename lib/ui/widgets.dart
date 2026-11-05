@@ -61,6 +61,22 @@ class TrailingMoney extends StatelessWidget {
   );
 }
 
+/// Small-caps label above a block, in the muted ink colour.
+class Eyebrow extends StatelessWidget {
+  final String text;
+  const Eyebrow(this.text, {super.key});
+  @override
+  Widget build(BuildContext context) => Text(
+    text.toUpperCase(),
+    style: context.text.labelSmall?.copyWith(
+      color: context.cash.textMuted,
+      letterSpacing: 1.1,
+      fontWeight: FontWeight.w700,
+      fontSize: 11,
+    ),
+  );
+}
+
 class SectionTitle extends StatelessWidget {
   final String text;
   final Widget? trailing;
@@ -70,14 +86,7 @@ class SectionTitle extends StatelessWidget {
     padding: const EdgeInsets.fromLTRB(Sp.x1, Sp.x6, Sp.x1, Sp.x3),
     child: Row(
       children: [
-        Expanded(
-          child: Text(
-            text,
-            style: context.text.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
+        Expanded(child: Eyebrow(text)),
         ?trailing,
       ],
     ),

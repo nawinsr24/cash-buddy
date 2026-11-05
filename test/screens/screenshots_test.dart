@@ -11,7 +11,11 @@ import 'package:cash_buddy/data/invest_repo.dart';
 import 'package:cash_buddy/domain/dates.dart';
 import 'package:cash_buddy/domain/sms_parser.dart';
 import 'package:cash_buddy/providers.dart';
+import 'package:cash_buddy/sync/sync_engine.dart';
+import 'package:cash_buddy/sync/sync_service.dart';
 import 'package:cash_buddy/ui/art.dart';
+import 'package:cash_buddy/ui/loaders.dart';
+import 'package:cash_buddy/ui/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart' show FontLoader;
@@ -54,6 +58,7 @@ Future<void> shot(WidgetTester tester, String name) async {
 
 void main() {
   artGallery();
+  loaderShot();
   for (final dark in [false, true]) {
     testWidgets('screens ${dark ? 'dark' : 'light'}', (tester) async {
       await tester.runAsync(loadFonts);
@@ -238,6 +243,23 @@ void main() {
         await r.setBudgetSplit('cat_entertainment', 200000);
         await r.setBudgetSplit('cat_transport', 50000);
         await r.setBudgetSplit('cat_health', 100000);
+        // the month before last, so the title comparison has something to compare
+        await r.addTransaction(
+          type: 'credit',
+          amountMinor: 6500000,
+          categoryId: 'cat_salary',
+          date: Dates.day(2026, 9, 1),
+          merchant: 'DENOVO SYSTEMS',
+        );
+        for (var i = 0; i < 12; i++) {
+          await r.addTransaction(
+            type: 'debit',
+            amountMinor: 310000,
+            categoryId: 'cat_food_dining',
+            date: Dates.day(2026, 9, 2 + i * 2),
+            merchant: 'Swiggy',
+          );
+        }
         // last month, so the monthly title and its banner have something to say
         await t(
           'credit',
@@ -282,6 +304,18 @@ void main() {
       );
       await settle(tester);
       final p = dark ? 'dark' : 'light';
+      // new month: the title celebration opens by itself, once
+      for (var i = 0; i < 3; i++) {
+        await settle(tester);
+      }
+      expect(find.textContaining('YOU EARNED THIS TITLE'), findsOneWidget);
+      await shot(tester, '$p-0-celebration');
+      await settle(tester);
+      await settle(tester);
+      await tester.drag(find.byType(Scrollable).last, const Offset(0, -420));
+      await shot(tester, '$p-0b-celebration-compare');
+      await tester.tap(find.byTooltip('Close'));
+      await settle(tester);
       await shot(tester, '$p-1-dashboard');
       await tester.drag(find.byType(Scrollable).first, const Offset(0, -500));
       await shot(tester, '$p-2-dashboard-scrolled');
@@ -290,16 +324,15 @@ void main() {
       await tester.drag(find.byType(Scrollable).first, const Offset(0, 1200));
       await tester.pump(const Duration(seconds: 2));
       await settle(tester);
-      await tapText(tester, 'October title is ready');
-      await shot(tester, '$p-2c-title-reveal');
-      await tester.tap(find.byTooltip('Close'));
-      await settle(tester);
-      await tapText(tester, 'Money Grade');
+      await tapText(tester, 'PLUS SCORE');
       await shot(tester, '$p-2d-grade');
       await tester.tap(find.byTooltip('Back'));
       await settle(tester);
-      await tapText(tester, 'Budget · Under budget');
+      await tapText(tester, 'BUDGET');
       await shot(tester, '$p-2e-budget');
+      await tester.tap(find.text('Year'));
+      await settle(tester);
+      await shot(tester, '$p-2e2-budget-year');
       await tester.drag(find.byType(Scrollable).first, const Offset(0, -500));
       await shot(tester, '$p-2f-budget-splits');
       await tester.tap(find.byTooltip('Back'));
@@ -380,5 +413,34 @@ void artGallery() {
       () => Future<void>.delayed(const Duration(milliseconds: 300)),
     );
     await shot(tester, 'art-gallery');
+  });
+}
+
+/// Renders the restore loader mid-way, so its look can be checked.
+void loaderShot() {
+  testWidgets('restore loader', (tester) async {
+    tester.view.physicalSize = const Size(390 * 2, 844 * 2);
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.reset);
+    final progress = ValueNotifier(
+      const SyncProgress(
+        active: true,
+        stage: SyncStage.downloading,
+        done: 3,
+        total: 8,
+      ),
+    );
+    await tester.pumpWidget(
+      RepaintBoundary(
+        key: _key,
+        child: MaterialApp(
+          theme: AppTheme.build(Brightness.light),
+          home: RestoreScreen(progress: progress),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 500));
+    await shot(tester, 'loader-restore');
+    await tester.pumpWidget(const SizedBox());
   });
 }

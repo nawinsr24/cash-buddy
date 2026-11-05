@@ -253,6 +253,41 @@ final titleHistoryProvider = FutureProvider.autoDispose<List<MonthTitle>>((
   return r.titleHistory();
 });
 
+/// The Plus Score for this month so far, with last month's for the trend.
+final plusScoreProvider =
+    FutureProvider.autoDispose<
+      ({MonthStats stats, MoneyGrade grade, int? prevScore, String? prevMonth})
+    >((ref) {
+      final r = ref.watch(repoProvider);
+      ref.watch(slowChangesProvider);
+      return () async {
+        final now = r.today;
+        final s = await r.monthStats(now.year, now.month);
+        final pm = Dates.addMonths(Dates.day(now.year, now.month, 1), -1);
+        final p = await r.monthStats(pm.year, pm.month);
+        final has = p.txnCount > 0 || p.spending > 0 || p.income > 0;
+        return (
+          stats: s,
+          grade: computeGrade(s),
+          prevScore: has ? computeGrade(p).score : null,
+          prevMonth: has ? monthKey(pm.year, pm.month) : null,
+        );
+      }();
+    });
+
+final scoreHistoryProvider =
+    FutureProvider.autoDispose<List<({String month, int score})>>(
+      (ref) => ref.watch(repoProvider).scoreHistory(),
+    );
+
+final liveTitleProvider =
+    FutureProvider.autoDispose<({TitleId id, TitleId? previous, bool settled})>(
+      (ref) {
+        ref.watch(slowChangesProvider);
+        return ref.watch(repoProvider).liveTitle();
+      },
+    );
+
 final budgetStatusProvider = FutureProvider.autoDispose<BudgetStatus?>((ref) {
   final now = ref.watch(repoProvider).today;
   // cheap (a few queries), and the user is watching it change: no debounce
@@ -260,6 +295,21 @@ final budgetStatusProvider = FutureProvider.autoDispose<BudgetStatus?>((ref) {
     ref,
     () => ref.watch(repoProvider).budgetStatus(now.year, now.month),
   );
+});
+
+final budgetDailyProvider = FutureProvider.autoDispose<List<int>>((ref) {
+  final now = ref.watch(repoProvider).today;
+  return _tick(
+    ref,
+    () => ref.watch(repoProvider).budgetDaily(now.year, now.month),
+  );
+});
+
+final budgetYearProvider = FutureProvider.autoDispose<List<BudgetYearMonth>>((
+  ref,
+) {
+  final now = ref.watch(repoProvider).today;
+  return _tick(ref, () => ref.watch(repoProvider).budgetYear(now.year));
 });
 
 final budgetHistoryProvider = FutureProvider.autoDispose<List<BudgetMonth>>((

@@ -28,6 +28,9 @@ class MonthStats {
   /// payments that was.
   final int healthSpending, healthCount;
 
+  /// The month's budget, when one is set.
+  final int? budgetMinor;
+
   const MonthStats({
     this.income = 0,
     this.spending = 0,
@@ -45,9 +48,35 @@ class MonthStats {
     this.daysElapsed = 30,
     this.healthSpending = 0,
     this.healthCount = 0,
+    this.budgetMinor,
   });
 
   bool get complete => daysElapsed >= daysInMonth;
+
+  /// The month as it is likely to end: spending scaled to the full month.
+  /// Used for the live title so a half-finished month is not judged against
+  /// a whole one.
+  MonthStats projectedForTitle() => complete
+      ? this
+      : MonthStats(
+          income: income,
+          spending: projectedSpending,
+          invested: invested,
+          prevAvgSpending: prevAvgSpending,
+          prevMonthOverspent: prevMonthOverspent,
+          txnCount: txnCount,
+          activeDays: activeDays,
+          topCategory: topCategory,
+          topShareBps: topShareBps,
+          overdueCount: overdueCount,
+          liabilities: liabilities,
+          paidToLiabilities: paidToLiabilities,
+          daysInMonth: daysInMonth,
+          daysElapsed: daysInMonth,
+          healthSpending: healthSpending,
+          healthCount: healthCount,
+          budgetMinor: budgetMinor,
+        );
   int get saved => income - spending;
   double get saveRate => income <= 0 ? 0 : saved / income;
   double get investRate => income <= 0 ? 0 : invested / income;
@@ -194,19 +223,32 @@ TitleId pickTitle(MonthStats s) {
   return TitleId.balancedSpender;
 }
 
-// ───────────────────────── Money Grade ─────────────────────────
+/// The title you hold right now, mid-month. The first week is too noisy to
+/// judge, so it stays "Fresh Victim" until a week of entries exists.
+TitleId liveTitleFor(MonthStats s) {
+  if (!s.complete && s.daysElapsed < 7) return TitleId.freshVictim;
+  return pickTitle(s.projectedForTitle());
+}
+
+// ───────────────────────── Plus Score ─────────────────────────
+/// One of the parts the Plus Score is made of.
 class GradePart {
-  final String label;
+  final String label, hint;
   final double score, max;
-  const GradePart(this.label, this.score, this.max);
+  const GradePart(this.label, this.score, this.max, [this.hint = '']);
   double get fraction => max == 0 ? 0 : score / max;
 }
 
+/// The Plus Score: 0..100 for a month, with a named level.
+/// (The class keeps its old name; the app calls it "Plus Score".)
 class MoneyGrade {
   final int score; // 0..100
   final List<GradePart> parts;
   final bool building; // not enough data to be fair yet
   const MoneyGrade(this.score, this.parts, this.building);
+
+  /// Named level shown next to the number.
+  String get level => levelFor(score);
 
   String get letter {
     const steps = [
@@ -226,40 +268,98 @@ class MoneyGrade {
     }
     return 'F';
   }
+
+  /// The part with the most points still on the table.
+  GradePart? get biggestGap {
+    GradePart? worst;
+    for (final p in parts) {
+      if (worst == null || (p.max - p.score) > (worst.max - worst.score)) {
+        worst = p;
+      }
+    }
+    return worst;
+  }
+}
+
+String levelFor(int score) {
+  if (score >= 90) return 'Elite';
+  if (score >= 80) return 'Excellent';
+  if (score >= 70) return 'Strong';
+  if (score >= 60) return 'Solid';
+  if (score >= 50) return 'Fair';
+  if (score >= 40) return 'Needs work';
+  return 'Reset needed';
 }
 
 double _clamp01(double v) => v.isNaN ? 0 : math.max(0.0, math.min(1.0, v));
 
+/// How well spending followed the budget: 1.0 while at or under it, then
+/// falling in a straight line to 0 at 25% over. Early in a month the actual
+/// figure is used; later the month-end projection.
+double budgetAdherence(MonthStats s) {
+  final b = s.budgetMinor;
+  if (b == null || b <= 0) return 1;
+  final basis = s.daysElapsed < 7 ? s.spending : s.projectedSpending;
+  final ratio = basis / b;
+  return ratio <= 1 ? 1 : _clamp01(1 - (ratio - 1) / 0.25);
+}
+
 MoneyGrade computeGrade(MonthStats s) {
-  // Savings rate: 30% saved earns full marks.
-  final savings = s.income <= 0 ? 0.0 : _clamp01(s.saveRate / 0.30) * 30;
-  // Spending control: against the 3-month average (neutral without history).
-  double control;
+  // Saving power: 30% of income saved earns full marks.
+  final saving = s.income <= 0 ? 0.0 : _clamp01(s.saveRate / 0.30);
+  // Spending discipline: against the 3-month average (neutral without history).
+  double discipline;
   if (s.prevAvgSpending <= 0) {
-    control = 12;
+    discipline = 0.6;
   } else {
     final ratio = s.projectedSpending / s.prevAvgSpending;
-    control = 20 * _clamp01((1.5 - ratio) / 0.6); // <=0.9 full, >=1.5 zero
+    discipline = _clamp01((1.5 - ratio) / 0.6); // <=0.9 full, >=1.5 zero
   }
-  // Debt health: overdue items and a heavy liability load cost points.
-  var debt = 20.0 - math.min(10, s.overdueCount * 5.0);
+  // Debt freedom: overdue items and a heavy liability load cost points.
+  var debt = 1.0 - math.min(0.5, s.overdueCount * 0.25);
   if (s.income > 0 && s.liabilities > 0) {
-    debt -= 10 * _clamp01(s.liabilities / (s.income * 6.0));
+    debt -= 0.5 * _clamp01(s.liabilities / (s.income * 6.0));
   }
-  debt = math.max(0, debt);
-  // Investing: 15% of income earns full marks.
-  final investing = s.income <= 0 ? 0.0 : _clamp01(s.investRate / 0.15) * 20;
-  // Tracking: logging on 20 days earns full marks.
-  final tracking = _clamp01(s.activeDays / 20.0) * 10;
+  debt = _clamp01(debt);
+  // Wealth growth: 15% of income invested earns full marks.
+  final wealth = s.income <= 0 ? 0.0 : _clamp01(s.investRate / 0.15);
+  // Money awareness: logging on 20 days earns full marks.
+  final aware = _clamp01(s.activeDays / 20.0);
+
+  final hasBudget = s.budgetMinor != null && s.budgetMinor! > 0;
+  // weights: with a budget they add to 100; without, the rest are scaled up
+  const wSave = 25.0,
+      wBudget = 20.0,
+      wDisc = 15.0,
+      wDebt = 15.0,
+      wWealth = 15.0,
+      wAware = 10.0;
+  final total =
+      wSave + wDisc + wDebt + wWealth + wAware + (hasBudget ? wBudget : 0);
+  final k = 100 / total;
+  GradePart part(String label, double frac, double w, String hint) =>
+      GradePart(label, frac * w * k, w * k, hint);
   final parts = [
-    GradePart('Savings', savings, 30),
-    GradePart('Spending control', control, 20),
-    GradePart('Debt health', debt, 20),
-    GradePart('Investing', investing, 20),
-    GradePart('Tracking', tracking, 10),
+    part('Saving power', saving, wSave, 'Save more of what you earn'),
+    if (hasBudget)
+      part(
+        'Budget discipline',
+        budgetAdherence(s),
+        wBudget,
+        'Stay inside your monthly budget',
+      ),
+    part(
+      'Spending discipline',
+      discipline,
+      wDisc,
+      'Spend less than your usual',
+    ),
+    part('Debt freedom', debt, wDebt, 'Clear overdue payments and debts'),
+    part('Wealth growth', wealth, wWealth, 'Invest a little every month'),
+    part('Money awareness', aware, wAware, 'Log your spending on more days'),
   ];
-  final total = parts.fold<double>(0, (a, p) => a + p.score);
-  return MoneyGrade(total.round().clamp(0, 100), parts, s.thin);
+  final sum = parts.fold<double>(0, (a, p) => a + p.score);
+  return MoneyGrade(sum.round().clamp(0, 100), parts, s.thin);
 }
 
 // ───────────────────────── words ─────────────────────────
@@ -431,4 +531,109 @@ String? healthNote(MonthStats s, {String seed = ''}) {
   ];
   final list = s.healthHeavy ? heavy : light;
   return list[pick % list.length];
+}
+
+// ───────────────────────── month-over-month ─────────────────────────
+/// One line of the "this month vs last month" card.
+class CompareRow {
+  final String label, current, previous;
+
+  /// true = this month is better, false = worse, null = about the same.
+  final bool? better;
+
+  /// Which way the number actually moved: 1 up, -1 down, 0 about the same.
+  final int trend;
+  const CompareRow(
+    this.label,
+    this.current,
+    this.previous,
+    this.better, [
+    this.trend = 0,
+  ]);
+}
+
+int _signCompare(num a, num b, {num tolerance = 0}) =>
+    (a - b).abs() <= tolerance ? 0 : (a > b ? 1 : -1);
+
+/// Compares a finished month with the one before it. Higher is better for
+/// saving, investing and the score; lower is better for spending.
+List<CompareRow> compareMonths(
+  MonthStats cur,
+  MonthStats prev, {
+  required int curScore,
+  required int prevScore,
+}) {
+  String pct(double v) => '${(v * 100).round()}%';
+  // [t] is how the number moved; [lowerIsBetter] decides whether that is good.
+  CompareRow row(
+    String label,
+    String c,
+    String p,
+    int t, {
+    bool lowerIsBetter = false,
+  }) => CompareRow(
+    label,
+    c,
+    p,
+    t == 0 ? null : (lowerIsBetter ? t < 0 : t > 0),
+    t,
+  );
+  final rows = <CompareRow>[];
+  if (cur.income > 0 || prev.income > 0) {
+    rows.add(
+      row(
+        'Saved',
+        cur.income > 0 ? pct(cur.saveRate) : '—',
+        prev.income > 0 ? pct(prev.saveRate) : '—',
+        _signCompare(cur.saveRate, prev.saveRate, tolerance: 0.01),
+      ),
+    );
+  }
+  rows.add(
+    row(
+      'Spent',
+      Money.format(cur.spending),
+      Money.format(prev.spending),
+      _signCompare(
+        cur.spending,
+        prev.spending,
+        tolerance: prev.spending * 0.02,
+      ),
+      lowerIsBetter: true,
+    ),
+  );
+  if (cur.invested > 0 || prev.invested > 0) {
+    rows.add(
+      row(
+        'Invested',
+        Money.format(cur.invested),
+        Money.format(prev.invested),
+        _signCompare(cur.invested, prev.invested),
+      ),
+    );
+  }
+  rows.add(
+    row(
+      'Plus Score',
+      '$curScore',
+      '$prevScore',
+      _signCompare(curScore, prevScore, tolerance: 1),
+    ),
+  );
+  final cb = cur.budgetMinor, pb = prev.budgetMinor;
+  if (cb != null && pb != null) {
+    String word(MonthStats m, int b) =>
+        m.spending < b ? 'Under' : (m.spending == b ? 'Exactly on' : 'Over');
+    int rank(MonthStats m, int b) =>
+        m.spending < b ? 2 : (m.spending == b ? 1 : 0);
+    rows.add(
+      row(
+        'Budget',
+        word(cur, cb),
+        word(prev, pb),
+        _signCompare(rank(cur, cb), rank(prev, pb)),
+      ),
+    );
+  }
+  return rows;
 }

@@ -3,6 +3,7 @@ import 'package:drift/drift.dart';
 import '../domain/dates.dart';
 import '../domain/grade.dart';
 import 'db.dart';
+import 'budget_repo.dart';
 import 'invest_repo.dart';
 import 'repo.dart';
 
@@ -216,6 +217,7 @@ extension InsightsRepo on Repo {
       daysElapsed: elapsed.clamp(0, r.days),
       healthSpending: health.read<int>('s'),
       healthCount: health.read<int>('n'),
+      budgetMinor: await budgetFor(y, m),
     );
   }
 
@@ -362,5 +364,95 @@ extension InsightsRepo on Repo {
     }
     out.sort((a, b) => a.next.compareTo(b.next));
     return out.take(4).toList();
+  }
+
+  // ───────────────────────── live title ─────────────────────────
+  /// The title you hold today (provisional until the month ends). Decided
+  /// once per day, so it moves daily rather than flickering with every entry.
+  /// [previous] is the title you held before it last changed.
+  Future<({TitleId id, TitleId? previous, bool settled})> liveTitle() async {
+    final now = today;
+    final todayKey = Dates.str(now);
+    TitleId? parse(String? v) =>
+        TitleId.values.where((t) => t.name == v).firstOrNull;
+    final raw = (await getSetting('liveTitle'))?.split('|');
+    if (raw != null && raw.length == 3 && raw[0] == todayKey) {
+      final id = parse(raw[1]);
+      if (id != null) {
+        return (id: id, previous: parse(raw[2]), settled: false);
+      }
+    }
+    final s = await monthStats(now.year, now.month);
+    final fresh = liveTitleFor(s);
+    final old = raw != null && raw.length == 3 ? parse(raw[1]) : null;
+    final oldPrev = raw != null && raw.length == 3 ? parse(raw[2]) : null;
+    // remember what it was before it changed
+    final previous = old == null ? null : (old != fresh ? old : oldPrev);
+    await setSetting(
+      'liveTitle',
+      '$todayKey|${fresh.name}|${previous?.name ?? ''}',
+    );
+    return (id: fresh, previous: previous, settled: false);
+  }
+
+  // ───────────────────────── month-end celebration ─────────────────────────
+  /// Last month's title, once, the first time the app opens in a new month.
+  Future<MonthTitle?> celebrationDue() async {
+    final now = today;
+    final prev = Dates.addMonths(Dates.day(now.year, now.month, 1), -1);
+    final key = monthKey(prev.year, prev.month);
+    if (await getSetting('titleCelebrated') == key) return null;
+    await ensureMonthTitles();
+    final v = await getSetting('title_$key');
+    final id = TitleId.values.where((t) => t.name == v).firstOrNull;
+    return id == null ? null : MonthTitle(key, id);
+  }
+
+  Future<void> markCelebrated(String month) async {
+    await setSetting('titleCelebrated', month);
+    await setSetting('titleBannerDismissed', month);
+  }
+
+  /// This finished month against the one before it; null for a first month.
+  Future<
+    ({
+      List<CompareRow> rows,
+      TitleId? previousTitle,
+      int score,
+      int previousScore,
+    })?
+  >
+  comparisonFor(MonthTitle t) async {
+    final cur = await monthStats(t.year, t.monthNo);
+    final pm = Dates.addMonths(Dates.day(t.year, t.monthNo, 1), -1);
+    final prev = await monthStats(pm.year, pm.month);
+    if (prev.txnCount == 0 && prev.spending == 0 && prev.income == 0) {
+      return null;
+    }
+    final cs = computeGrade(cur).score;
+    final ps = computeGrade(prev).score;
+    final v = await getSetting('title_${monthKey(pm.year, pm.month)}');
+    return (
+      rows: compareMonths(cur, prev, curScore: cs, prevScore: ps),
+      previousTitle: TitleId.values.where((x) => x.name == v).firstOrNull,
+      score: cs,
+      previousScore: ps,
+    );
+  }
+
+  /// Plus Score of each recent month that has entries, oldest first
+  /// (the current month last, as it stands so far).
+  Future<List<({String month, int score})>> scoreHistory({
+    int months = 12,
+  }) async {
+    final now = today;
+    final out = <({String month, int score})>[];
+    for (var k = months - 1; k >= 0; k--) {
+      final d = Dates.addMonths(Dates.day(now.year, now.month, 1), -k);
+      final s = await monthStats(d.year, d.month);
+      if (s.txnCount == 0 && s.spending == 0 && s.income == 0) continue;
+      out.add((month: monthKey(d.year, d.month), score: computeGrade(s).score));
+    }
+    return out;
   }
 }

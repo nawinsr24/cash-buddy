@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'helpers.dart';
 
 void main() {
+  liveAndCelebration();
   // newEnv clock: 4 Nov 2026
   test('monthStats counts income, spending, invested, categories', () async {
     final e = await newEnv(opening: 10000000);
@@ -212,5 +213,140 @@ void main() {
     expect(s.healthSpending, 245000);
     expect(s.healthCount, 3);
     expect(s.spending, 1244000);
+  });
+}
+
+void liveAndCelebration() {
+  test(
+    'live title is "fresh" in the first week, then follows the month',
+    () async {
+      final e = await newEnv(opening: 10000000, now: DateTime(2026, 11, 3, 10));
+      await e.repo.addTransaction(
+        type: 'credit',
+        amountMinor: 5000000,
+        categoryId: 'cat_salary',
+        date: Dates.day(2026, 11, 1),
+      );
+      for (var i = 0; i < 12; i++) {
+        await e.repo.addTransaction(
+          type: 'debit',
+          amountMinor: 20000,
+          date: Dates.day(2026, 11, 1 + (i % 3)),
+        );
+      }
+      final early = await e.repo.liveTitle();
+      expect(early.id, TitleId.freshVictim);
+      e.clockNow = DateTime(2026, 11, 12, 10);
+      final later = await e.repo.liveTitle();
+      expect(later.id, isNot(TitleId.freshVictim));
+      expect(later.previous, TitleId.freshVictim); // shows the movement
+    },
+  );
+
+  test('live title is decided once per day', () async {
+    final e = await newEnv(opening: 10000000, now: DateTime(2026, 11, 15, 10));
+    await e.repo.addTransaction(
+      type: 'credit',
+      amountMinor: 5000000,
+      categoryId: 'cat_salary',
+      date: Dates.day(2026, 11, 1),
+    );
+    for (var i = 0; i < 12; i++) {
+      await e.repo.addTransaction(
+        type: 'debit',
+        amountMinor: 10000,
+        date: Dates.day(2026, 11, 1 + i),
+      );
+    }
+    final a = await e.repo.liveTitle();
+    // a huge overspend later the same day does not flip it until tomorrow
+    await e.repo.addTransaction(
+      type: 'debit',
+      amountMinor: 9000000,
+      date: Dates.day(2026, 11, 15),
+    );
+    final b = await e.repo.liveTitle();
+    expect(b.id, a.id);
+    e.clockNow = DateTime(2026, 11, 16, 10);
+    final c = await e.repo.liveTitle();
+    expect(c.id, TitleId.overdraftArtist);
+    expect(c.previous, a.id);
+  });
+
+  test(
+    'celebration shows once per month, and only when last month has a title',
+    () async {
+      final e = await newEnv(opening: 10000000);
+      expect(await e.repo.celebrationDue(), isNull); // nothing last month
+      for (var i = 0; i < 12; i++) {
+        await e.repo.addTransaction(
+          type: 'debit',
+          amountMinor: 1000,
+          date: Dates.day(2026, 10, 1 + i),
+        );
+      }
+      final due = await e.repo.celebrationDue();
+      expect(due, isNotNull);
+      expect(due!.month, '2026-10');
+      await e.repo.markCelebrated(due.month);
+      expect(await e.repo.celebrationDue(), isNull);
+      expect(await e.repo.bannerTitle(), isNull); // banner is dismissed with it
+    },
+  );
+
+  test('comparison with the month before; none for a first month', () async {
+    final e = await newEnv(opening: 10000000);
+    final r = e.repo;
+    // September: spent a lot
+    await r.addTransaction(
+      type: 'credit',
+      amountMinor: 5000000,
+      categoryId: 'cat_salary',
+      date: Dates.day(2026, 9, 1),
+    );
+    for (var i = 0; i < 12; i++) {
+      await r.addTransaction(
+        type: 'debit',
+        amountMinor: 300000,
+        date: Dates.day(2026, 9, 2 + i),
+      );
+    }
+    // October: spent less, invested
+    await r.addTransaction(
+      type: 'credit',
+      amountMinor: 5000000,
+      categoryId: 'cat_salary',
+      date: Dates.day(2026, 10, 1),
+    );
+    for (var i = 0; i < 12; i++) {
+      await r.addTransaction(
+        type: 'debit',
+        amountMinor: 100000,
+        date: Dates.day(2026, 10, 2 + i),
+      );
+    }
+    final inv = await r.createInvestment(kind: 'mutual_fund', name: 'F');
+    await r.addInvestmentEntry(
+      inv,
+      type: 'contribute',
+      amountMinor: 800000,
+      date: Dates.day(2026, 10, 5),
+    );
+    await r.ensureMonthTitles();
+    final oct = (await r.titleHistory()).firstWhere(
+      (t) => t.month == '2026-10',
+    );
+    final c = (await r.comparisonFor(oct))!;
+    expect(c.score, greaterThan(c.previousScore));
+    final spent = c.rows.firstWhere((x) => x.label == 'Spent');
+    expect(spent.better, isTrue); // lower spending is better
+    expect(spent.trend, -1); // and the number really went down
+    final saved = c.rows.firstWhere((x) => x.label == 'Saved');
+    expect(saved.better, isTrue);
+    expect(c.rows.any((x) => x.label == 'Invested'), isTrue);
+    final sep = (await r.titleHistory()).firstWhere(
+      (t) => t.month == '2026-09',
+    );
+    expect(await r.comparisonFor(sep), isNull); // no August data
   });
 }

@@ -86,6 +86,107 @@ void main() {
     expect(const MoneyGrade(41, [], false).letter, 'D');
   });
 
+  test(
+    'budget discipline: full while within budget, falls to zero at 25% over',
+    () {
+      MonthStats withBudget(int spent, int budget) => MonthStats(
+        income: 5000000,
+        spending: spent,
+        txnCount: 30,
+        activeDays: 15,
+        budgetMinor: budget,
+      );
+      expect(budgetAdherence(withBudget(900000, 1000000)), 1);
+      expect(budgetAdherence(withBudget(1000000, 1000000)), 1); // exactly on
+      expect(budgetAdherence(withBudget(1125000, 1000000)), closeTo(0.5, 1e-9));
+      expect(budgetAdherence(withBudget(1250000, 1000000)), 0);
+      expect(budgetAdherence(withBudget(9000000, 1000000)), 0);
+      expect(
+        budgetAdherence(const MonthStats(spending: 5)),
+        1,
+      ); // no budget: neutral
+    },
+  );
+
+  test(
+    'with a budget the grade has six parts, without it five; both add to 100',
+    () {
+      final withB = computeGrade(
+        const MonthStats(
+          income: 5000000,
+          spending: 2000000,
+          txnCount: 20,
+          activeDays: 10,
+          budgetMinor: 3000000,
+        ),
+      );
+      final without = computeGrade(
+        const MonthStats(
+          income: 5000000,
+          spending: 2000000,
+          txnCount: 20,
+          activeDays: 10,
+        ),
+      );
+      expect(withB.parts.length, 6);
+      expect(without.parts.length, 5);
+      expect(withB.parts.any((p) => p.label == 'Budget discipline'), isTrue);
+      expect(without.parts.any((p) => p.label == 'Budget discipline'), isFalse);
+      expect(
+        withB.parts.fold<double>(0, (a, p) => a + p.max),
+        closeTo(100, 1e-9),
+      );
+      expect(
+        without.parts.fold<double>(0, (a, p) => a + p.max),
+        closeTo(100, 1e-9),
+      );
+    },
+  );
+
+  test('blowing the budget costs score; staying inside does not', () {
+    MonthStats m(int spent) => MonthStats(
+      income: 5000000,
+      spending: spent,
+      txnCount: 30,
+      activeDays: 15,
+      budgetMinor: 2000000,
+    );
+    final ok = computeGrade(m(1900000));
+    final blown = computeGrade(m(2600000));
+    expect(
+      ok.parts.firstWhere((p) => p.label == 'Budget discipline').score,
+      20,
+    );
+    expect(
+      blown.parts.firstWhere((p) => p.label == 'Budget discipline').score,
+      0,
+    );
+    expect(ok.score, greaterThan(blown.score));
+  });
+
+  test('level names follow the score', () {
+    expect(levelFor(95), 'Elite');
+    expect(levelFor(85), 'Excellent');
+    expect(levelFor(72), 'Strong');
+    expect(levelFor(61), 'Solid');
+    expect(levelFor(52), 'Fair');
+    expect(levelFor(42), 'Needs work');
+    expect(levelFor(10), 'Reset needed');
+  });
+
+  test('biggest gap points at the weakest part', () {
+    final g = computeGrade(
+      const MonthStats(
+        income: 5000000,
+        spending: 1000000,
+        txnCount: 30,
+        activeDays: 20,
+      ),
+    );
+    expect(g.biggestGap, isNotNull);
+    expect(g.biggestGap!.label, 'Wealth growth'); // nothing invested
+  });
+
   test('thin data is flagged as building', () {
     expect(computeGrade(base(txn: 4)).building, isTrue);
     expect(computeGrade(base()).building, isFalse);

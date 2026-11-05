@@ -5638,6 +5638,459 @@ class InvestmentEntriesCompanion extends UpdateCompanion<InvestmentEntry> {
   }
 }
 
+class $BudgetItemsTable extends BudgetItems
+    with TableInfo<$BudgetItemsTable, BudgetItem> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $BudgetItemsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _keyMeta = const VerificationMeta('key');
+  @override
+  late final GeneratedColumn<String> key = GeneratedColumn<String>(
+    'key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _amountMinorMeta = const VerificationMeta(
+    'amountMinor',
+  );
+  @override
+  late final GeneratedColumn<int> amountMinor = GeneratedColumn<int>(
+    'amount_minor',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _spentMinorMeta = const VerificationMeta(
+    'spentMinor',
+  );
+  @override
+  late final GeneratedColumn<int> spentMinor = GeneratedColumn<int>(
+    'spent_minor',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _hlcMeta = const VerificationMeta('hlc');
+  @override
+  late final GeneratedColumn<String> hlc = GeneratedColumn<String>(
+    'hlc',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<String> deletedAt = GeneratedColumn<String>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    kind,
+    key,
+    amountMinor,
+    spentMinor,
+    hlc,
+    deletedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'budget_items';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<BudgetItem> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    if (data.containsKey('key')) {
+      context.handle(
+        _keyMeta,
+        key.isAcceptableOrUnknown(data['key']!, _keyMeta),
+      );
+    }
+    if (data.containsKey('amount_minor')) {
+      context.handle(
+        _amountMinorMeta,
+        amountMinor.isAcceptableOrUnknown(
+          data['amount_minor']!,
+          _amountMinorMeta,
+        ),
+      );
+    }
+    if (data.containsKey('spent_minor')) {
+      context.handle(
+        _spentMinorMeta,
+        spentMinor.isAcceptableOrUnknown(data['spent_minor']!, _spentMinorMeta),
+      );
+    }
+    if (data.containsKey('hlc')) {
+      context.handle(
+        _hlcMeta,
+        hlc.isAcceptableOrUnknown(data['hlc']!, _hlcMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_hlcMeta);
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  BudgetItem map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return BudgetItem(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      key: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}key'],
+      )!,
+      amountMinor: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}amount_minor'],
+      )!,
+      spentMinor: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}spent_minor'],
+      )!,
+      hlc: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}hlc'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}deleted_at'],
+      ),
+    );
+  }
+
+  @override
+  $BudgetItemsTable createAlias(String alias) {
+    return $BudgetItemsTable(attachedDatabase, alias);
+  }
+}
+
+class BudgetItem extends DataClass implements Insertable<BudgetItem> {
+  final String id;
+  final String kind;
+  final String key;
+  final int amountMinor;
+  final int spentMinor;
+  final String hlc;
+  final String? deletedAt;
+  const BudgetItem({
+    required this.id,
+    required this.kind,
+    required this.key,
+    required this.amountMinor,
+    required this.spentMinor,
+    required this.hlc,
+    this.deletedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['kind'] = Variable<String>(kind);
+    map['key'] = Variable<String>(key);
+    map['amount_minor'] = Variable<int>(amountMinor);
+    map['spent_minor'] = Variable<int>(spentMinor);
+    map['hlc'] = Variable<String>(hlc);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<String>(deletedAt);
+    }
+    return map;
+  }
+
+  BudgetItemsCompanion toCompanion(bool nullToAbsent) {
+    return BudgetItemsCompanion(
+      id: Value(id),
+      kind: Value(kind),
+      key: Value(key),
+      amountMinor: Value(amountMinor),
+      spentMinor: Value(spentMinor),
+      hlc: Value(hlc),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+    );
+  }
+
+  factory BudgetItem.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return BudgetItem(
+      id: serializer.fromJson<String>(json['id']),
+      kind: serializer.fromJson<String>(json['kind']),
+      key: serializer.fromJson<String>(json['key']),
+      amountMinor: serializer.fromJson<int>(json['amountMinor']),
+      spentMinor: serializer.fromJson<int>(json['spentMinor']),
+      hlc: serializer.fromJson<String>(json['hlc']),
+      deletedAt: serializer.fromJson<String?>(json['deletedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'kind': serializer.toJson<String>(kind),
+      'key': serializer.toJson<String>(key),
+      'amountMinor': serializer.toJson<int>(amountMinor),
+      'spentMinor': serializer.toJson<int>(spentMinor),
+      'hlc': serializer.toJson<String>(hlc),
+      'deletedAt': serializer.toJson<String?>(deletedAt),
+    };
+  }
+
+  BudgetItem copyWith({
+    String? id,
+    String? kind,
+    String? key,
+    int? amountMinor,
+    int? spentMinor,
+    String? hlc,
+    Value<String?> deletedAt = const Value.absent(),
+  }) => BudgetItem(
+    id: id ?? this.id,
+    kind: kind ?? this.kind,
+    key: key ?? this.key,
+    amountMinor: amountMinor ?? this.amountMinor,
+    spentMinor: spentMinor ?? this.spentMinor,
+    hlc: hlc ?? this.hlc,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+  );
+  BudgetItem copyWithCompanion(BudgetItemsCompanion data) {
+    return BudgetItem(
+      id: data.id.present ? data.id.value : this.id,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      key: data.key.present ? data.key.value : this.key,
+      amountMinor: data.amountMinor.present
+          ? data.amountMinor.value
+          : this.amountMinor,
+      spentMinor: data.spentMinor.present
+          ? data.spentMinor.value
+          : this.spentMinor,
+      hlc: data.hlc.present ? data.hlc.value : this.hlc,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BudgetItem(')
+          ..write('id: $id, ')
+          ..write('kind: $kind, ')
+          ..write('key: $key, ')
+          ..write('amountMinor: $amountMinor, ')
+          ..write('spentMinor: $spentMinor, ')
+          ..write('hlc: $hlc, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, kind, key, amountMinor, spentMinor, hlc, deletedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is BudgetItem &&
+          other.id == this.id &&
+          other.kind == this.kind &&
+          other.key == this.key &&
+          other.amountMinor == this.amountMinor &&
+          other.spentMinor == this.spentMinor &&
+          other.hlc == this.hlc &&
+          other.deletedAt == this.deletedAt);
+}
+
+class BudgetItemsCompanion extends UpdateCompanion<BudgetItem> {
+  final Value<String> id;
+  final Value<String> kind;
+  final Value<String> key;
+  final Value<int> amountMinor;
+  final Value<int> spentMinor;
+  final Value<String> hlc;
+  final Value<String?> deletedAt;
+  final Value<int> rowid;
+  const BudgetItemsCompanion({
+    this.id = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.key = const Value.absent(),
+    this.amountMinor = const Value.absent(),
+    this.spentMinor = const Value.absent(),
+    this.hlc = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  BudgetItemsCompanion.insert({
+    required String id,
+    required String kind,
+    this.key = const Value.absent(),
+    this.amountMinor = const Value.absent(),
+    this.spentMinor = const Value.absent(),
+    required String hlc,
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       kind = Value(kind),
+       hlc = Value(hlc);
+  static Insertable<BudgetItem> custom({
+    Expression<String>? id,
+    Expression<String>? kind,
+    Expression<String>? key,
+    Expression<int>? amountMinor,
+    Expression<int>? spentMinor,
+    Expression<String>? hlc,
+    Expression<String>? deletedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (kind != null) 'kind': kind,
+      if (key != null) 'key': key,
+      if (amountMinor != null) 'amount_minor': amountMinor,
+      if (spentMinor != null) 'spent_minor': spentMinor,
+      if (hlc != null) 'hlc': hlc,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  BudgetItemsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? kind,
+    Value<String>? key,
+    Value<int>? amountMinor,
+    Value<int>? spentMinor,
+    Value<String>? hlc,
+    Value<String?>? deletedAt,
+    Value<int>? rowid,
+  }) {
+    return BudgetItemsCompanion(
+      id: id ?? this.id,
+      kind: kind ?? this.kind,
+      key: key ?? this.key,
+      amountMinor: amountMinor ?? this.amountMinor,
+      spentMinor: spentMinor ?? this.spentMinor,
+      hlc: hlc ?? this.hlc,
+      deletedAt: deletedAt ?? this.deletedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (key.present) {
+      map['key'] = Variable<String>(key.value);
+    }
+    if (amountMinor.present) {
+      map['amount_minor'] = Variable<int>(amountMinor.value);
+    }
+    if (spentMinor.present) {
+      map['spent_minor'] = Variable<int>(spentMinor.value);
+    }
+    if (hlc.present) {
+      map['hlc'] = Variable<String>(hlc.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<String>(deletedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BudgetItemsCompanion(')
+          ..write('id: $id, ')
+          ..write('kind: $kind, ')
+          ..write('key: $key, ')
+          ..write('amountMinor: $amountMinor, ')
+          ..write('spentMinor: $spentMinor, ')
+          ..write('hlc: $hlc, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $SmsInboxTable extends SmsInbox
     with TableInfo<$SmsInboxTable, SmsInboxData> {
   @override
@@ -6569,6 +7022,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $InvestmentsTable investments = $InvestmentsTable(this);
   late final $InvestmentEntriesTable investmentEntries =
       $InvestmentEntriesTable(this);
+  late final $BudgetItemsTable budgetItems = $BudgetItemsTable(this);
   late final $SmsInboxTable smsInbox = $SmsInboxTable(this);
   late final $SettingsTable settings = $SettingsTable(this);
   late final Index txnDate = Index(
@@ -6607,6 +7061,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     debtEvents,
     investments,
     investmentEntries,
+    budgetItems,
     smsInbox,
     settings,
     txnDate,
@@ -9292,6 +9747,257 @@ typedef $$InvestmentEntriesTableProcessedTableManager =
       InvestmentEntry,
       PrefetchHooks Function()
     >;
+typedef $$BudgetItemsTableCreateCompanionBuilder =
+    BudgetItemsCompanion Function({
+      required String id,
+      required String kind,
+      Value<String> key,
+      Value<int> amountMinor,
+      Value<int> spentMinor,
+      required String hlc,
+      Value<String?> deletedAt,
+      Value<int> rowid,
+    });
+typedef $$BudgetItemsTableUpdateCompanionBuilder =
+    BudgetItemsCompanion Function({
+      Value<String> id,
+      Value<String> kind,
+      Value<String> key,
+      Value<int> amountMinor,
+      Value<int> spentMinor,
+      Value<String> hlc,
+      Value<String?> deletedAt,
+      Value<int> rowid,
+    });
+
+class $$BudgetItemsTableFilterComposer
+    extends Composer<_$AppDatabase, $BudgetItemsTable> {
+  $$BudgetItemsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get key => $composableBuilder(
+    column: $table.key,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get amountMinor => $composableBuilder(
+    column: $table.amountMinor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get spentMinor => $composableBuilder(
+    column: $table.spentMinor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get hlc => $composableBuilder(
+    column: $table.hlc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$BudgetItemsTableOrderingComposer
+    extends Composer<_$AppDatabase, $BudgetItemsTable> {
+  $$BudgetItemsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get key => $composableBuilder(
+    column: $table.key,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get amountMinor => $composableBuilder(
+    column: $table.amountMinor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get spentMinor => $composableBuilder(
+    column: $table.spentMinor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get hlc => $composableBuilder(
+    column: $table.hlc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$BudgetItemsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $BudgetItemsTable> {
+  $$BudgetItemsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get key =>
+      $composableBuilder(column: $table.key, builder: (column) => column);
+
+  GeneratedColumn<int> get amountMinor => $composableBuilder(
+    column: $table.amountMinor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get spentMinor => $composableBuilder(
+    column: $table.spentMinor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get hlc =>
+      $composableBuilder(column: $table.hlc, builder: (column) => column);
+
+  GeneratedColumn<String> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+}
+
+class $$BudgetItemsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $BudgetItemsTable,
+          BudgetItem,
+          $$BudgetItemsTableFilterComposer,
+          $$BudgetItemsTableOrderingComposer,
+          $$BudgetItemsTableAnnotationComposer,
+          $$BudgetItemsTableCreateCompanionBuilder,
+          $$BudgetItemsTableUpdateCompanionBuilder,
+          (
+            BudgetItem,
+            BaseReferences<_$AppDatabase, $BudgetItemsTable, BudgetItem>,
+          ),
+          BudgetItem,
+          PrefetchHooks Function()
+        > {
+  $$BudgetItemsTableTableManager(_$AppDatabase db, $BudgetItemsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$BudgetItemsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$BudgetItemsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$BudgetItemsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<String> key = const Value.absent(),
+                Value<int> amountMinor = const Value.absent(),
+                Value<int> spentMinor = const Value.absent(),
+                Value<String> hlc = const Value.absent(),
+                Value<String?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => BudgetItemsCompanion(
+                id: id,
+                kind: kind,
+                key: key,
+                amountMinor: amountMinor,
+                spentMinor: spentMinor,
+                hlc: hlc,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String kind,
+                Value<String> key = const Value.absent(),
+                Value<int> amountMinor = const Value.absent(),
+                Value<int> spentMinor = const Value.absent(),
+                required String hlc,
+                Value<String?> deletedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => BudgetItemsCompanion.insert(
+                id: id,
+                kind: kind,
+                key: key,
+                amountMinor: amountMinor,
+                spentMinor: spentMinor,
+                hlc: hlc,
+                deletedAt: deletedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$BudgetItemsTable, BudgetItem>(table),
+                  BaseReferences<_$AppDatabase, $BudgetItemsTable, BudgetItem>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$BudgetItemsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $BudgetItemsTable,
+      BudgetItem,
+      $$BudgetItemsTableFilterComposer,
+      $$BudgetItemsTableOrderingComposer,
+      $$BudgetItemsTableAnnotationComposer,
+      $$BudgetItemsTableCreateCompanionBuilder,
+      $$BudgetItemsTableUpdateCompanionBuilder,
+      (
+        BudgetItem,
+        BaseReferences<_$AppDatabase, $BudgetItemsTable, BudgetItem>,
+      ),
+      BudgetItem,
+      PrefetchHooks Function()
+    >;
 typedef $$SmsInboxTableCreateCompanionBuilder = SmsInboxCompanion Function({
   required String id,
   required String fingerprint,
@@ -9792,6 +10498,8 @@ class $AppDatabaseManager {
       $$InvestmentsTableTableManager(_db, _db.investments);
   $$InvestmentEntriesTableTableManager get investmentEntries =>
       $$InvestmentEntriesTableTableManager(_db, _db.investmentEntries);
+  $$BudgetItemsTableTableManager get budgetItems =>
+      $$BudgetItemsTableTableManager(_db, _db.budgetItems);
   $$SmsInboxTableTableManager get smsInbox =>
       $$SmsInboxTableTableManager(_db, _db.smsInbox);
   $$SettingsTableTableManager get settings =>

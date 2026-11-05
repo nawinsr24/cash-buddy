@@ -97,7 +97,7 @@ void main() {
       expect(find.text('Opening balance'), findsOneWidget);
       await tester.enterText(find.byType(TextField).first, '5000');
       await tapText(tester, 'Start using Cash++');
-      expect(find.text('Total balance'), findsOneWidget);
+      expect(find.text('TOTAL BALANCE'), findsOneWidget);
       expect(find.text('₹5,000.00'), findsWidgets);
     },
   );
@@ -273,7 +273,7 @@ void main() {
     await settle(tester);
     expect(await tester.runAsync(() => env.repo.totalBalance()), 750000);
     await tapText(tester, 'Office chit');
-    expect(find.text('History'), findsOneWidget);
+    expect(find.text('HISTORY'), findsOneWidget);
     expect(find.text('Added money'), findsOneWidget);
   });
 
@@ -358,8 +358,8 @@ void main() {
     tester,
   ) async {
     final env = await pump(tester, opening: 10000000);
-    expect(find.text('Set your monthly budget'), findsOneWidget);
-    await tapText(tester, 'Set your monthly budget');
+    expect(find.text('Set a monthly budget'), findsOneWidget);
+    await tapText(tester, 'Set a monthly budget');
     expect(find.text('No budget yet'), findsOneWidget);
     await tapText(tester, 'Set my budget');
     await tester.enterText(find.byType(TextField).first, '5000');
@@ -405,14 +405,14 @@ void main() {
     tester,
   ) async {
     await pump(tester, opening: 1000000);
-    expect(find.text('Money Grade'), findsOneWidget);
-    expect(find.text('Building your grade…'), findsOneWidget);
+    expect(find.text('PLUS SCORE'), findsOneWidget);
+    expect(find.text('Building…'), findsOneWidget);
     await tester.scrollUntilVisible(
-      find.text('Insights'),
+      find.text('INSIGHTS'),
       300,
       scrollable: find.byType(Scrollable).first,
     );
-    expect(find.text('Insights'), findsOneWidget);
+    expect(find.text('INSIGHTS'), findsOneWidget);
   });
 
   testWidgets('settings: switch to split accounts keeps total balance', (
@@ -439,13 +439,13 @@ void main() {
 
   testWidgets('follows system dark mode live', (tester) async {
     await pump(tester, brightness: Brightness.dark);
-    final ctx = tester.element(find.text('Total balance'));
+    final ctx = tester.element(find.text('TOTAL BALANCE'));
     expect(Theme.of(ctx).brightness, Brightness.dark);
     tester.platformDispatcher.platformBrightnessTestValue = Brightness.light;
     await tester.pump();
     await tester.pump(const Duration(seconds: 1)); // let AnimatedTheme finish
     expect(
-      Theme.of(tester.element(find.text('Total balance'))).brightness,
+      Theme.of(tester.element(find.text('TOTAL BALANCE'))).brightness,
       Brightness.light,
     );
   });

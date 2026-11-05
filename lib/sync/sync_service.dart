@@ -19,6 +19,20 @@ Future<({RemoteStore remote, String? email})?> _googleSignIn() async {
   return r == null ? null : (remote: r, email: r.email);
 }
 
+/// What the sync is doing right now, for the loader on screen.
+class SyncProgress {
+  final bool active;
+  final SyncStage? stage;
+  final int done, total;
+  const SyncProgress({
+    this.active = false,
+    this.stage,
+    this.done = 0,
+    this.total = 0,
+  });
+  static const idle = SyncProgress();
+}
+
 /// Outcome of signing in during first-run setup.
 class SetupSignIn {
   final bool ok;
@@ -42,6 +56,13 @@ class SyncService with WidgetsBindingObserver {
 
   /// The account signed in during this session (display only).
   String? signedInEmail;
+
+  /// Live progress of sign-in / sync / restore.
+  final ValueNotifier<SyncProgress> progress = ValueNotifier(SyncProgress.idle);
+
+  void _report(SyncStage s, int done, int total) => progress.value =
+      SyncProgress(active: true, stage: s, done: done, total: total);
+  void _end() => progress.value = SyncProgress.idle;
 
   RemoteStore? _remote;
   Timer? _debounce;
@@ -96,11 +117,13 @@ class SyncService with WidgetsBindingObserver {
   /// nothing locally; Online Mode is only switched on by [finishSetupOnline]
   /// or [restoreFromDrive].
   Future<SetupSignIn> signInForSetup() async {
+    _report(SyncStage.signingIn, 0, 0);
     try {
       final signed = await _signIn();
       if (signed == null) {
         return const SetupSignIn(ok: false, error: 'Sign-in was cancelled.');
       }
+      _report(SyncStage.finding, 0, 0);
       final names = await signed.remote.list();
       _remote = signed.remote;
       signedInEmail = signed.email;
@@ -116,6 +139,8 @@ class SyncService with WidgetsBindingObserver {
         ok: false,
         error: 'Could not reach your Google Drive: $e',
       );
+    } finally {
+      _end();
     }
   }
 
@@ -167,9 +192,10 @@ class SyncService with WidgetsBindingObserver {
     _running = true;
     try {
       final device = await repo.getSetting('deviceId') ?? 'dev';
-      return await SyncEngine(repo, remote, device).sync();
+      return await SyncEngine(repo, remote, device, onProgress: _report).sync();
     } finally {
       _running = false;
+      _end();
     }
   }
 }

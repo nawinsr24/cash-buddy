@@ -1,3 +1,4 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -19,98 +20,191 @@ Color budgetColor(BuildContext c, BudgetState s) => switch (s) {
   BudgetState.over => c.cash.spending,
 };
 
-List<Color> _heroColors(BudgetState s) => switch (s) {
-  BudgetState.under => const [Color(0xFF22B573), Color(0xFF2F6BFF)],
-  BudgetState.exact => const [Color(0xFFF59E0B), Color(0xFFFF8A3D)],
-  BudgetState.over => const [Color(0xFFEF4444), Color(0xFFEC4899)],
-};
-
 // ───────────────────────── card on Home ─────────────────────────
+class _BudgetRing extends StatelessWidget {
+  final double fraction;
+  final Color color;
+  final double size;
+  final Widget center;
+  const _BudgetRing({
+    required this.fraction,
+    required this.color,
+    required this.size,
+    required this.center,
+  });
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: size,
+    height: size,
+    child: Stack(
+      alignment: Alignment.center,
+      children: [
+        TweenAnimationBuilder<double>(
+          tween: Tween(end: fraction.clamp(0, 1)),
+          duration: const Duration(milliseconds: 1000),
+          curve: Curves.easeOutCubic,
+          builder: (_, v, _) => SizedBox(
+            width: size,
+            height: size,
+            child: CircularProgressIndicator(
+              value: v,
+              strokeWidth: size * 0.1,
+              strokeCap: StrokeCap.round,
+              color: color,
+              backgroundColor: context.scheme.outlineVariant,
+            ),
+          ),
+        ),
+        center,
+      ],
+    ),
+  );
+}
+
+class _StatePill extends StatelessWidget {
+  final BudgetState state;
+  const _StatePill(this.state);
+  @override
+  Widget build(BuildContext context) {
+    final color = budgetColor(context, state);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        state.label,
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.w700,
+          fontSize: 12,
+        ),
+      ),
+    );
+  }
+}
+
 class BudgetCard extends ConsumerWidget {
   const BudgetCard({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(budgetStatusProvider);
-    final roast = ref.watch(roastModeProvider).value ?? true;
     if (!async.hasValue) return const SizedBox.shrink();
     final b = async.value;
     void go() => Navigator.of(context).push(softRoute(const BudgetPage()));
     if (b == null) {
       return Pressable(
         onTap: go,
-        child: Card(
-          child: Padding(
-            padding: const EdgeInsets.all(Sp.x4),
-            child: Row(
-              children: [
-                const Text('🎯', style: TextStyle(fontSize: 30)),
-                const SizedBox(width: Sp.x3),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Set your monthly budget',
-                        style: context.text.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
+        child: Container(
+          padding: const EdgeInsets.all(Sp.x4),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(Sp.rCard),
+            color: context.scheme.primaryContainer,
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.flag_outlined, color: context.scheme.primary),
+              const SizedBox(width: Sp.x3),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Set a monthly budget',
+                      style: context.text.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
                       ),
-                      Text(
-                        'Know if you finish under, on or over it.',
-                        style: context.text.bodySmall?.copyWith(
-                          color: context.cash.textMuted,
-                        ),
+                    ),
+                    Text(
+                      'Know if you finish under, on or over it.',
+                      style: context.text.bodySmall?.copyWith(
+                        color: context.cash.textMuted,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                const Icon(Icons.chevron_right),
-              ],
-            ),
+              ),
+              const Icon(Icons.arrow_forward, size: 20),
+            ],
           ),
         ),
       );
     }
     final color = budgetColor(context, b.state);
+    final over = b.state == BudgetState.over;
     return Pressable(
       onTap: go,
       child: Card(
         child: Padding(
           padding: const EdgeInsets.all(Sp.x4),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
             children: [
-              Row(
-                children: [
-                  Text(b.state.emoji, style: const TextStyle(fontSize: 22)),
-                  const SizedBox(width: Sp.x2),
-                  Expanded(
-                    child: Text(
-                      'Budget · ${b.state.label}',
-                      style: context.text.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
+              _BudgetRing(
+                fraction: b.fraction,
+                color: color,
+                size: 76,
+                center: Text(
+                  '${(b.fraction * 100).round()}%',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 17,
+                    color: context.scheme.onSurface,
+                    fontFeatures: moneyFeatures,
+                  ),
+                ),
+              ),
+              const SizedBox(width: Sp.x4),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Expanded(child: Eyebrow('Budget')),
+                        _StatePill(b.state),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(
+                              text: Money.format(b.remaining.abs()),
+                              style: context.text.titleLarge?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 24,
+                                letterSpacing: -0.8,
+                                color: over ? color : null,
+                                fontFeatures: moneyFeatures,
+                              ),
+                            ),
+                            TextSpan(
+                              text: over ? '  over' : '  left',
+                              style: context.text.bodyMedium?.copyWith(
+                                color: context.cash.textMuted,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  const Icon(Icons.chevron_right, size: 20),
-                ],
-              ),
-              const SizedBox(height: Sp.x3),
-              _Bar(fraction: b.fraction, color: color),
-              const SizedBox(height: Sp.x2),
-              Text(
-                '${Money.format(b.spent)} of ${Money.format(b.budget)}',
-                style: context.text.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  fontFeatures: moneyFeatures,
+                    const SizedBox(height: 2),
+                    Text(
+                      b.complete
+                          ? 'of ${Money.format(b.budget)}'
+                          : 'of ${Money.format(b.budget)}  ·  ${b.daysLeft} days left',
+                      style: context.text.bodySmall?.copyWith(
+                        color: context.cash.textMuted,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              Text(
-                budgetHeadline(b, roast: roast),
-                style: context.text.bodySmall?.copyWith(
-                  color: context.cash.textMuted,
-                ),
-              ),
+              const Icon(Icons.chevron_right, size: 20),
             ],
           ),
         ),
@@ -135,7 +229,7 @@ class _Bar extends StatelessWidget {
         value: v,
         minHeight: height,
         color: color,
-        backgroundColor: color.withValues(alpha: 0.16),
+        backgroundColor: color.withValues(alpha: 0.14),
       ),
     ),
   );
@@ -187,118 +281,87 @@ class BudgetPage extends ConsumerWidget {
     String month,
   ) {
     final c = context.cash;
-    final colors = _heroColors(b.state);
     final over = b.state == BudgetState.over;
+    final color = budgetColor(context, b.state);
     return ListView(
       padding: const EdgeInsets.fromLTRB(Sp.x4, 0, Sp.x4, Sp.x8),
       children: [
         Reveal(
-          child: Container(
-            padding: const EdgeInsets.all(Sp.x5),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(Sp.rCard + 4),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: colors,
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(b.state.emoji, style: const TextStyle(fontSize: 26)),
-                    const SizedBox(width: Sp.x2),
-                    Expanded(
-                      child: Text(
-                        '$month${b.monthOnly ? ' · this month only' : ''}',
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontWeight: FontWeight.w600,
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.all(Sp.x5),
+              child: Column(
+                children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Eyebrow(
+                      '$month${b.monthOnly ? ' · this month only' : ''}',
+                    ),
+                  ),
+                  const SizedBox(height: Sp.x4),
+                  _BudgetRing(
+                    fraction: b.fraction,
+                    color: color,
+                    size: 190,
+                    center: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            Money.format(b.remaining.abs()),
+                            style: context.text.headlineMedium?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -1.2,
+                              color: over ? color : null,
+                              fontFeatures: moneyFeatures,
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: Sp.x2),
-                Text(
-                  b.state.label,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 26,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  budgetHeadline(b, roast: roast),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    height: 1.3,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: Sp.x4),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: TweenAnimationBuilder<double>(
-                    tween: Tween(end: b.fraction.clamp(0, 1)),
-                    duration: const Duration(milliseconds: 900),
-                    curve: Curves.easeOutCubic,
-                    builder: (_, v, _) => LinearProgressIndicator(
-                      value: v,
-                      minHeight: 14,
-                      color: Colors.white,
-                      backgroundColor: Colors.white.withValues(alpha: 0.25),
+                        Text(
+                          over ? 'over budget' : 'left to spend',
+                          style: context.text.bodyMedium?.copyWith(
+                            color: c.textMuted,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-                const SizedBox(height: Sp.x3),
-                Row(
-                  children: [
-                    _hero('Budget', Money.format(b.budget)),
-                    _hero('Spent', Money.format(b.spent)),
-                    _hero(
-                      over ? 'Over by' : 'Left',
-                      Money.format(b.remaining.abs()),
+                  const SizedBox(height: Sp.x4),
+                  _StatePill(b.state),
+                  const SizedBox(height: Sp.x2),
+                  Text(
+                    budgetHeadline(b, roast: roast),
+                    textAlign: TextAlign.center,
+                    style: context.text.bodyMedium?.copyWith(
+                      color: c.textMuted,
+                      height: 1.35,
                     ),
-                  ],
-                ),
-              ],
+                  ),
+                  const SizedBox(height: Sp.x4),
+                  const Divider(),
+                  const SizedBox(height: Sp.x3),
+                  Row(
+                    children: [
+                      _hero(context, 'Budget', Money.format(b.budget)),
+                      _hero(context, 'Spent', Money.format(b.spent)),
+                      if (!b.complete && b.state != BudgetState.over)
+                        _hero(context, 'Safe a day', Money.format(b.safePerDay))
+                      else
+                        _hero(
+                          context,
+                          b.complete ? 'Result' : 'Over by',
+                          over ? Money.format(b.remaining.abs()) : 'On target',
+                        ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
         const SizedBox(height: Sp.x3),
-        Reveal(
-          index: 1,
-          child: Wrap(
-            spacing: Sp.x3,
-            runSpacing: Sp.x3,
-            children: [
-              if (!b.complete && b.state != BudgetState.over)
-                _fact(
-                  context,
-                  '📆',
-                  'Safe to spend',
-                  '${Money.format(b.safePerDay)} a day',
-                  '${b.daysLeft} days left',
-                  const Color(0xFF2F6BFF),
-                ),
-              if (!b.complete)
-                _fact(
-                  context,
-                  '🔮',
-                  'On pace for',
-                  Money.format(b.projected),
-                  b.projected > b.budget
-                      ? 'would finish over'
-                      : 'would finish within',
-                  b.projected > b.budget ? c.spending : c.income,
-                ),
-            ],
-          ),
-        ),
+        Reveal(index: 1, child: _ChartCard(status: b)),
         if (b.splitsOffButFine) ...[
           const SizedBox(height: Sp.x3),
           Reveal(
@@ -353,69 +416,26 @@ class BudgetPage extends ConsumerWidget {
     );
   }
 
-  Widget _hero(String label, String value) => Expanded(
+  Widget _hero(BuildContext context, String label, String value) => Expanded(
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(color: Colors.white70, fontSize: 12),
+          style: context.text.labelMedium?.copyWith(
+            color: context.cash.textMuted,
+          ),
         ),
+        const SizedBox(height: 2),
         FittedBox(
           fit: BoxFit.scaleDown,
           alignment: Alignment.centerLeft,
           child: Text(
             value,
-            style: const TextStyle(
-              color: Colors.white,
+            style: context.text.titleMedium?.copyWith(
               fontWeight: FontWeight.w800,
-              fontSize: 16,
               fontFeatures: moneyFeatures,
             ),
-          ),
-        ),
-      ],
-    ),
-  );
-
-  Widget _fact(
-    BuildContext context,
-    String emoji,
-    String label,
-    String value,
-    String sub,
-    Color color,
-  ) => Container(
-    constraints: BoxConstraints(
-      minWidth: (MediaQuery.sizeOf(context).width - Sp.x4 * 2 - Sp.x3) / 2,
-    ),
-    padding: const EdgeInsets.all(Sp.x4),
-    decoration: BoxDecoration(
-      color: color.withValues(alpha: 0.1),
-      borderRadius: BorderRadius.circular(Sp.rCard),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          '$emoji  $label',
-          style: context.text.labelMedium?.copyWith(
-            color: context.cash.textMuted,
-          ),
-        ),
-        Text(
-          value,
-          style: context.text.titleMedium?.copyWith(
-            color: color,
-            fontWeight: FontWeight.w800,
-            fontFeatures: moneyFeatures,
-          ),
-        ),
-        Text(
-          sub,
-          style: context.text.bodySmall?.copyWith(
-            color: context.cash.textMuted,
           ),
         ),
       ],
@@ -640,6 +660,382 @@ class _History extends ConsumerWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+// ───────────────────────── charts ─────────────────────────
+class _ChartCard extends ConsumerStatefulWidget {
+  final BudgetStatus status;
+  const _ChartCard({required this.status});
+  @override
+  ConsumerState<_ChartCard> createState() => _ChartCardState();
+}
+
+class _ChartCardState extends ConsumerState<_ChartCard> {
+  bool year = false;
+  @override
+  Widget build(BuildContext context) {
+    final b = widget.status;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(Sp.x4, Sp.x4, Sp.x4, Sp.x3),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Expanded(child: Eyebrow('Spending vs budget')),
+                SegmentedButton<bool>(
+                  showSelectedIcon: false,
+                  style: SegmentedButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  segments: const [
+                    ButtonSegment(value: false, label: Text('Month')),
+                    ButtonSegment(value: true, label: Text('Year')),
+                  ],
+                  selected: {year},
+                  onSelectionChanged: (v) => setState(() => year = v.first),
+                ),
+              ],
+            ),
+            const SizedBox(height: Sp.x4),
+            SizedBox(
+              height: 190,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                child: year
+                    ? _YearChart(key: const ValueKey('y'))
+                    : _MonthChart(key: const ValueKey('m'), status: b),
+              ),
+            ),
+            const SizedBox(height: Sp.x2),
+            year ? const _YearLegend() : _MonthLegend(status: b),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Legend extends StatelessWidget {
+  final List<(Color, String, bool)> items; // colour, label, dashed
+  const _Legend(this.items);
+  @override
+  Widget build(BuildContext context) => Wrap(
+    spacing: Sp.x4,
+    runSpacing: 4,
+    children: [
+      for (final i in items)
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 14,
+              height: 3,
+              decoration: BoxDecoration(
+                color: i.$1,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              i.$2,
+              style: context.text.labelSmall?.copyWith(
+                color: context.cash.textMuted,
+              ),
+            ),
+          ],
+        ),
+    ],
+  );
+}
+
+class _MonthLegend extends StatelessWidget {
+  final BudgetStatus status;
+  const _MonthLegend({required this.status});
+  @override
+  Widget build(BuildContext context) => _Legend([
+    (budgetColor(context, status.state), 'Spent so far', false),
+    (context.cash.textMuted, 'Budget', true),
+    if (!status.complete && status.daysElapsed >= 7)
+      (context.scheme.primary, 'Pace to month end', true),
+  ]);
+}
+
+class _YearLegend extends StatelessWidget {
+  const _YearLegend();
+  @override
+  Widget build(BuildContext context) => _Legend([
+    (context.cash.income, 'Under', false),
+    (const Color(0xFFF59E0B), 'Exactly on', false),
+    (context.cash.spending, 'Over', false),
+    (context.cash.textMuted.withValues(alpha: 0.5), 'Budget', false),
+  ]);
+}
+
+/// Short axis labels: 500, 5K, 50K, 1.5L (lakh), 1.2Cr.
+String _k(double v) {
+  String t(double x) =>
+      x == x.roundToDouble() ? x.round().toString() : x.toStringAsFixed(1);
+  if (v >= 10000000) return '₹${t(v / 10000000)}Cr';
+  if (v >= 100000) return '₹${t(v / 100000)}L';
+  if (v >= 1000) return '₹${t(v / 1000)}K';
+  return '₹${v.round()}';
+}
+
+class _MonthChart extends ConsumerWidget {
+  final BudgetStatus status;
+  const _MonthChart({super.key, required this.status});
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final daily = ref.watch(budgetDailyProvider).value ?? const <int>[];
+    final b = status;
+    final color = budgetColor(context, b.state);
+    final muted = context.cash.textMuted;
+    final spots = [
+      FlSpot(0, 0),
+      for (var i = 0; i < daily.length; i++) FlSpot(i + 1.0, daily[i] / 100),
+    ];
+    final today = daily.length;
+    final maxV =
+        [
+          b.budget / 100,
+          b.projected / 100,
+          (daily.isEmpty ? 0 : daily.last) / 100,
+        ].reduce((a, c) => a > c ? a : c) *
+        1.12;
+    // the first week is too little to project from
+    final pace = !b.complete && today >= 7
+        ? [
+            FlSpot(today.toDouble(), daily.last / 100),
+            FlSpot(b.daysInMonth.toDouble(), b.projected / 100),
+          ]
+        : <FlSpot>[];
+    return ExcludeSemantics(
+      child: LineChart(
+        LineChartData(
+          minX: 1,
+          maxX: b.daysInMonth.toDouble(),
+          minY: 0,
+          maxY: maxV <= 0 ? 1 : maxV,
+          gridData: FlGridData(
+            drawVerticalLine: false,
+            getDrawingHorizontalLine: (_) =>
+                FlLine(color: context.scheme.outlineVariant, strokeWidth: 1),
+          ),
+          borderData: FlBorderData(show: false),
+          titlesData: FlTitlesData(
+            topTitles: const AxisTitles(),
+            rightTitles: const AxisTitles(),
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 44,
+                getTitlesWidget: (v, meta) => v == meta.max || v == meta.min
+                    ? const SizedBox.shrink()
+                    : Text(_k(v), style: TextStyle(fontSize: 10, color: muted)),
+              ),
+            ),
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                interval: 7,
+                getTitlesWidget: (v, _) => Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    '${v.round()}',
+                    style: TextStyle(fontSize: 10, color: muted),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          extraLinesData: ExtraLinesData(
+            horizontalLines: [
+              HorizontalLine(
+                y: b.budget / 100,
+                color: muted,
+                strokeWidth: 1.4,
+                dashArray: [6, 5],
+              ),
+            ],
+          ),
+          lineTouchData: LineTouchData(
+            touchTooltipData: LineTouchTooltipData(
+              getTooltipItems: (spots) => [
+                for (final s in spots)
+                  LineTooltipItem(
+                    'Day ${s.x.round()}  ${Money.format((s.y * 100).round())}',
+                    const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          lineBarsData: [
+            LineChartBarData(
+              spots: spots,
+              isCurved: false,
+              color: color,
+              barWidth: 3,
+              dotData: const FlDotData(show: false),
+              belowBarData: BarAreaData(
+                show: true,
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    color.withValues(alpha: 0.2),
+                    color.withValues(alpha: 0),
+                  ],
+                ),
+              ),
+            ),
+            if (pace.length == 2)
+              LineChartBarData(
+                spots: pace,
+                color: context.scheme.primary,
+                barWidth: 2,
+                dashArray: [5, 5],
+                dotData: FlDotData(
+                  getDotPainter: (s, _, _, i) => FlDotCirclePainter(
+                    radius: i == 1 ? 3.5 : 0,
+                    color: context.scheme.primary,
+                    strokeWidth: 0,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _YearChart extends ConsumerWidget {
+  const _YearChart({super.key});
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final months = ref.watch(budgetYearProvider).value;
+    if (months == null) {
+      return const Center(child: CircularProgressIndicator.adaptive());
+    }
+    final muted = context.cash.textMuted;
+    var maxV = 1.0;
+    for (final m in months) {
+      maxV = [
+        maxV,
+        m.spent / 100,
+        (m.budget ?? 0) / 100,
+      ].reduce((a, c) => a > c ? a : c);
+    }
+    Color barColor(BudgetYearMonth m) => switch (m.state) {
+      BudgetState.under => context.cash.income,
+      BudgetState.exact => const Color(0xFFF59E0B),
+      BudgetState.over => context.cash.spending,
+      null => muted.withValues(alpha: 0.45),
+    };
+    const initials = [
+      'J',
+      'F',
+      'M',
+      'A',
+      'M',
+      'J',
+      'J',
+      'A',
+      'S',
+      'O',
+      'N',
+      'D',
+    ];
+    return ExcludeSemantics(
+      child: BarChart(
+        BarChartData(
+          maxY: maxV * 1.15,
+          alignment: BarChartAlignment.spaceAround,
+          gridData: FlGridData(
+            drawVerticalLine: false,
+            getDrawingHorizontalLine: (_) =>
+                FlLine(color: context.scheme.outlineVariant, strokeWidth: 1),
+          ),
+          borderData: FlBorderData(show: false),
+          titlesData: FlTitlesData(
+            topTitles: const AxisTitles(),
+            rightTitles: const AxisTitles(),
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 44,
+                getTitlesWidget: (v, meta) => v == meta.max || v == meta.min
+                    ? const SizedBox.shrink()
+                    : Text(_k(v), style: TextStyle(fontSize: 10, color: muted)),
+              ),
+            ),
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                getTitlesWidget: (v, _) => Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    initials[v.round().clamp(0, 11)],
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: months[v.round().clamp(0, 11)].current
+                          ? FontWeight.w800
+                          : FontWeight.w500,
+                      color: months[v.round().clamp(0, 11)].current
+                          ? context.scheme.onSurface
+                          : muted,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          barTouchData: BarTouchData(
+            touchTooltipData: BarTouchTooltipData(
+              getTooltipItem: (group, _, rod, _) {
+                final m = months[group.x];
+                final name = DateFormat('MMM').format(DateTime(2000, m.month));
+                return BarTooltipItem(
+                  m.future
+                      ? name
+                      : '$name\n${Money.format(m.spent)}${m.budget != null ? ' of ${Money.format(m.budget!)}' : ''}',
+                  const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12,
+                  ),
+                );
+              },
+            ),
+          ),
+          barGroups: [
+            for (var i = 0; i < months.length; i++)
+              BarChartGroupData(
+                x: i,
+                barRods: [
+                  BarChartRodData(
+                    toY: months[i].future ? 0 : months[i].spent / 100,
+                    width: 13,
+                    borderRadius: BorderRadius.circular(5),
+                    color: barColor(months[i]),
+                    backDrawRodData: BackgroundBarChartRodData(
+                      show: months[i].budget != null,
+                      toY: (months[i].budget ?? 0) / 100,
+                      color: muted.withValues(alpha: 0.16),
+                    ),
+                  ),
+                ],
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

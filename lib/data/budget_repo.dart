@@ -5,21 +5,101 @@ import 'package:drift/drift.dart';
 import '../domain/budget.dart';
 import '../domain/dates.dart';
 import 'insights_repo.dart' show monthKey;
+import 'db.dart';
 import 'repo.dart';
 
-/// Monthly budget kept in device settings:
-///  * `budgetMinor`          the amount that applies to every month
-///  * `budget_YYYY-MM`       a one-month override
-///  * `budgetSplit`          JSON {categoryId: allocatedMinor}
-///  * `budgetSince`          first month a budget existed (history starts here)
-///  * `budgetResult_YYYY-MM` frozen "budget|spent" of a finished month
+/// Monthly budget, stored in the synced `budget_items` table (see db.dart),
+/// so it follows the user to a new phone through Drive.
 extension BudgetRepo on Repo {
+  String get _bNow => now().toUtc().toIso8601String();
+
+  Future<BudgetItem?> _item(String id) => (db.select(
+    db.budgetItems,
+  )..where((t) => t.id.equals(id) & t.deletedAt.isNull())).getSingleOrNull();
+
+  Future<void> _putItem(
+    String id,
+    String kind, {
+    String key = '',
+    required int amount,
+    int spent = 0,
+  }) => db
+      .into(db.budgetItems)
+      .insertOnConflictUpdate(
+        BudgetItemsCompanion.insert(
+          id: id,
+          kind: kind,
+          hlc: clock.next(),
+          key: Value(key),
+          amountMinor: Value(amount),
+          spentMinor: Value(spent),
+          deletedAt: const Value(null),
+        ),
+      );
+
+  Future<void> _dropItem(String id) async {
+    final cur = await _item(id);
+    if (cur == null) return;
+    await db
+        .into(db.budgetItems)
+        .insertOnConflictUpdate(
+          cur
+              .toCompanion(true)
+              .copyWith(deletedAt: Value(_bNow), hlc: Value(clock.next())),
+        );
+  }
+
+  /// One-time move of a budget saved by an older version (device settings)
+  /// into the synced table.
+  Future<void> migrateBudgetSettings() async {
+    if (await getSetting('budgetMigrated') == '1') return;
+    final base = int.tryParse(await getSetting('budgetMinor') ?? '');
+    if (base != null) await _putItem('base', 'base', amount: base);
+    final rows = await db.select(db.settings).get();
+    for (final r in rows) {
+      if (r.key.startsWith('budget_') && r.key.length == 14) {
+        final m = int.tryParse(r.value);
+        final month = r.key.substring(7);
+        if (m != null) {
+          await _putItem('month:$month', 'month', key: month, amount: m);
+        }
+      } else if (r.key.startsWith('budgetResult_')) {
+        final month = r.key.substring(13);
+        final p = r.value.split('|');
+        if (p.length == 2) {
+          await _putItem(
+            'result:$month',
+            'result',
+            key: month,
+            amount: int.parse(p[0]),
+            spent: int.parse(p[1]),
+          );
+        }
+      }
+    }
+    final since = await getSetting('budgetSince');
+    if (since != null) await _putItem('since', 'since', key: since, amount: 0);
+    final splitRaw = await getSetting('budgetSplit');
+    if (splitRaw != null && splitRaw.isNotEmpty) {
+      try {
+        for (final e
+            in (jsonDecode(splitRaw) as Map<String, dynamic>).entries) {
+          await _putItem(
+            'split:${e.key}',
+            'split',
+            key: e.key,
+            amount: (e.value as num).toInt(),
+          );
+        }
+      } catch (_) {}
+    }
+    await setSetting('budgetMigrated', '1');
+  }
+
   Future<int?> budgetFor(int y, int m) async {
-    final over = int.tryParse(
-      await getSetting('budget_${monthKey(y, m)}') ?? '',
-    );
-    if (over != null) return over;
-    return int.tryParse(await getSetting('budgetMinor') ?? '');
+    final over = await _item('month:${monthKey(y, m)}');
+    if (over != null) return over.amountMinor;
+    return (await _item('base'))?.amountMinor;
   }
 
   /// Sets the budget for every month, or only for [month] when given.
@@ -28,47 +108,47 @@ extension BudgetRepo on Repo {
       throw ValidationException('Budget must be more than zero');
     }
     if (month != null) {
-      final key = 'budget_${monthKey(month.year, month.month)}';
+      final key = monthKey(month.year, month.month);
       if (minor == null) {
-        await db.customStatement('DELETE FROM settings WHERE key = ?', [key]);
+        await _dropItem('month:$key');
       } else {
-        await setSetting(key, '$minor');
+        await _putItem('month:$key', 'month', key: key, amount: minor);
       }
     } else if (minor == null) {
-      await db.customStatement(
-        "DELETE FROM settings WHERE key = 'budgetMinor'",
-      );
+      await _dropItem('base');
     } else {
-      await setSetting('budgetMinor', '$minor');
+      await _putItem('base', 'base', amount: minor);
     }
-    if (minor != null && await getSetting('budgetSince') == null) {
+    if (minor != null && await _item('since') == null) {
       final t = month ?? today;
-      await setSetting('budgetSince', monthKey(t.year, t.month));
+      await _putItem(
+        'since',
+        'since',
+        key: monthKey(t.year, t.month),
+        amount: 0,
+      );
     }
   }
 
   Future<Map<String, int>> budgetSplits() async {
-    final raw = await getSetting('budgetSplit');
-    if (raw == null || raw.isEmpty) return {};
-    try {
-      return {
-        for (final e in (jsonDecode(raw) as Map<String, dynamic>).entries)
-          e.key: (e.value as num).toInt(),
-      };
-    } catch (_) {
-      return {};
-    }
+    final rows = await (db.select(
+      db.budgetItems,
+    )..where((t) => t.kind.equals('split') & t.deletedAt.isNull())).get();
+    return {for (final r in rows) r.key: r.amountMinor};
   }
 
   /// Allocates [minor] to a main category (null or 0 removes it).
   Future<void> setBudgetSplit(String categoryId, int? minor) async {
-    final m = await budgetSplits();
     if (minor == null || minor <= 0) {
-      m.remove(categoryId);
+      await _dropItem('split:$categoryId');
     } else {
-      m[categoryId] = minor;
+      await _putItem(
+        'split:$categoryId',
+        'split',
+        key: categoryId,
+        amount: minor,
+      );
     }
-    await setSetting('budgetSplit', jsonEncode(m));
   }
 
   Future<Map<String, int>> _spentByMainCategory(DateRange r) async {
@@ -140,7 +220,7 @@ extension BudgetRepo on Repo {
       month: m,
       budget: budget,
       spent: spent,
-      monthOnly: await getSetting('budget_${monthKey(y, m)}') != null,
+      monthOnly: await _item('month:${monthKey(y, m)}') != null,
       splits: rows,
       daysInMonth: r.days,
       daysElapsed: elapsed,
@@ -150,17 +230,23 @@ extension BudgetRepo on Repo {
   /// Freezes the result of each finished month since the budget began, so
   /// later edits to the budget never rewrite history.
   Future<void> ensureBudgetResults() async {
-    final since = await getSetting('budgetSince');
+    final since = (await _item('since'))?.key;
     if (since == null) return;
     final now = today;
     for (var k = 1; k <= 12; k++) {
       final d = Dates.addMonths(Dates.day(now.year, now.month, 1), -k);
       final key = monthKey(d.year, d.month);
       if (key.compareTo(since) < 0) continue;
-      if (await getSetting('budgetResult_$key') != null) continue;
+      if (await _item('result:$key') != null) continue;
       final s = await budgetStatus(d.year, d.month);
       if (s == null) continue;
-      await setSetting('budgetResult_$key', '${s.budget}|${s.spent}');
+      await _putItem(
+        'result:$key',
+        'result',
+        key: key,
+        amount: s.budget,
+        spent: s.spent,
+      );
     }
   }
 
@@ -168,17 +254,89 @@ extension BudgetRepo on Repo {
   Future<List<BudgetMonth>> budgetHistory() async {
     await ensureBudgetResults();
     final rows = await (db.select(
-      db.settings,
-    )..where((s) => s.key.like('budgetResult_%'))).get();
-    final out = <BudgetMonth>[];
-    for (final r in rows) {
-      final p = r.value.split('|');
-      if (p.length != 2) continue;
+      db.budgetItems,
+    )..where((t) => t.kind.equals('result') & t.deletedAt.isNull())).get();
+    final out = [
+      for (final r in rows) BudgetMonth(r.key, r.amountMinor, r.spentMinor),
+    ];
+    out.sort((a, b) => b.month.compareTo(a.month));
+    return out;
+  }
+
+  /// Cumulative spending for each day of the month so far (index 0 = day 1).
+  Future<List<int>> budgetDaily(int y, int m) async {
+    final r = DateRange(
+      Dates.day(y, m, 1),
+      Dates.day(y, m, Dates.daysInMonth(y, m)),
+    );
+    final now = today;
+    final last = now.isBefore(r.start)
+        ? 0
+        : (now.isAfter(r.end) ? r.days : now.difference(r.start).inDays + 1);
+    final rows = await db
+        .customSelect(
+          "SELECT date AS d, SUM(amount_minor) AS s FROM transactions WHERE type='debit' AND source NOT IN ('debt','invest') AND deleted_at IS NULL AND date BETWEEN ? AND ? GROUP BY date",
+          variables: [Variable(r.startStr), Variable(r.endStr)],
+          readsFrom: {db.transactions},
+        )
+        .get();
+    final byDay = {for (final x in rows) x.read<String>('d'): x.read<int>('s')};
+    var run = 0;
+    final out = <int>[];
+    for (var i = 0; i < last; i++) {
+      run += byDay[Dates.str(r.start.add(Duration(days: i)))] ?? 0;
+      out.add(run);
+    }
+    return out;
+  }
+
+  /// All 12 months of [year]: what was spent against the budget of that
+  /// month (frozen result when the month is finished).
+  Future<List<BudgetYearMonth>> budgetYear(int year) async {
+    await ensureBudgetResults();
+    final now = today;
+    final out = <BudgetYearMonth>[];
+    for (var m = 1; m <= 12; m++) {
+      final future = year > now.year || (year == now.year && m > now.month);
+      final current = year == now.year && m == now.month;
+      if (future) {
+        out.add(
+          BudgetYearMonth(
+            month: m,
+            spent: 0,
+            budget: await budgetFor(year, m),
+            future: true,
+          ),
+        );
+        continue;
+      }
+      final frozen = await _item('result:${monthKey(year, m)}');
+      if (frozen != null && !current) {
+        out.add(
+          BudgetYearMonth(
+            month: m,
+            spent: frozen.spentMinor,
+            budget: frozen.amountMinor,
+          ),
+        );
+        continue;
+      }
+      final r = DateRange(
+        Dates.day(year, m, 1),
+        Dates.day(year, m, Dates.daysInMonth(year, m)),
+      );
+      final byCat = await _spentByMainCategory(r);
+      final since = (await _item('since'))?.key;
+      final tracked = since != null && monthKey(year, m).compareTo(since) >= 0;
       out.add(
-        BudgetMonth(r.key.substring(13), int.parse(p[0]), int.parse(p[1])),
+        BudgetYearMonth(
+          month: m,
+          spent: byCat.values.fold<int>(0, (a, b) => a + b),
+          budget: tracked || current ? await budgetFor(year, m) : null,
+          current: current,
+        ),
       );
     }
-    out.sort((a, b) => b.month.compareTo(a.month));
     return out;
   }
 }

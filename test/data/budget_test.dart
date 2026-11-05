@@ -201,4 +201,68 @@ void main() {
     }
     expect(budgetHeadline(st(100000), roast: false), contains('Exactly'));
   });
+
+  test(
+    'a budget saved by an older version moves into the synced table once',
+    () async {
+      final e = await newEnv();
+      final r = e.repo;
+      await r.setSetting('budgetMinor', '2500000');
+      await r.setSetting('budget_2026-12', '3000000');
+      await r.setSetting('budgetSplit', '{"cat_food": 500000}');
+      await r.setSetting('budgetSince', '2026-10');
+      await r.setSetting('budgetResult_2026-10', '2500000|2100000');
+      await r.migrateBudgetSettings();
+      expect(await r.budgetFor(2026, 11), 2500000);
+      expect(await r.budgetFor(2026, 12), 3000000);
+      expect(await r.budgetSplits(), {'cat_food': 500000});
+      final h = await r.budgetHistory();
+      expect(h.single.month, '2026-10');
+      expect(h.single.spent, 2100000);
+      // running it again changes nothing
+      await r.setBudget(1, month: DateTime(2027, 1));
+      await r.migrateBudgetSettings();
+      expect(await r.budgetFor(2027, 1), 1);
+    },
+  );
+
+  test('daily series is cumulative and stops today', () async {
+    final e = await newEnv(opening: 10000000);
+    final r = e.repo;
+    await spend(r, 100000, 'cat_food_groceries', day: 1);
+    await spend(r, 50000, 'cat_food_groceries', day: 3);
+    final d = await r.budgetDaily(2026, 11);
+    expect(d, [100000, 100000, 150000, 150000]); // 4 days elapsed (clock 4 Nov)
+  });
+
+  test('year view: months before the budget have no budget, finished ones are frozen', () async {
+    final e = await newEnv(opening: 10000000);
+    final r = e.repo;
+    e.clockNow = DateTime(2026, 9, 10, 10);
+    await r.setBudget(1000000);
+    await r.addTransaction(
+      type: 'debit',
+      amountMinor: 1500000,
+      categoryId: 'cat_food_groceries',
+      date: Dates.day(2026, 9, 5),
+    );
+    e.clockNow = DateTime(2026, 11, 4, 10);
+    await r.addTransaction(
+      type: 'debit',
+      amountMinor: 300000,
+      categoryId: 'cat_food_groceries',
+      date: Dates.day(2026, 11, 2),
+    );
+    final y = await r.budgetYear(2026);
+    expect(y.length, 12);
+    expect(y[7].budget, isNull); // August: before the budget began
+    expect(y[8].budget, 1000000); // September: finished, frozen
+    expect(y[8].spent, 1500000);
+    expect(y[8].state, BudgetState.over);
+    expect(y[10].current, isTrue); // November
+    expect(y[10].spent, 300000);
+    expect(y[10].state, BudgetState.under);
+    expect(y[11].future, isTrue);
+    expect(y[11].state, isNull);
+  });
 }

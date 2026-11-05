@@ -24,24 +24,24 @@ class CashColors extends ThemeExtension<CashColors> {
   });
 
   static const light = CashColors(
-    income: Color(0xFF12805C),
-    spending: Color(0xFFD1344B),
-    debtIn: Color(0xFFB7791F),
-    liability: Color(0xFF6D4AD6),
+    income: Color(0xFF0E9F6E),
+    spending: Color(0xFFE11D48),
+    debtIn: Color(0xFFD97706),
+    liability: Color(0xFF7C3AED),
     surfaceRaised: Color(0xFFFFFFFF),
-    textMuted: Color(0xFF667085),
-    positiveBg: Color(0xFFE6F6EF),
-    negativeBg: Color(0xFFFDECEF),
+    textMuted: Color(0xFF6B7280),
+    positiveBg: Color(0xFFE7F7F0),
+    negativeBg: Color(0xFFFDEBEF),
   );
   static const dark = CashColors(
-    income: Color(0xFF3DD6A0),
-    spending: Color(0xFFFF7A8E),
-    debtIn: Color(0xFFF5B547),
-    liability: Color(0xFFA98BFF),
-    surfaceRaised: Color(0xFF1B2230),
-    textMuted: Color(0xFF9AA4B5),
-    positiveBg: Color(0xFF12332A),
-    negativeBg: Color(0xFF3A1D25),
+    income: Color(0xFF34D399),
+    spending: Color(0xFFFB7185),
+    debtIn: Color(0xFFFBBF24),
+    liability: Color(0xFFA78BFA),
+    surfaceRaised: Color(0xFF14161B),
+    textMuted: Color(0xFF9AA1AD),
+    positiveBg: Color(0xFF0F2A21),
+    negativeBg: Color(0xFF331820),
   );
 
   @override
@@ -95,18 +95,31 @@ class Sp {
       x5 = 20,
       x6 = 24,
       x8 = 32;
-  static const double rCard = 20, rChip = 12, rField = 14;
+  static const double rCard = 22, rChip = 12, rField = 14;
 }
 
 class AppTheme {
-  static const _seed = Color(0xFF2F6BFF);
+  /// Ink-and-indigo: neutral surfaces, one accent, colour only where it means
+  /// something (money in, money out, status).
+  static const accentLight = Color(0xFF4F46E5);
+  static const accentDark = Color(0xFF8B93FF);
 
   static ThemeData build(Brightness b) {
     final dark = b == Brightness.dark;
-    final scheme = ColorScheme.fromSeed(seedColor: _seed, brightness: b)
+    final accent = dark ? accentDark : accentLight;
+    final ink = dark ? const Color(0xFFF4F5F7) : const Color(0xFF0F1115);
+    final bg = dark ? const Color(0xFF0B0C10) : const Color(0xFFF6F6F8);
+    final hairline = dark ? const Color(0xFF23262D) : const Color(0xFFE6E7EB);
+    final scheme = ColorScheme.fromSeed(seedColor: accentLight, brightness: b)
         .copyWith(
-          surface: dark ? const Color(0xFF0E131C) : const Color(0xFFF5F7FB),
-          primary: dark ? const Color(0xFF7FA2FF) : _seed,
+          primary: accent,
+          onPrimary: dark ? const Color(0xFF0B0C10) : Colors.white,
+          primaryContainer: accent.withValues(alpha: dark ? 0.22 : 0.12),
+          onPrimaryContainer: ink,
+          surface: bg,
+          onSurface: ink,
+          outlineVariant: hairline,
+          outline: dark ? const Color(0xFF3A3E47) : const Color(0xFFC9CCD3),
         );
     final colors = dark ? CashColors.dark : CashColors.light;
     final base = ThemeData(
@@ -114,12 +127,32 @@ class AppTheme {
       colorScheme: scheme,
       brightness: b,
     );
+    final tt = base.textTheme.apply(bodyColor: ink, displayColor: ink);
     return base.copyWith(
-      scaffoldBackgroundColor: scheme.surface,
+      scaffoldBackgroundColor: bg,
       extensions: [colors],
-      textTheme: base.textTheme.apply(
-        bodyColor: scheme.onSurface,
-        displayColor: scheme.onSurface,
+      textTheme: tt.copyWith(
+        headlineLarge: tt.headlineLarge?.copyWith(
+          letterSpacing: -1.0,
+          fontWeight: FontWeight.w800,
+        ),
+        headlineMedium: tt.headlineMedium?.copyWith(
+          letterSpacing: -0.8,
+          fontWeight: FontWeight.w800,
+        ),
+        headlineSmall: tt.headlineSmall?.copyWith(
+          letterSpacing: -0.5,
+          fontWeight: FontWeight.w700,
+        ),
+        titleLarge: tt.titleLarge?.copyWith(
+          letterSpacing: -0.3,
+          fontWeight: FontWeight.w700,
+        ),
+        titleMedium: tt.titleMedium?.copyWith(
+          letterSpacing: -0.1,
+          fontWeight: FontWeight.w600,
+        ),
+        labelLarge: tt.labelLarge?.copyWith(fontWeight: FontWeight.w600),
       ),
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
@@ -128,14 +161,15 @@ class AppTheme {
         },
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: scheme.surface,
+        backgroundColor: bg,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        titleTextStyle: base.textTheme.titleLarge?.copyWith(
-          fontWeight: FontWeight.w700,
-          color: scheme.onSurface,
+        titleTextStyle: tt.titleLarge?.copyWith(
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.4,
+          color: ink,
         ),
       ),
       cardTheme: CardThemeData(
@@ -144,51 +178,92 @@ class AppTheme {
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(Sp.rCard),
-          side: BorderSide(
-            color: scheme.outlineVariant.withValues(alpha: dark ? 0.4 : 0.6),
-          ),
+          side: BorderSide(color: hairline),
         ),
       ),
+      dividerTheme: DividerThemeData(color: hairline, space: 1, thickness: 1),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: colors.surfaceRaised,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(Sp.rField),
-          borderSide: BorderSide(color: scheme.outlineVariant),
+          borderSide: BorderSide(color: hairline),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(Sp.rField),
-          borderSide: BorderSide(color: scheme.outlineVariant),
+          borderSide: BorderSide(color: hairline),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(Sp.rField),
+          borderSide: BorderSide(color: accent, width: 1.6),
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: colors.surfaceRaised,
-        indicatorColor: scheme.primary.withValues(alpha: 0.18),
-        height: 68,
-        labelTextStyle: WidgetStatePropertyAll(base.textTheme.labelMedium),
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        height: 66,
+        indicatorColor: accent.withValues(alpha: dark ? 0.2 : 0.1),
+        labelTextStyle: WidgetStatePropertyAll(
+          tt.labelMedium?.copyWith(fontWeight: FontWeight.w600, fontSize: 11.5),
+        ),
+        iconTheme: WidgetStateProperty.resolveWith(
+          (s) => IconThemeData(
+            color: s.contains(WidgetState.selected) ? accent : colors.textMuted,
+            size: 24,
+          ),
+        ),
       ),
       chipTheme: base.chipTheme.copyWith(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(Sp.rChip),
         ),
-        side: BorderSide(color: scheme.outlineVariant),
+        side: BorderSide(color: hairline),
+        backgroundColor: colors.surfaceRaised,
+        selectedColor: accent.withValues(alpha: dark ? 0.24 : 0.12),
+        labelStyle: tt.labelLarge,
+        showCheckmark: false,
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          minimumSize: const Size.fromHeight(52),
+          minimumSize: const Size.fromHeight(54),
+          elevation: 0,
+          textStyle: tt.titleSmall?.copyWith(fontWeight: FontWeight.w700),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(Sp.rField),
           ),
         ),
       ),
-      floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: scheme.primary,
-        foregroundColor: scheme.onPrimary,
-        elevation: 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(color: hairline),
+          foregroundColor: ink,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(Sp.rField),
+          ),
+        ),
       ),
-      snackBarTheme: const SnackBarThemeData(
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: SegmentedButton.styleFrom(
+          side: BorderSide(color: hairline),
+          selectedBackgroundColor: accent.withValues(alpha: dark ? 0.24 : 0.12),
+          selectedForegroundColor: ink,
+          foregroundColor: colors.textMuted,
+        ),
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: ink,
+        foregroundColor: bg,
+        elevation: 0,
+        highlightElevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      ),
+      listTileTheme: ListTileThemeData(iconColor: colors.textMuted),
+      snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
+        backgroundColor: ink,
+        contentTextStyle: tt.bodyMedium?.copyWith(color: bg),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
     );
   }

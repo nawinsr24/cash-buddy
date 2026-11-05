@@ -3,12 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/insights_repo.dart';
+import '../data/repo.dart';
 import '../platform/diag.dart';
 import '../platform/notifications.dart';
 import '../platform/reminders.dart';
 import '../platform/sms_reader.dart';
 import '../providers.dart';
 import 'dashboard.dart';
+import 'grade_ui.dart';
 import 'debts.dart';
 import '../ui/motion.dart';
 import 'inbox.dart';
@@ -111,6 +114,19 @@ class ShellState extends ConsumerState<Shell> with WidgetsBindingObserver {
       }
     }
     await refreshReminder(repo);
+    await _maybeCelebrate(repo);
+  }
+
+  /// First open of a new month: the title celebration (once per month).
+  Future<void> _maybeCelebrate(Repo repo) async {
+    final due = await repo.celebrationDue();
+    if (due == null || !mounted) return;
+    // mark first, so nothing can ever show it twice
+    await repo.markCelebrated(due.month);
+    ref.invalidate(bannerTitleProvider);
+    if (!mounted) return;
+    await Navigator.of(context)
+        .push(softRoute(TitleRevealPage(title: due, celebrate: true)));
   }
 
   bool _inboxOpen = false;

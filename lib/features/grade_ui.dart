@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +7,7 @@ import '../data/insights_repo.dart';
 import '../domain/grade.dart';
 import '../domain/money.dart';
 import '../providers.dart';
+import '../ui/celebrate.dart';
 import '../ui/motion.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
@@ -132,7 +131,14 @@ class TitleBanner extends ConsumerWidget {
 // ───────────────────────── the reveal ─────────────────────────
 class TitleRevealPage extends ConsumerWidget {
   final MonthTitle title;
-  const TitleRevealPage({super.key, required this.title});
+
+  /// First open of a new month: confetti, and "You earned this title".
+  final bool celebrate;
+  const TitleRevealPage({
+    super.key,
+    required this.title,
+    this.celebrate = false,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -141,156 +147,211 @@ class TitleRevealPage extends ConsumerWidget {
     final colors = titleColors(title.id);
     return Scaffold(
       backgroundColor: colors.first,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: colors,
+      body: ConfettiBurst(
+        play: celebrate,
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: colors,
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: FutureBuilder<MonthStats>(
-            future: repo.monthStats(title.year, title.monthNo),
-            builder: (context, snap) {
-              final s = snap.data;
-              final note = s == null ? null : healthNote(s, seed: title.month);
-              return Column(
-                children: [
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: IconButton(
-                      tooltip: 'Close',
-                      icon: const Icon(Icons.close, color: Colors.white),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                  ),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(
-                        Sp.x6,
-                        0,
-                        Sp.x6,
-                        Sp.x6,
+          child: SafeArea(
+            child: FutureBuilder<MonthStats>(
+              future: repo.monthStats(title.year, title.monthNo),
+              builder: (context, snap) {
+                final s = snap.data;
+                final note = s == null
+                    ? null
+                    : healthNote(s, seed: title.month);
+                return Column(
+                  children: [
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: IconButton(
+                        tooltip: 'Close',
+                        icon: const Icon(Icons.close, color: Colors.white),
+                        onPressed: () => Navigator.of(context).pop(),
                       ),
-                      child: Column(
-                        children: [
-                          Reveal(
-                            child: Text(
-                              monthName(title.month, year: true).toUpperCase(),
-                              style: const TextStyle(
-                                color: Colors.white70,
-                                letterSpacing: 2,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: Sp.x5),
-                          TweenAnimationBuilder<double>(
-                            tween: Tween(begin: 0, end: 1),
-                            duration: const Duration(milliseconds: 900),
-                            curve: Curves.elasticOut,
-                            builder: (_, t, c) => Transform.scale(
-                              scale: t.clamp(0, 1.2),
-                              child: c,
-                            ),
-                            child: Text(
-                              title.id.emoji,
-                              style: const TextStyle(fontSize: 96),
-                            ),
-                          ),
-                          const SizedBox(height: Sp.x4),
-                          Reveal(
-                            index: 2,
-                            child: Text(
-                              title.id.title,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 32,
-                                fontWeight: FontWeight.w900,
-                                height: 1.1,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: Sp.x4),
-                          if (s != null)
+                    ),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(
+                          Sp.x6,
+                          0,
+                          Sp.x6,
+                          Sp.x6,
+                        ),
+                        child: Column(
+                          children: [
                             Reveal(
-                              index: 3,
                               child: Text(
-                                _line(title.id, s, title.month, roast),
+                                celebrate
+                                    ? 'YOU EARNED THIS TITLE  ·  ${monthName(title.month).toUpperCase()}'
+                                    : monthName(
+                                        title.month,
+                                        year: true,
+                                      ).toUpperCase(),
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  letterSpacing: 2,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: Sp.x5),
+                            TweenAnimationBuilder<double>(
+                              tween: Tween(begin: 0, end: 1),
+                              duration: const Duration(milliseconds: 900),
+                              curve: Curves.elasticOut,
+                              builder: (_, t, c) => Transform.scale(
+                                scale: t.clamp(0, 1.2),
+                                child: c,
+                              ),
+                              child: Text(
+                                title.id.emoji,
+                                style: const TextStyle(fontSize: 96),
+                              ),
+                            ),
+                            const SizedBox(height: Sp.x4),
+                            Reveal(
+                              index: 2,
+                              child: Text(
+                                title.id.title,
                                 textAlign: TextAlign.center,
                                 style: const TextStyle(
                                   color: Colors.white,
-                                  fontSize: 17,
-                                  height: 1.35,
-                                  fontWeight: FontWeight.w600,
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.w900,
+                                  height: 1.1,
                                 ),
                               ),
                             ),
-                          const SizedBox(height: Sp.x5),
-                          if (s != null) ...[
-                            Reveal(index: 4, child: _proof(context, s)),
                             const SizedBox(height: Sp.x4),
-                            Reveal(
-                              index: 5,
-                              child: _box(
-                                '👉  Next move',
-                                nextStep(s, roast: roast),
-                              ),
-                            ),
-                          ],
-                          if (note != null) ...[
-                            const SizedBox(height: Sp.x4),
-                            Reveal(
-                              index: 6,
-                              child: _box(
-                                '💚  Take care of yourself',
-                                note,
-                                foot: 'General encouragement, not medical advice.',
-                              ),
-                            ),
-                          ],
-                          const SizedBox(height: Sp.x5),
-                          Reveal(
-                            index: 7,
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: FilledButton.icon(
-                                    style: FilledButton.styleFrom(
-                                      backgroundColor: Colors.white,
-                                      foregroundColor: colors.first,
-                                      minimumSize: const Size.fromHeight(52),
-                                    ),
-                                    icon: const Icon(Icons.ios_share),
-                                    label: const Text('Copy to share'),
-                                    onPressed: () async {
-                                      await Clipboard.setData(
-                                        ClipboardData(
-                                          text:
-                                              '${title.id.emoji} My ${monthName(title.month)} title on Cash++: ${title.id.title}',
-                                        ),
-                                      );
-                                      if (context.mounted) {
-                                        toast(
-                                          context,
-                                          'Copied. Paste it anywhere (no amounts included).',
-                                        );
-                                      }
-                                    },
+                            if (s != null)
+                              Reveal(
+                                index: 3,
+                                child: Text(
+                                  _line(title.id, s, title.month, roast),
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 17,
+                                    height: 1.35,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                              ],
+                              ),
+                            const SizedBox(height: Sp.x5),
+                            if (s != null) ...[
+                              Reveal(index: 4, child: _proof(context, s)),
+                              const SizedBox(height: Sp.x4),
+                              FutureBuilder(
+                                future: repo.comparisonFor(title),
+                                builder: (context, cs) {
+                                  final cmp = cs.data;
+                                  if (cmp == null) {
+                                    return const SizedBox.shrink();
+                                  }
+                                  return Padding(
+                                    padding: const EdgeInsets.only(
+                                      bottom: Sp.x4,
+                                    ),
+                                    child: Reveal(
+                                      index: 5,
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          if (cmp.previousTitle != null)
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                bottom: Sp.x2,
+                                              ),
+                                              child: Text(
+                                                'Last month you were ${cmp.previousTitle!.emoji} ${cmp.previousTitle!.title}',
+                                                style: const TextStyle(
+                                                  color: Colors.white70,
+                                                  fontSize: 13,
+                                                ),
+                                              ),
+                                            ),
+                                          CompareCard(
+                                            title: 'Compared with last month',
+                                            currentLabel: monthName(
+                                              title.month,
+                                            ),
+                                            previousLabel: 'Before',
+                                            rows: cmp.rows,
+                                            onDark: true,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                              Reveal(
+                                index: 5,
+                                child: _box(
+                                  '👉  Next move',
+                                  nextStep(s, roast: roast),
+                                ),
+                              ),
+                            ],
+                            if (note != null) ...[
+                              const SizedBox(height: Sp.x4),
+                              Reveal(
+                                index: 6,
+                                child: _box(
+                                  '💚  Take care of yourself',
+                                  note,
+                                  foot: 'General encouragement, not medical advice.',
+                                ),
+                              ),
+                            ],
+                            const SizedBox(height: Sp.x5),
+                            Reveal(
+                              index: 7,
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: FilledButton.icon(
+                                      style: FilledButton.styleFrom(
+                                        backgroundColor: Colors.white,
+                                        foregroundColor: colors.first,
+                                        minimumSize: const Size.fromHeight(52),
+                                      ),
+                                      icon: const Icon(Icons.ios_share),
+                                      label: const Text('Copy to share'),
+                                      onPressed: () async {
+                                        await Clipboard.setData(
+                                          ClipboardData(
+                                            text:
+                                                '${title.id.emoji} My ${monthName(title.month)} title on Cash++: ${title.id.title}',
+                                          ),
+                                        );
+                                        if (context.mounted) {
+                                          toast(
+                                            context,
+                                            'Copied. Paste it anywhere (no amounts included).',
+                                          );
+                                        }
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              );
-            },
+                  ],
+                );
+              },
+            ),
           ),
         ),
       ),
@@ -380,244 +441,6 @@ class TitleRevealPage extends ConsumerWidget {
       ),
     ],
   );
-}
-
-// ───────────────────────── Money Grade ─────────────────────────
-class _RingPainter extends CustomPainter {
-  final double fraction;
-  final Color track, color;
-  _RingPainter(this.fraction, this.track, this.color);
-  @override
-  void paint(Canvas canvas, Size size) {
-    final r = Rect.fromLTWH(6, 6, size.width - 12, size.height - 12);
-    final base = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 10
-      ..strokeCap = StrokeCap.round;
-    canvas.drawArc(r, 0, math.pi * 2, false, base..color = track);
-    canvas.drawArc(
-      r,
-      -math.pi / 2,
-      math.pi * 2 * fraction.clamp(0, 1),
-      false,
-      base..color = color,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_RingPainter o) =>
-      o.fraction != fraction || o.color != color;
-}
-
-Color gradeColor(int score) => score >= 75
-    ? const Color(0xFF22B573)
-    : score >= 55
-    ? const Color(0xFFF59E0B)
-    : const Color(0xFFEF4444);
-
-class GradeRing extends StatelessWidget {
-  final MoneyGrade grade;
-  final double size;
-  const GradeRing({super.key, required this.grade, this.size = 96});
-  @override
-  Widget build(BuildContext context) {
-    final color = grade.building
-        ? context.cash.textMuted
-        : gradeColor(grade.score);
-    return SizedBox(
-      width: size,
-      height: size,
-      child: TweenAnimationBuilder<double>(
-        tween: Tween(end: grade.building ? 0 : grade.score / 100),
-        duration: const Duration(milliseconds: 1100),
-        curve: Curves.easeOutCubic,
-        builder: (_, v, _) => CustomPaint(
-          painter: _RingPainter(v, color.withValues(alpha: 0.18), color),
-          child: Center(
-            child: Text(
-              grade.building ? '…' : grade.letter,
-              style: TextStyle(
-                fontSize: size * 0.34,
-                fontWeight: FontWeight.w900,
-                color: color,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class GradeCard extends ConsumerWidget {
-  const GradeCard({super.key});
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final s = ref.watch(monthStatsProvider).value;
-    final roast = ref.watch(roastModeProvider).value ?? true;
-    if (s == null) return const SizedBox.shrink();
-    final g = computeGrade(s);
-    final c = context.cash;
-    return Pressable(
-      onTap: () =>
-          Navigator.of(context).push(softRoute(const GradeDetailPage())),
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(Sp.x4),
-          child: Row(
-            children: [
-              GradeRing(grade: g),
-              const SizedBox(width: Sp.x4),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Money Grade',
-                      style: context.text.labelLarge?.copyWith(
-                        color: c.textMuted,
-                      ),
-                    ),
-                    Text(
-                      g.building
-                          ? 'Building your grade…'
-                          : '${g.score}/100 this month',
-                      style: context.text.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      g.building
-                          ? 'Log 10 entries and I will start judging you.'
-                          : nextStep(s, roast: roast),
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: context.text.bodySmall?.copyWith(
-                        color: c.textMuted,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class GradeDetailPage extends ConsumerWidget {
-  const GradeDetailPage({super.key});
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final s = ref.watch(monthStatsProvider).value;
-    final roast = ref.watch(roastModeProvider).value ?? true;
-    return Scaffold(
-      appBar: AppBar(title: const Text('Money Grade')),
-      body: s == null
-          ? const Center(child: CircularProgressIndicator.adaptive())
-          : _body(context, s, roast),
-    );
-  }
-
-  Widget _body(BuildContext context, MonthStats s, bool roast) {
-    final g = computeGrade(s);
-    final c = context.cash;
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(Sp.x4, 0, Sp.x4, Sp.x8),
-      children: [
-        Center(child: GradeRing(grade: g, size: 150)),
-        const SizedBox(height: Sp.x3),
-        Center(
-          child: Text(
-            g.building ? 'Not enough entries yet' : '${g.score} out of 100',
-            style: context.text.titleLarge?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        ),
-        const SizedBox(height: Sp.x5),
-        for (var i = 0; i < g.parts.length; i++)
-          Reveal(
-            index: i,
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: Sp.x3),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          g.parts[i].label,
-                          style: context.text.titleSmall,
-                        ),
-                      ),
-                      Text(
-                        '${g.parts[i].score.round()}/${g.parts[i].max.round()}',
-                        style: context.text.labelLarge?.copyWith(
-                          color: c.textMuted,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: TweenAnimationBuilder<double>(
-                      tween: Tween(end: g.parts[i].fraction),
-                      duration: const Duration(milliseconds: 900),
-                      curve: Curves.easeOutCubic,
-                      builder: (_, v, _) => LinearProgressIndicator(
-                        value: v,
-                        minHeight: 10,
-                        color: gradeColor((v * 100).round()),
-                        backgroundColor: c.textMuted.withValues(alpha: 0.15),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        const SizedBox(height: Sp.x2),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(Sp.x4),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '👉  Next move',
-                  style: context.text.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: Sp.x2),
-                Text(nextStep(s, roast: roast)),
-              ],
-            ),
-          ),
-        ),
-        if (healthNote(s, seed: 'now') != null) ...[
-          const SizedBox(height: Sp.x3),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(Sp.x4),
-              child: Text(healthNote(s, seed: 'now')!),
-            ),
-          ),
-        ],
-        const SizedBox(height: Sp.x3),
-        Text(
-          'A guide to your habits, not financial advice. Covers this month so far.',
-          style: context.text.bodySmall?.copyWith(color: c.textMuted),
-        ),
-      ],
-    );
-  }
 }
 
 // ───────────────────────── trophy shelf ─────────────────────────
@@ -792,16 +615,9 @@ class _InsightCard extends StatelessWidget {
     width: 158,
     padding: const EdgeInsets.all(Sp.x3),
     decoration: BoxDecoration(
+      color: context.cash.surfaceRaised,
       borderRadius: BorderRadius.circular(Sp.rCard),
-      gradient: LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [
-          i.color.withValues(alpha: 0.22),
-          i.color.withValues(alpha: 0.08),
-        ],
-      ),
-      border: Border.all(color: i.color.withValues(alpha: 0.3)),
+      border: Border.all(color: context.scheme.outlineVariant),
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -809,14 +625,20 @@ class _InsightCard extends StatelessWidget {
       children: [
         Row(
           children: [
-            Text(i.emoji, style: const TextStyle(fontSize: 20)),
-            const SizedBox(width: 6),
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(color: i.color, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 7),
             Expanded(
               child: Text(
                 i.label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: context.text.labelMedium,
+                style: context.text.labelMedium?.copyWith(
+                  color: context.cash.textMuted,
+                ),
               ),
             ),
           ],
@@ -828,7 +650,7 @@ class _InsightCard extends StatelessWidget {
             i.value,
             style: context.text.titleLarge?.copyWith(
               fontWeight: FontWeight.w800,
-              color: i.color,
+              letterSpacing: -0.6,
               fontFeatures: moneyFeatures,
             ),
           ),

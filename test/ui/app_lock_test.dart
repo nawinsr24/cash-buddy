@@ -46,7 +46,7 @@ void main() {
       await settle(tester);
       expect(find.text('Cash++ is locked'), findsOneWidget);
       expect(
-        find.text('Total balance'),
+        find.text('TOTAL BALANCE'),
         findsNothing,
       ); // nothing leaks behind the lock
       expect(auth.calls, greaterThan(0));
@@ -58,7 +58,7 @@ void main() {
       auth.result = true;
       await tester.tap(find.text('Unlock'));
       await settle(tester);
-      expect(find.text('Total balance'), findsOneWidget);
+      expect(find.text('TOTAL BALANCE'), findsOneWidget);
     },
   );
 
@@ -80,7 +80,7 @@ void main() {
       ),
     );
     await settle(tester);
-    expect(find.text('Total balance'), findsOneWidget);
+    expect(find.text('TOTAL BALANCE'), findsOneWidget);
     expect(auth.calls, 0);
   });
 }

@@ -113,3 +113,20 @@ String budgetHeadline(BudgetStatus b, {required bool roast}) {
           : '${m(b.remaining)} over budget. A lighter month ahead will balance it.';
   }
 }
+
+/// One month in the year chart. [budget] is null for months before a budget
+/// existed; [spent] is always shown.
+class BudgetYearMonth {
+  final int month, spent;
+  final int? budget;
+  final bool current, future;
+  const BudgetYearMonth({
+    required this.month,
+    required this.spent,
+    required this.budget,
+    this.current = false,
+    this.future = false,
+  });
+  BudgetState? get state =>
+      budget == null || future ? null : budgetState(spent, budget!);
+}

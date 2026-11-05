@@ -153,6 +153,25 @@ class InvestmentEntries extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// Budget data, synced like everything else. Row ids are deterministic:
+///  `base`            the amount that applies to every month
+///  `month:YYYY-MM`   a one-month override
+///  `split:<catId>`   money set aside for a main category
+///  `since`           the first month a budget existed ([key] = YYYY-MM)
+///  `result:YYYY-MM`  frozen result of a finished month (amount = budget,
+///                    spent = what was spent)
+class BudgetItems extends Table {
+  TextColumn get id => text()();
+  TextColumn get kind => text()(); // base | month | split | since | result
+  TextColumn get key => text().withDefault(const Constant(''))();
+  IntColumn get amountMinor => integer().withDefault(const Constant(0))();
+  IntColumn get spentMinor => integer().withDefault(const Constant(0))();
+  TextColumn get hlc => text()();
+  TextColumn get deletedAt => text().nullable()();
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 /// Device-local (never synced): SMS candidates awaiting review.
 class SmsInbox extends Table {
   TextColumn get id => text()();
@@ -190,6 +209,7 @@ class Settings extends Table {
     DebtEvents,
     Investments,
     InvestmentEntries,
+    BudgetItems,
     SmsInbox,
     Settings,
   ],
@@ -208,7 +228,7 @@ class AppDatabase extends _$AppDatabase {
   static AppDatabase open() => AppDatabase(openAppDatabase());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -227,6 +247,9 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(investments, investments.timeOfDay);
         await m.addColumn(investments, investments.installments);
         await m.addColumn(investments, investments.endDate);
+      }
+      if (from < 4) {
+        await m.createTable(budgetItems);
       }
       if (from < 3) {
         // Chit funds became custom monthly plans: instalment = monthly amount,

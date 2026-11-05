@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:cash_buddy/data/budget_repo.dart';
 import 'package:cash_buddy/data/invest_repo.dart';
 import 'package:cash_buddy/data/repo.dart';
 import 'package:cash_buddy/domain/dates.dart';
@@ -44,6 +45,7 @@ Future<String> dump(Repo r) async {
     'e': rows(await r.db.select(r.db.debtEvents).get()),
     'i': rows(await r.db.select(r.db.investments).get()),
     'ie': rows(await r.db.select(r.db.investmentEntries).get()),
+    'b': rows(await r.db.select(r.db.budgetItems).get()),
   });
 }
 
@@ -347,5 +349,30 @@ void main() {
     expect(await a.repo.investmentEntries(id), isEmpty);
     expect(await dump(a.repo), await dump(b.repo));
     expect(await a.repo.checkInvariants(), isEmpty);
+  });
+
+  test('budget, splits and frozen results sync to another device', () async {
+    final remote = InMemoryRemote();
+    final a = await dev('A', remote);
+    final b = await dev('B', remote);
+    await syncAll([a, b]);
+    await a.repo.setBudget(3000000);
+    await a.repo.setBudget(4500000, month: DateTime(2026, 12));
+    await a.repo.setBudgetSplit('cat_food', 800000);
+    await a.repo.setBudgetSplit('cat_health', 200000);
+    await syncAll([a, b]);
+    expect(await b.repo.budgetFor(2026, 11), 3000000);
+    expect(await b.repo.budgetFor(2026, 12), 4500000);
+    expect(await b.repo.budgetSplits(), {
+      'cat_food': 800000,
+      'cat_health': 200000,
+    });
+    // B removes a split and the monthly override; A converges (tombstones)
+    await b.repo.setBudgetSplit('cat_health', null);
+    await b.repo.setBudget(null, month: DateTime(2026, 12));
+    await syncAll([a, b]);
+    expect(await a.repo.budgetSplits(), {'cat_food': 800000});
+    expect(await a.repo.budgetFor(2026, 12), 3000000);
+    expect(await dump(a.repo), await dump(b.repo));
   });
 }

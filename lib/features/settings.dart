@@ -17,6 +17,8 @@ import '../platform/sms_reader.dart';
 import '../providers.dart';
 import '../sync/backup.dart';
 import '../sync/drive_remote.dart';
+import '../sync/sync_service.dart';
+import '../ui/loaders.dart';
 import '../ui/motion.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
@@ -78,27 +80,43 @@ class SettingsPage extends ConsumerWidget {
                             ? 'Last sync failed'
                             : 'Up to date',
                       ),
-                      subtitle: Text(
-                        s.lastSyncError ??
-                            (s.lastSyncAt == null
-                                ? 'Not synced yet'
-                                : 'Last synced ${DateFormat('d MMM, h:mm a').format(DateTime.parse(s.lastSyncAt!).toLocal())}'),
+                      subtitle: ValueListenableBuilder<SyncProgress>(
+                        valueListenable: ref.read(syncServiceProvider).progress,
+                        builder: (context, p, _) => p.active
+                            ? SyncProgressLine(p: p)
+                            : Text(
+                                s.lastSyncError ??
+                                    (s.lastSyncAt == null
+                                        ? 'Not synced yet'
+                                        : 'Last synced ${DateFormat('d MMM, h:mm a').format(DateTime.parse(s.lastSyncAt!).toLocal())}'),
+                              ),
                       ),
-                      trailing: TextButton(
-                        onPressed: () async {
-                          final r = await ref
-                              .read(syncServiceProvider)
-                              .syncNow();
-                          if (context.mounted) {
-                            toast(
-                              context,
-                              r.ok
-                                  ? 'Synced: ${r.pushedRows} sent, ${r.pulledRows} received'
-                                  : 'Sync failed: ${r.error}',
-                            );
-                          }
-                        },
-                        child: const Text('Sync now'),
+                      trailing: ValueListenableBuilder<SyncProgress>(
+                        valueListenable: ref.read(syncServiceProvider).progress,
+                        builder: (context, p, _) => p.active
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.4,
+                                ),
+                              )
+                            : TextButton(
+                                onPressed: () async {
+                                  final r = await ref
+                                      .read(syncServiceProvider)
+                                      .syncNow();
+                                  if (context.mounted) {
+                                    toast(
+                                      context,
+                                      r.ok
+                                          ? 'Synced: ${r.pushedRows} sent, ${r.pulledRows} received'
+                                          : 'Sync failed: ${r.error}',
+                                    );
+                                  }
+                                },
+                                child: const Text('Sync now'),
+                              ),
                       ),
                     ),
                   ],

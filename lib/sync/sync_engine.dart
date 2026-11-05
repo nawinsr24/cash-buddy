@@ -62,6 +62,11 @@ class SyncResult {
   bool get ok => error == null;
 }
 
+/// The steps of a sync, reported so the UI can show real progress.
+enum SyncStage { signingIn, finding, downloading, merging, rebuilding, sending }
+
+typedef SyncProgressFn = void Function(SyncStage stage, int done, int total);
+
 /// State-based, row-level last-writer-wins sync over immutable segment files.
 ///
 ///  * Every synced row has an HLC `hlc` (version) + `deleted_at` tombstone.
@@ -77,7 +82,10 @@ class SyncEngine {
   final Repo repo;
   final RemoteStore remote;
   final String deviceId;
-  SyncEngine(this.repo, this.remote, this.deviceId);
+  final SyncProgressFn? onProgress;
+  SyncEngine(this.repo, this.remote, this.deviceId, {this.onProgress});
+  void _p(SyncStage s, [int done = 0, int total = 0]) =>
+      onProgress?.call(s, done, total);
 
   AppDatabase get db => repo.db;
   Hlc get clock => repo.clock;
@@ -90,6 +98,7 @@ class SyncEngine {
     'debt_events',
     'investments',
     'investment_entries',
+    'budget_items',
   ];
 
   Future<SyncResult> sync() async {
@@ -140,6 +149,7 @@ class SyncEngine {
       db.investmentEntries,
       db.investmentEntries.hlc,
     );
+    await grab('budget_items', db.budgetItems, db.budgetItems.hlc);
     return out;
   }
 
@@ -156,6 +166,7 @@ class SyncEngine {
         count++;
       }
     }
+    _p(SyncStage.sending, 0, count);
     final seq = int.parse(await repo.getSetting('segSeq') ?? '0') + 1;
     final payload = jsonEncode({
       'schema': schema,
@@ -182,12 +193,16 @@ class SyncEngine {
     ) as List).cast<String>().toSet();
     var rows = 0, segs = 0;
     final touchedDebts = <String>{};
-    for (final name in await remote.list()) {
-      if (!name.startsWith('seg/') ||
-          name.startsWith('seg/$deviceId/') ||
-          applied.contains(name)) {
-        continue;
-      }
+    _p(SyncStage.finding);
+    final pending = [
+      for (final name in await remote.list())
+        if (name.startsWith('seg/') &&
+            !name.startsWith('seg/$deviceId/') &&
+            !applied.contains(name))
+          name,
+    ];
+    for (final name in pending) {
+      _p(SyncStage.downloading, segs, pending.length);
       final bytes = await remote.read(name);
       final env =
           jsonDecode(utf8.decode(gzipDecode(bytes))) as Map<String, dynamic>;
@@ -199,6 +214,7 @@ class SyncEngine {
       if ((data['schema'] as int) > schema) {
         throw StateError('Segment $name needs a newer app version');
       }
+      _p(SyncStage.merging, segs, pending.length);
       await db.transaction(() async {
         final r = data['rows'] as Map<String, dynamic>;
         for (final t in _tables) {
@@ -219,8 +235,11 @@ class SyncEngine {
       await repo.setSetting('appliedSegs', jsonEncode(applied.toList()));
     }
     if (segs > 0) {
+      _p(SyncStage.rebuilding, 0, touchedDebts.length);
+      var i = 0;
       for (final id in touchedDebts) {
         await repo.reconcileDebt(id);
+        _p(SyncStage.rebuilding, ++i, touchedDebts.length);
       }
     }
     return (rows, segs);
@@ -265,6 +284,10 @@ class SyncEngine {
         local = (await (db.select(
           db.investmentEntries,
         )..where((t) => t.id.equals(id))).getSingleOrNull())?.hlc;
+      case 'budget_items':
+        local = (await (db.select(
+          db.budgetItems,
+        )..where((t) => t.id.equals(id))).getSingleOrNull())?.hlc;
     }
     if (local != null && local.compareTo(incoming) >= 0) return false;
     switch (table) {
@@ -295,6 +318,10 @@ class SyncEngine {
         await db
             .into(db.investmentEntries)
             .insertOnConflictUpdate(InvestmentEntry.fromJson(json));
+      case 'budget_items':
+        await db
+            .into(db.budgetItems)
+            .insertOnConflictUpdate(BudgetItem.fromJson(json));
     }
     return true;
   }

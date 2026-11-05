@@ -138,7 +138,7 @@ void main() {
       await tester.runAsync(() => env.repo.totalBalance()),
       500000 - 12300,
     );
-    expect(find.text('Total balance'), findsOneWidget);
+    expect(find.text('TOTAL BALANCE'), findsOneWidget);
   });
 
   testWidgets('"Start fresh" keeps the wizard going', (tester) async {
