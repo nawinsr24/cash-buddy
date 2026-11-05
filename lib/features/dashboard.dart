@@ -744,6 +744,7 @@ class PillarDetailPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: Text(title)),
       body: d.when(
+        skipLoadingOnReload: true,
         loading: () =>
             const Center(child: CircularProgressIndicator.adaptive()),
         error: (e, _) => ErrorState(e),

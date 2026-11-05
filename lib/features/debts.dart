@@ -72,6 +72,7 @@ class _DebtList extends ConsumerWidget {
     final rec = direction == 'receivable';
     final color = rec ? context.cash.debtIn : context.cash.liability;
     return list.when(
+      skipLoadingOnReload: true,
       loading: () => const Center(child: CircularProgressIndicator.adaptive()),
       error: (e, _) => ErrorState(e),
       data: (items) {

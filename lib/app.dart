@@ -24,15 +24,18 @@ class CashBuddyApp extends ConsumerWidget {
       theme: AppTheme.build(Brightness.light),
       darkTheme: AppTheme.build(Brightness.dark),
       themeMode: mode,
-      home: s.when(
-        loading: () => const Scaffold(
-          body: Center(child: CircularProgressIndicator.adaptive()),
-        ),
-        error: (e, _) => Scaffold(body: Center(child: Text('$e'))),
-        data: (v) => v.onboarded
-            ? const AppLockGate(child: Shell())
-            : const OnboardingPage(),
-      ),
+      // Once settings have loaded, never swap back to a spinner: they reload
+      // on every database write, and replacing the app would rebuild the
+      // whole UI (and re-lock it) each time.
+      home: s.hasValue
+          ? (s.value!.onboarded
+                ? const AppLockGate(child: Shell())
+                : const OnboardingPage())
+          : s.hasError
+          ? Scaffold(body: Center(child: Text('${s.error}')))
+          : const Scaffold(
+              body: Center(child: CircularProgressIndicator.adaptive()),
+            ),
     );
   }
 }

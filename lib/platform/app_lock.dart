@@ -42,15 +42,20 @@ final authenticatorProvider = Provider<Authenticator>(
 );
 
 /// Blocks the app behind the device lock when "App lock" is on. Re-locks after
-/// the app has been in the background for [relockAfter].
+/// the app has been in the background for the time chosen in Settings.
 class AppLockGate extends ConsumerStatefulWidget {
   final Widget child;
-  final Duration relockAfter;
-  const AppLockGate({
-    super.key,
-    required this.child,
-    this.relockAfter = const Duration(seconds: 30),
-  });
+
+  /// Overrides the Settings value (tests).
+  final Duration? relockAfter;
+  const AppLockGate({super.key, required this.child, this.relockAfter});
+
+  static DateTime? _holdUntil;
+
+  /// Call right before the app opens a system screen of its own (a permission
+  /// dialog, Google sign-in). Coming back from it will not re-lock the app.
+  static void holdOff([Duration d = const Duration(seconds: 90)]) =>
+      _holdUntil = DateTime.now().add(d);
   @override
   ConsumerState<AppLockGate> createState() => _AppLockGateState();
 }
@@ -81,7 +86,14 @@ class _AppLockGateState extends ConsumerState<AppLockGate>
     } else if (state == AppLifecycleState.resumed) {
       final p = _pausedAt;
       _pausedAt = null;
-      if (p != null && DateTime.now().difference(p) >= widget.relockAfter) {
+      final hold = AppLockGate._holdUntil;
+      if (hold != null && DateTime.now().isBefore(hold)) return;
+      final after =
+          widget.relockAfter ??
+          Duration(
+            seconds: ref.read(settingsProvider).value?.lockAfterSeconds ?? 300,
+          );
+      if (!_prompting && p != null && DateTime.now().difference(p) >= after) {
         setState(() => _unlocked = false);
       }
     }

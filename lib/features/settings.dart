@@ -41,6 +41,7 @@ class SettingsPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: async.when(
+        skipLoadingOnReload: true,
         loading: () =>
             const Center(child: CircularProgressIndicator.adaptive()),
         error: (e, _) => ErrorState(e),
@@ -264,6 +265,7 @@ class SettingsPage extends ConsumerWidget {
                       value: s.reminderEnabled,
                       onChanged: (v) async {
                         if (v) {
+                          AppLockGate.holdOff();
                           final ok = await Notifications.instance
                               .requestPermission();
                           if (!ok) {
@@ -292,22 +294,6 @@ class SettingsPage extends ConsumerWidget {
                         } else {
                           await repo.setSetting('reminderEnabled', '0');
                           await Notifications.instance.cancelDailyReview();
-                        }
-                      },
-                    ),
-                    ListTile(
-                      leading: const Icon(Icons.notifications_none),
-                      title: const Text('Send a test notification'),
-                      onTap: () async {
-                        await Notifications.instance.requestPermission();
-                        final err = await Notifications.instance.testNow();
-                        if (context.mounted) {
-                          toast(
-                            context,
-                            err == null
-                                ? 'Sent. Check your notification shade.'
-                                : 'Failed: $err',
-                          );
                         }
                       },
                     ),
@@ -351,16 +337,74 @@ class SettingsPage extends ConsumerWidget {
                 ],
               ),
             ),
+            const _Group('Notifications'),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.notifications_none),
+                title: const Text('Send a test notification'),
+                subtitle: const Text(
+                  'Checks that Cash++ can alert you on this phone',
+                ),
+                onTap: () async {
+                  // the permission dialog is ours: don't lock the app after it
+                  AppLockGate.holdOff();
+                  await Notifications.instance.requestPermission();
+                  final err = await Notifications.instance.testNow();
+                  if (context.mounted) {
+                    toast(
+                      context,
+                      err == null
+                          ? 'Sent. Check your notification shade.'
+                          : 'Failed: $err',
+                    );
+                  }
+                },
+              ),
+            ),
             const _Group('Security'),
             Card(
-              child: SwitchListTile.adaptive(
-                secondary: const Icon(Icons.lock_outline),
-                title: const Text('App lock'),
-                subtitle: const Text(
-                  'Require fingerprint, face or your phone PIN to open Cash++. Also hides the app in the recent-apps view.',
-                ),
-                value: s.appLock,
-                onChanged: (v) => _toggleLock(context, ref, v),
+              child: Column(
+                children: [
+                  SwitchListTile.adaptive(
+                    secondary: const Icon(Icons.lock_outline),
+                    title: const Text('App lock'),
+                    subtitle: const Text(
+                      'Require fingerprint, face or your phone PIN to open Cash++. Also hides the app in the recent-apps view.',
+                    ),
+                    value: s.appLock,
+                    onChanged: (v) => _toggleLock(context, ref, v),
+                  ),
+                  if (s.appLock) ...[
+                    const Divider(height: 1),
+                    Padding(
+                      padding: const EdgeInsets.all(Sp.x4),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Ask again after being away for',
+                            style: context.text.labelLarge,
+                          ),
+                          const SizedBox(height: Sp.x2),
+                          SegmentedButton<int>(
+                            showSelectedIcon: false,
+                            segments: const [
+                              ButtonSegment(value: 0, label: Text('Always')),
+                              ButtonSegment(value: 60, label: Text('1 min')),
+                              ButtonSegment(value: 300, label: Text('5 min')),
+                              ButtonSegment(value: 900, label: Text('15 min')),
+                            ],
+                            selected: {s.lockAfterSeconds},
+                            onSelectionChanged: (v) => repo.setSetting(
+                              'lockAfterSeconds',
+                              '${v.first}',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
             const _Group('Monthly title'),
@@ -511,6 +555,7 @@ class SettingsPage extends ConsumerWidget {
     }
     if (SmsReader.supported) {
       // Show the system permission dialog; only enable when it is granted.
+      AppLockGate.holdOff();
       final granted = await SmsReader.instance.requestPermission();
       if (!granted) {
         if (context.mounted) {
@@ -567,6 +612,7 @@ class SettingsPage extends ConsumerWidget {
       ),
     );
     if (ok != true) return;
+    AppLockGate.holdOff(const Duration(minutes: 2));
     final r = await ref.read(syncServiceProvider).goOnline();
     if (context.mounted) {
       toast(

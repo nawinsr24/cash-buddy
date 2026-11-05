@@ -43,6 +43,9 @@ class AppSettings {
   final bool investReducesBalance, lendReducesBalance;
   final bool smsLearnDigits;
   final String? lastScanInfo;
+
+  /// Seconds in the background before App lock asks again (0 = every time).
+  final int lockAfterSeconds;
   final String? lastSyncAt;
   final String? lastSyncError;
   const AppSettings({
@@ -58,6 +61,7 @@ class AppSettings {
     this.lendReducesBalance = true,
     this.smsLearnDigits = false,
     this.lastScanInfo,
+    this.lockAfterSeconds = 300,
     this.lastSyncAt,
     this.lastSyncError,
   });
@@ -77,6 +81,7 @@ final settingsProvider = FutureProvider.autoDispose<AppSettings>((ref) async {
     smsEnabled: await g('smsEnabled') == '1',
     smsLearnDigits: await g('smsLearnDigits') == '1',
     lastScanInfo: await g('lastScanInfo'),
+    lockAfterSeconds: int.tryParse(await g('lockAfterSeconds') ?? '') ?? 300,
     investReducesBalance: (await g('investReducesBalance') ?? '1') == '1',
     lendReducesBalance: (await g('lendReducesBalance') ?? '1') == '1',
     reminderEnabled: await g('reminderEnabled') == '1',
