@@ -240,6 +240,12 @@ class _BalanceCard extends ConsumerWidget {
               spacing: Sp.x2,
               runSpacing: Sp.x2,
               children: [
+                // With several banks, also show the combined online total.
+                if (accounts.where((a) => a.kind == 'bank').length > 1)
+                  _chip(
+                    '🌐  Online  ${Money.format(accounts.where((a) => a.kind == 'bank').fold<int>(0, (t, a) => t + (bal[a.id] ?? 0)))}',
+                    strong: true,
+                  ),
                 for (final a in accounts)
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -285,6 +291,22 @@ class _BalanceCard extends ConsumerWidget {
     );
   }
 }
+
+Widget _chip(String text, {bool strong = false}) => Container(
+  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+  decoration: BoxDecoration(
+    color: Colors.white.withValues(alpha: strong ? 0.3 : 0.18),
+    borderRadius: BorderRadius.circular(20),
+  ),
+  child: Text(
+    text,
+    style: const TextStyle(
+      color: Colors.white,
+      fontWeight: FontWeight.w700,
+      fontSize: 12.5,
+    ),
+  ),
+);
 
 class _CashButton extends StatelessWidget {
   final String label;
@@ -766,15 +788,15 @@ class PillarDetailPage extends ConsumerWidget {
         emptyText: 'Nothing recorded in this period',
       ),
       if (spending) ...[
-        if (x.cashSpending + x.cardSpending > 0) ...[
-          const SectionTitle('Cash vs card'),
+        if (x.cashSpending + x.onlineSpending > 0) ...[
+          const SectionTitle('Cash vs online'),
           Card(
             child: Padding(
               padding: const EdgeInsets.all(Sp.x4),
               child: _SplitBar(
                 parts: [
                   ('Cash', x.cashSpending, context.cash.income),
-                  ('Card', x.cardSpending, context.scheme.primary),
+                  ('Online', x.onlineSpending, context.scheme.primary),
                 ],
               ),
             ),

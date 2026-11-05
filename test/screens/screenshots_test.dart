@@ -70,7 +70,6 @@ void main() {
       await tester.runAsync(() async {
         env = await newEnv(accountMode: 'split', opening: 8500000, now: now);
         final r = env.repo;
-        await r.setSetting('cashCard', '1');
         await r.setSetting('smsEnabled', '1');
         final d = Dates.today();
         Future<void> t(

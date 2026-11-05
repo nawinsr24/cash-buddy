@@ -20,11 +20,10 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   int _step = 0;
   String? _dataMode;
   String? _accountMode;
-  bool _cashCard = false;
   final _cash = TextEditingController();
   final _bank = TextEditingController();
   bool _saving = false;
-  static const _steps = 4;
+  static const _steps = 3;
 
   bool get _canNext => switch (_step) {
     0 => _dataMode != null,
@@ -51,7 +50,6 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           .completeOnboarding(
             dataMode: _dataMode!,
             accountMode: _accountMode!,
-            cashCard: _cashCard,
             openingCashMinor: cash,
             openingBankMinor: bank,
           );
@@ -138,7 +136,6 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                     value: _accountMode,
                     onChanged: (v) => setState(() => _accountMode = v),
                   ),
-                  _cashCardPage(),
                   _openingPage(),
                 ],
               ),
@@ -270,24 +267,6 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             ),
           ),
         ),
-    ],
-  );
-
-  Widget _cashCardPage() => ListView(
-    padding: const EdgeInsets.symmetric(horizontal: Sp.x6),
-    children: [
-      _header(
-        'Cash vs card?',
-        'Optionally tag every transaction as cash or card to see the split on your dashboard.',
-      ),
-      Card(
-        child: SwitchListTile.adaptive(
-          title: const Text('Track cash and card separately'),
-          subtitle: const Text('You can turn this off any time.'),
-          value: _cashCard,
-          onChanged: (v) => setState(() => _cashCard = v),
-        ),
-      ),
     ],
   );
 

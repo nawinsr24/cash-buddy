@@ -29,20 +29,19 @@ class AppSettings {
   final bool onboarded;
   final String accountMode; // combined | split
   final String dataMode; // offline | online
-  final bool cashCard;
   final bool smsEnabled;
   final bool reminderEnabled;
   final String reminderTime; // HH:mm
   final String themeMode; // system | light | dark
   final bool appLock;
   final bool investReducesBalance, lendReducesBalance;
+  final bool smsLearnDigits;
   final String? lastSyncAt;
   final String? lastSyncError;
   const AppSettings({
     this.onboarded = false,
     this.accountMode = 'combined',
     this.dataMode = 'offline',
-    this.cashCard = false,
     this.smsEnabled = false,
     this.reminderEnabled = false,
     this.reminderTime = '08:00',
@@ -50,6 +49,7 @@ class AppSettings {
     this.appLock = false,
     this.investReducesBalance = true,
     this.lendReducesBalance = true,
+    this.smsLearnDigits = false,
     this.lastSyncAt,
     this.lastSyncError,
   });
@@ -66,8 +66,8 @@ final settingsProvider = FutureProvider.autoDispose<AppSettings>((ref) async {
     onboarded: await g('onboarded') == '1',
     accountMode: await g('accountMode') ?? 'combined',
     dataMode: await g('dataMode') ?? 'offline',
-    cashCard: await g('cashCard') == '1',
     smsEnabled: await g('smsEnabled') == '1',
+    smsLearnDigits: await g('smsLearnDigits') == '1',
     investReducesBalance: (await g('investReducesBalance') ?? '1') == '1',
     lendReducesBalance: (await g('lendReducesBalance') ?? '1') == '1',
     reminderEnabled: await g('reminderEnabled') == '1',

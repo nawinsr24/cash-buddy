@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
@@ -188,14 +189,6 @@ class SettingsPage extends ConsumerWidget {
                     ),
                   ),
                   const Divider(height: 1),
-                  SwitchListTile.adaptive(
-                    secondary: const Icon(Icons.credit_card),
-                    title: const Text('Track cash vs card'),
-                    value: s.cashCard,
-                    onChanged: (v) =>
-                        repo.setSetting('cashCard', v ? '1' : '0'),
-                  ),
-                  const Divider(height: 1),
                   ListTile(
                     leading: const Icon(Icons.savings_outlined),
                     title: const Text('Manage accounts'),
@@ -240,6 +233,19 @@ class SettingsPage extends ConsumerWidget {
                         'Reads recent bank messages on this phone',
                       ),
                       onTap: () => scanAndReport(context, ref),
+                    ),
+                  ],
+                  if (s.smsEnabled && s.split) ...[
+                    const Divider(height: 1),
+                    SwitchListTile.adaptive(
+                      secondary: const Icon(Icons.pin_outlined),
+                      title: const Text('Remember account digits'),
+                      subtitle: const Text(
+                        'Optional. Learns the last 4 digits of a bank account from messages you confirm, so later ones are pre-selected. You can also type them in Accounts.',
+                      ),
+                      value: s.smsLearnDigits,
+                      onChanged: (v) =>
+                          repo.setSetting('smsLearnDigits', v ? '1' : '0'),
                     ),
                   ],
                   if (s.smsEnabled) ...[
@@ -553,7 +559,7 @@ class AccountsPage extends ConsumerWidget {
       floatingActionButton: split
           ? FloatingActionButton.extended(
               icon: const Icon(Icons.add),
-              label: const Text('Bank account'),
+              label: const Text('Add bank account'),
               onPressed: () => _edit(context, ref, null),
             )
           : null,
@@ -586,7 +592,12 @@ class AccountsPage extends ConsumerWidget {
                       ),
                     ),
                     title: Text(a.name),
-                    subtitle: Text('Opening ${Money.format(a.openingMinor)}'),
+                    subtitle: Text(
+                      [
+                        'Opening ${Money.format(a.openingMinor)}',
+                        if (a.last4 != null) '•• ${a.last4}',
+                      ].join(' · '),
+                    ),
                     trailing: TrailingMoney(
                       bal[a.id] ?? 0,
                       style: context.text.titleSmall,
@@ -606,6 +617,7 @@ class AccountsPage extends ConsumerWidget {
     final opening = TextEditingController(
       text: a == null ? '' : (a.openingMinor / 100).toStringAsFixed(2),
     );
+    final last4 = TextEditingController(text: a?.last4 ?? '');
     showSheet(
       context,
       (c) => SafeArea(
@@ -620,6 +632,20 @@ class AccountsPage extends ConsumerWidget {
               ),
               const SizedBox(height: Sp.x3),
               AmountField(controller: opening, label: 'Opening balance'),
+              if (a == null || a.kind == 'bank') ...[
+                const SizedBox(height: Sp.x3),
+                TextField(
+                  controller: last4,
+                  keyboardType: TextInputType.number,
+                  maxLength: 4,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  decoration: const InputDecoration(
+                    labelText: 'Last 4 digits of account or card (optional)',
+                    helperText: 'Only used to pre-select this account for bank messages',
+                    counterText: '',
+                  ),
+                ),
+              ],
               const SizedBox(height: Sp.x4),
               FilledButton(
                 onPressed: () async {
@@ -629,7 +655,13 @@ class AccountsPage extends ConsumerWidget {
                       0;
                   try {
                     if (a == null) {
-                      await repo.addAccount(name.text, openingMinor: o);
+                      await repo.addAccount(
+                        name.text,
+                        openingMinor: o,
+                        last4: last4.text.trim().isEmpty
+                            ? null
+                            : last4.text.trim(),
+                      );
                     } else {
                       await repo.updateAccount(
                         a.id,
@@ -637,6 +669,11 @@ class AccountsPage extends ConsumerWidget {
                             ? a.name
                             : name.text.trim(),
                         openingMinor: o,
+                        last4: last4.text.trim().isEmpty
+                            ? null
+                            : last4.text.trim(),
+                        clearLast4:
+                            a.kind == 'bank' && last4.text.trim().isEmpty,
                       );
                     }
                     if (c.mounted) Navigator.pop(c);

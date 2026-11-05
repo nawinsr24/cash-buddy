@@ -184,7 +184,6 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                   account: accounts[t.accountId],
                   toAccount: accounts[t.toAccountId],
                   showAccount: settings?.split ?? false,
-                  showMethod: settings?.cashCard ?? false,
                 );
               },
             );
@@ -266,7 +265,6 @@ class _TxnTile extends ConsumerWidget {
   final Account? account;
   final Account? toAccount;
   final bool showAccount;
-  final bool showMethod;
   const _TxnTile({
     required this.txn,
     this.category,
@@ -274,7 +272,6 @@ class _TxnTile extends ConsumerWidget {
     this.account,
     this.toAccount,
     required this.showAccount,
-    required this.showMethod,
   });
 
   @override
@@ -307,7 +304,6 @@ class _TxnTile extends ConsumerWidget {
         '${account!.name} → ${toAccount!.name}'
       else if (showAccount && account != null)
         account!.name,
-      if (showMethod && txn.paymentMethod != null) txn.paymentMethod!,
       if (txn.source == 'sms') 'SMS',
     ].join(' · ');
     final tile = ListTile(
@@ -485,13 +481,6 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
                 f.accountId,
                 (v) => setState(() => f = _copy(acc: v, clearAcc: v == null)),
               ),
-            if (settings?.cashCard ?? false)
-              chips(
-                'Payment method',
-                [('All', null), ('Cash', 'cash'), ('Card', 'card')],
-                f.paymentMethod,
-                (v) => setState(() => f = _copy(pm: v, clearPm: v == null)),
-              ),
             chips(
               'Source',
               [
@@ -617,9 +606,15 @@ Future<void> showTransactionSheet(
   Transaction? edit,
   String? initialType,
   SmsInboxData? sms,
+  String? accountId,
 }) => showSheet(
   context,
-  (_) => _TxnForm(edit: edit, initialType: initialType, sms: sms),
+  (_) => _TxnForm(
+    edit: edit,
+    initialType: initialType,
+    sms: sms,
+    initialAccountId: accountId,
+  ),
 );
 
 class _TxnForm extends ConsumerStatefulWidget {
@@ -629,7 +624,15 @@ class _TxnForm extends ConsumerStatefulWidget {
   /// A detected bank message. The form opens pre-filled from it, and saving
   /// marks the message as handled. Nothing is added until the user saves.
   final SmsInboxData? sms;
-  const _TxnForm({this.edit, this.initialType, this.sms});
+
+  /// Pre-selected account (e.g. matched from a bank message).
+  final String? initialAccountId;
+  const _TxnForm({
+    this.edit,
+    this.initialType,
+    this.sms,
+    this.initialAccountId,
+  });
   @override
   ConsumerState<_TxnForm> createState() => _TxnFormState();
 }
@@ -652,7 +655,7 @@ class _TxnFormState extends ConsumerState<_TxnForm> {
     text: widget.edit?.merchant ?? widget.sms?.merchant ?? '',
   );
   late String? categoryId = widget.edit?.categoryId;
-  late String? accountId = widget.edit?.accountId;
+  late String? accountId = widget.edit?.accountId ?? widget.initialAccountId;
   late String? toAccountId = widget.edit?.toAccountId;
   late String? method = widget.edit?.paymentMethod;
   late DateTime date = widget.edit != null
@@ -845,20 +848,6 @@ class _TxnFormState extends ConsumerState<_TxnForm> {
                   onChanged: (v) => setState(() => toAccountId = v),
                 ),
               ],
-            ],
-            if ((settings?.cashCard ?? false) && type != 'transfer') ...[
-              const SizedBox(height: Sp.x4),
-              Wrap(
-                spacing: Sp.x2,
-                children: [
-                  for (final m in const ['cash', 'card'])
-                    ChoiceChip(
-                      label: Text(m == 'cash' ? 'Cash' : 'Card'),
-                      selected: method == m,
-                      onSelected: (s) => setState(() => method = s ? m : null),
-                    ),
-                ],
-              ),
             ],
             const SizedBox(height: Sp.x4),
             TextField(

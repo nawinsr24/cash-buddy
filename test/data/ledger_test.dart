@@ -235,8 +235,8 @@ void main() {
         x.spendingByCategory.map((s) => s.totalMinor).reduce((a, b) => a + b),
         x.spending,
       );
-      expect(x.cardSpending, 10000);
-      expect(x.cashSpending, 5000);
+      // combined mode: one account, so no cash/online distinction
+      expect(x.cashSpending + x.onlineSpending, 0);
       expect(x.dailySpending['2026-11-03'], 22000);
     },
   );

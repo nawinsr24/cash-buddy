@@ -94,8 +94,7 @@ void main() {
       );
       await tapText(tester, 'Combined account');
       await tapText(tester, 'Continue');
-      expect(find.text('Cash vs card?'), findsOneWidget);
-      await tapText(tester, 'Continue');
+      expect(find.text('Opening balance'), findsOneWidget);
       await tester.enterText(find.byType(TextField).first, '5000');
       await tapText(tester, 'Start using Cash Buddy');
       expect(find.text('Total balance'), findsOneWidget);

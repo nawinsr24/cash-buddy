@@ -84,7 +84,10 @@ class DashboardData {
       liabilityInterest;
   final List<CatSlice> spendingByCategory, incomeByCategory;
   final Map<String, int> dailySpending, dailyIncome;
-  final int cashSpending, cardSpending;
+
+  /// Spending by where it was paid from: the Cash account vs any bank/online
+  /// account. Both are 0 in Combined mode (one account, no distinction).
+  final int cashSpending, onlineSpending;
   final List<MapEntry<String, int>> spendingByAccount;
   final List<DebtSummary> receivables, liabilityList;
   final int totalBalance;
@@ -105,7 +108,7 @@ class DashboardData {
     required this.dailySpending,
     required this.dailyIncome,
     required this.cashSpending,
-    required this.cardSpending,
+    required this.onlineSpending,
     required this.spendingByAccount,
     required this.receivables,
     required this.liabilityList,
@@ -149,8 +152,6 @@ class Repo {
       (await getSetting('accountMode')) ?? 'combined';
   Future<String> get dataMode async =>
       (await getSetting('dataMode')) ?? 'offline';
-  Future<bool> get cashCardEnabled async =>
-      (await getSetting('cashCard')) == '1';
 
   /// Emits whenever any data table changes (used to refresh UI providers).
   Stream<void> get changes => db.tableUpdates();
@@ -159,14 +160,12 @@ class Repo {
   Future<void> completeOnboarding({
     required String dataMode,
     required String accountMode,
-    required bool cashCard,
     int openingCashMinor = 0,
     int openingBankMinor = 0,
   }) async {
     await db.transaction(() async {
       await setSetting('dataMode', dataMode);
       await setSetting('accountMode', accountMode);
-      await setSetting('cashCard', cashCard ? '1' : '0');
       await seedCategories();
       if (accountMode == 'combined') {
         await _putAccount(
@@ -350,6 +349,8 @@ class Repo {
     int? openingMinor,
     bool? archived,
     int? color,
+    String? last4,
+    bool clearLast4 = false,
   }) async {
     final a = await (db.select(
       db.accounts,
@@ -362,9 +363,30 @@ class Repo {
         colorValue: Value(color ?? a.colorValue),
         openingMinor: Value(openingMinor ?? a.openingMinor),
         archived: Value(archived ?? a.archived),
+        last4: Value(clearLast4 ? null : (last4 ?? a.last4)),
         hlc: Value(clock.next()),
       ),
     );
+  }
+
+  /// Which account a detected bank message most likely belongs to.
+  ///  * one account in total (Combined): that account
+  ///  * the message's account digits match a bank account's last 4: that bank
+  ///  * only one bank account: that bank (nothing to ask)
+  ///  * several banks, no match: the first bank, with [sure] false so the UI
+  ///    can ask the user to confirm.
+  Future<({String id, bool sure})?> accountForSms(String? accountRef) async {
+    final accs = await accounts();
+    if (accs.isEmpty) return null;
+    if (accs.length == 1) return (id: accs.first.id, sure: true);
+    final banks = accs.where((a) => a.kind == 'bank').toList();
+    if (banks.isEmpty) return null;
+    if (accountRef != null && accountRef.isNotEmpty) {
+      final hit = banks.where((b) => b.last4 == accountRef).toList();
+      if (hit.length == 1) return (id: hit.first.id, sure: true);
+    }
+    if (banks.length == 1) return (id: banks.first.id, sure: true);
+    return (id: banks.first.id, sure: false);
   }
 
   /// Balance per account: opening + credits - debits - transfers out + transfers in.
@@ -1272,17 +1294,17 @@ class Repo {
           readsFrom: {db.transactions},
         )
         .get();
-    final byPm = await db
+    final byKind = await db
         .customSelect(
-          "SELECT COALESCE(payment_method,'') AS m, SUM(amount_minor) AS s FROM transactions WHERE type='debit' AND source NOT IN ('debt','invest') AND deleted_at IS NULL AND date BETWEEN ? AND ? GROUP BY payment_method",
+          "SELECT a.kind AS k, SUM(t.amount_minor) AS s FROM transactions t JOIN accounts a ON a.id = t.account_id WHERE t.type='debit' AND t.source NOT IN ('debt','invest') AND t.deleted_at IS NULL AND t.date BETWEEN ? AND ? GROUP BY a.kind",
           variables: [Variable(r.startStr), Variable(r.endStr)],
-          readsFrom: {db.transactions},
+          readsFrom: {db.transactions, db.accounts},
         )
         .get();
-    var cash = 0, card = 0;
-    for (final x in byPm) {
-      if (x.read<String>('m') == 'cash') cash = x.read<int>('s');
-      if (x.read<String>('m') == 'card') card = x.read<int>('s');
+    var cash = 0, online = 0;
+    for (final x in byKind) {
+      if (x.read<String>('k') == 'cash') cash = x.read<int>('s');
+      if (x.read<String>('k') == 'bank') online = x.read<int>('s');
     }
     return DashboardData(
       range: r,
@@ -1301,7 +1323,7 @@ class Repo {
       dailySpending: await _daily('debit', r),
       dailyIncome: await _daily('credit', r),
       cashSpending: cash,
-      cardSpending: card,
+      onlineSpending: online,
       spendingByAccount: [
         for (final x in perAcc)
           MapEntry(accs[x.read<String>('a')] ?? '?', x.read<int>('s')),
@@ -1423,8 +1445,23 @@ class Repo {
       await (db.update(db.smsInbox)..where((x) => x.id.equals(smsId))).write(
         const SmsInboxCompanion(status: Value('confirmed'), body: Value('')),
       );
+      await _learnLast4(accountId, s.accountRef);
       return id;
     });
+  }
+
+  /// With the optional "Remember account digits" setting on: the first time
+  /// the user files a message from "a/c XX1234" under a bank account that has
+  /// no digits yet, remember them so the next message from it is pre-selected.
+  /// Only when the user has switched on "Remember account digits" (off by default).
+  Future<void> _learnLast4(String? accountId, String? ref) async {
+    if (accountId == null || ref == null || ref.isEmpty) return;
+    if (await getSetting('smsLearnDigits') != '1') return;
+    final accs = await accounts();
+    final a = accs.where((x) => x.id == accountId).firstOrNull;
+    if (a == null || a.kind != 'bank' || a.last4 != null) return;
+    if (accs.any((x) => x.last4 == ref)) return;
+    await updateAccount(a.id, last4: ref);
   }
 
   Future<void> discardSms(String smsId) =>

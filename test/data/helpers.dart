@@ -36,7 +36,6 @@ Future<TestEnv> newEnv({
   await env.repo.completeOnboarding(
     dataMode: 'offline',
     accountMode: accountMode,
-    cashCard: true,
     openingCashMinor: opening,
     openingBankMinor: 0,
   );

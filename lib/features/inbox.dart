@@ -144,6 +144,16 @@ class _SmsTile extends ConsumerStatefulWidget {
 }
 
 class _SmsTileState extends ConsumerState<_SmsTile> {
+  /// "→ HDFC" when the digits matched exactly one bank account.
+  String? _matchedName() {
+    final accs = ref.watch(accountsProvider).value ?? const [];
+    final banks = accs.where((a) => a.kind == 'bank').toList();
+    final ref0 = widget.s.accountRef;
+    if (banks.length < 2 || ref0 == null) return null;
+    final hit = banks.where((b) => b.last4 == ref0).toList();
+    return hit.length == 1 ? '→ ${hit.first.name}' : null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = widget.s;
@@ -179,6 +189,7 @@ class _SmsTileState extends ConsumerState<_SmsTile> {
                           [
                             DateFormat('d MMM y').format(Dates.parse(s.date)),
                             if (s.accountRef != null) 'a/c ••${s.accountRef}',
+                            ?_matchedName(),
                           ].join(' · '),
                           style: context.text.bodySmall?.copyWith(
                             color: context.cash.textMuted,
@@ -220,9 +231,13 @@ class _SmsTileState extends ConsumerState<_SmsTile> {
                       ),
                       icon: const Icon(Icons.edit_note),
                       label: const Text('Review & add'),
-                      onPressed: () {
+                      onPressed: () async {
                         haptic();
-                        showTransactionSheet(context, sms: s);
+                        final m = await ref
+                            .read(repoProvider)
+                            .accountForSms(s.accountRef);
+                        if (!context.mounted) return;
+                        showTransactionSheet(context, sms: s, accountId: m?.id);
                       },
                     ),
                   ),
