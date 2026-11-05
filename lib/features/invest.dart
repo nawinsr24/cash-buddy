@@ -176,8 +176,7 @@ class _InvestTile extends StatelessWidget {
     final up = s.gain >= 0;
     final pct = s.gainPct;
     return Pressable(
-      onTap: () =>
-          Navigator.of(context).push(softRoute(InvestDetailPage(id: s.inv.id))),
+      onTap: () => pushReveal(context, InvestDetailPage(id: s.inv.id)),
       child: Card(
         child: Padding(
           padding: const EdgeInsets.all(Sp.x4),

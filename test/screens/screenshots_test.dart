@@ -10,6 +10,7 @@ import 'package:cash_buddy/data/budget_repo.dart';
 import 'package:cash_buddy/data/invest_repo.dart';
 import 'package:cash_buddy/domain/dates.dart';
 import 'package:cash_buddy/domain/sms_parser.dart';
+import 'package:cash_buddy/features/settings.dart' show CategoriesPage;
 import 'package:cash_buddy/providers.dart';
 import 'package:cash_buddy/sync/sync_engine.dart';
 import 'package:cash_buddy/sync/sync_service.dart';
@@ -372,6 +373,37 @@ void main() {
       await settle(tester);
       await tapText(tester, 'Trophy shelf');
       await shot(tester, '$p-13-trophies');
+      await tester.tap(find.byTooltip('Back'));
+      await settle(tester);
+      // categories: sheet, emoji tiles, sub view, and the sent-home party
+      await tapText(tester, 'Home', last: true);
+      await tapText(tester, 'Add');
+      await shot(tester, '$p-14-add-sheet');
+      await tapText(tester, 'Uncategorised');
+      await shot(tester, '$p-15-category-picker');
+      await tester.ensureVisible(find.text('Hobbies').first);
+      await tapText(tester, 'Hobbies');
+      await shot(tester, '$p-16-category-subs');
+      await tester.tap(find.byTooltip('Back to categories'));
+      await settle(tester);
+      await tester.ensureVisible(find.text('Sent Home').first);
+      await tapText(tester, 'Sent Home');
+      await tapText(tester, 'Parents');
+      await tester.enterText(find.byType(TextField).first, '5000');
+      await tapText(tester, 'Add', last: true);
+      await settle(tester);
+      await tester.pump(const Duration(milliseconds: 900));
+      await shot(tester, '$p-17-home-celebration');
+      await tester.tap(find.text('Home is proud of you'));
+      await settle(tester);
+      // the Categories page, opened directly
+      tester
+          .state<NavigatorState>(find.byType(Navigator).first)
+          .push(
+            MaterialPageRoute<void>(builder: (_) => const CategoriesPage()),
+          );
+      await settle(tester);
+      await shot(tester, '$p-18-categories');
       await tester.tap(find.byTooltip('Back'));
       await settle(tester);
       // the new-investment form (recurring) and a schedule detail

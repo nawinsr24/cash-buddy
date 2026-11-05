@@ -144,6 +144,27 @@ extension InsightsRepo on Repo {
         )
         .getSingle();
 
+    // everyday-life categories, each rolled up with its subcategories
+    final life = await db
+        .customSelect(
+          '''SELECT COALESCE(p.id, c.id) AS cid, SUM(t.amount_minor) AS s
+             FROM transactions t
+             JOIN categories c ON c.id = t.category_id
+             LEFT JOIN categories p ON p.id = c.parent_id
+             WHERE t.type='debit' AND t.source NOT IN ('debt','invest')
+               AND t.deleted_at IS NULL AND t.date BETWEEN ? AND ?
+             GROUP BY COALESCE(p.id, c.id)''',
+          variables: [Variable(r.startStr), Variable(r.endStr)],
+          readsFrom: {db.transactions, db.categories},
+        )
+        .get();
+    int lifeOf(String id) {
+      for (final x in life) {
+        if (x.read<String>('cid') == id) return x.read<int>('s');
+      }
+      return 0;
+    }
+
     // overdue: unpaid recurring instalments + liabilities past their due date
     var overdue = 0;
     for (final i in await investments()) {
@@ -218,6 +239,12 @@ extension InsightsRepo on Repo {
       healthSpending: health.read<int>('s'),
       healthCount: health.read<int>('n'),
       budgetMinor: await budgetFor(y, m),
+      smokeSpending: lifeOf('cat_cigarettes'),
+      liquorSpending: lifeOf('cat_liquor'),
+      friendsSpending: lifeOf('cat_friends'),
+      hobbySpending: lifeOf('cat_hobbies'),
+      tripSpending: lifeOf('cat_tours_trips'),
+      homeSent: lifeOf('cat_sent_home'),
     );
   }
 

@@ -13,7 +13,9 @@ import '../providers.dart';
 import 'dashboard.dart';
 import 'grade_ui.dart';
 import 'debts.dart';
+import '../ui/fun_nav.dart';
 import '../ui/motion.dart';
+import '../ui/widgets.dart' show haptic;
 import 'inbox.dart';
 import 'invest.dart';
 import 'settings.dart';
@@ -41,6 +43,7 @@ class ShellState extends ConsumerState<Shell> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     Diag.instance.log('Shell created');
+    unawaited(ref.read(repoProvider).ensureDefaultCategories());
     WidgetsBinding.instance.addObserver(this);
     Notifications.instance.openInboxRequests.addListener(_openInbox);
     // record how fast the database changes, to spot runaway writes
@@ -196,29 +199,32 @@ class ShellState extends ConsumerState<Shell> with WidgetsBindingObserver {
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 280),
         switchInCurve: Curves.easeOutCubic,
+        // slides in from the side you are moving towards, with a soft squash
         transitionBuilder: (child, anim) => FadeTransition(
           opacity: anim,
           child: SlideTransition(
             position: Tween(
-              begin: const Offset(0, 0.03),
+              begin: Offset(0.10 * _dir, 0),
               end: Offset.zero,
             ).animate(anim),
-            child: child,
+            child: ScaleTransition(
+              scale: Tween(begin: 0.97, end: 1.0).animate(anim),
+              child: child,
+            ),
           ),
         ),
         child: KeyedSubtree(key: ValueKey(tabs[i].label), child: tabs[i].page),
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: i,
-        onDestinationSelected: (v) => setState(() => _index = v),
-        destinations: [
+      bottomNavigationBar: FunNavBar(
+        index: i,
+        items: [
           for (final t in tabs)
-            NavigationDestination(
-              icon: _badge(t, Icon(t.icon)),
-              selectedIcon: _badge(t, Icon(t.selectedIcon)),
-              label: t.label,
-            ),
+            FunNavItem(t.icon, t.selectedIcon, t.label, badge: t.badge),
         ],
+        onTap: (v) {
+          if (v != _index) haptic();
+          _select(v);
+        },
       ),
     );
   }
@@ -228,10 +234,12 @@ class ShellState extends ConsumerState<Shell> with WidgetsBindingObserver {
     return labels.indexOf(label).clamp(0, labels.length - 1);
   }
 
-  void _select(int i) => setState(() => _index = i);
+  int _dir = 1; // +1 moving right, -1 moving left
 
-  Widget _badge(_Tab t, Widget icon) =>
-      t.badge > 0 ? Badge(label: Text('${t.badge}'), child: icon) : icon;
+  void _select(int i) => setState(() {
+    _dir = i >= _index ? 1 : -1;
+    _index = i;
+  });
 }
 
 class _Tab {

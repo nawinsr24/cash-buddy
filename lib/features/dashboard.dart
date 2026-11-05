@@ -240,105 +240,106 @@ class _BalanceCard extends ConsumerWidget {
     final bal = ref.watch(balancesProvider).value ?? const {};
     final dark = Theme.of(context).brightness == Brightness.dark;
     final banks = accounts.where((a) => a.kind == 'bank').toList();
-    return Container(
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(Sp.rCard + 4),
-        color: dark ? const Color(0xFF191B22) : const Color(0xFF0F1115),
-        border: dark ? Border.all(color: const Color(0xFF2A2D36)) : null,
-      ),
-      child: Stack(
-        children: [
-          // a soft accent glow, top right
-          Positioned(
-            right: -60,
-            top: -70,
-            child: Container(
-              width: 220,
-              height: 220,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    const Color(0xFF6366F1).withValues(alpha: 0.38),
-                    const Color(0xFF6366F1).withValues(alpha: 0),
-                  ],
+    return TiltCard(
+      child: Container(
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(Sp.rCard + 4),
+          color: dark ? const Color(0xFF191B22) : const Color(0xFF0F1115),
+          border: dark ? Border.all(color: const Color(0xFF2A2D36)) : null,
+        ),
+        child: Stack(
+          children: [
+            // a soft accent glow, top right
+            Positioned(
+              right: -60,
+              top: -70,
+              child: Container(
+                width: 220,
+                height: 220,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      const Color(0xFF6366F1).withValues(alpha: 0.38),
+                      const Color(0xFF6366F1).withValues(alpha: 0),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(Sp.x5),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'TOTAL BALANCE',
-                  style: context.text.labelSmall?.copyWith(
-                    color: Colors.white54,
-                    letterSpacing: 1.2,
-                    fontWeight: FontWeight.w700,
+            Padding(
+              padding: const EdgeInsets.all(Sp.x5),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'TOTAL BALANCE',
+                    style: context.text.labelSmall?.copyWith(
+                      color: Colors.white54,
+                      letterSpacing: 1.2,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
-                const SizedBox(height: Sp.x2),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: CountUp(
-                    value: total,
-                    builder: (v) => MoneyText(
-                      v,
-                      color: Colors.white,
+                  const SizedBox(height: Sp.x2),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: RollingMoney(
+                      minor: total,
+                      format: (v) => Money.format(v),
                       style: context.text.headlineLarge?.copyWith(
                         fontWeight: FontWeight.w800,
                         fontSize: 38,
                         letterSpacing: -1.4,
+                        color: Colors.white,
+                        fontFeatures: moneyFeatures,
                       ),
                     ),
                   ),
-                ),
-                if (split && accounts.isNotEmpty) ...[
-                  const SizedBox(height: Sp.x4),
-                  Wrap(
-                    spacing: Sp.x2,
-                    runSpacing: Sp.x2,
-                    children: [
-                      if (banks.length > 1)
-                        _chip(
-                          'Online  ${Money.format(banks.fold<int>(0, (t, a) => t + (bal[a.id] ?? 0)))}',
-                          strong: true,
+                  if (split && accounts.isNotEmpty) ...[
+                    const SizedBox(height: Sp.x4),
+                    Wrap(
+                      spacing: Sp.x2,
+                      runSpacing: Sp.x2,
+                      children: [
+                        if (banks.length > 1)
+                          _chip(
+                            'Online  ${Money.format(banks.fold<int>(0, (t, a) => t + (bal[a.id] ?? 0)))}',
+                            strong: true,
+                          ),
+                        for (final a in accounts)
+                          _chip('${a.name}  ${Money.format(bal[a.id] ?? 0)}'),
+                      ],
+                    ),
+                    const SizedBox(height: Sp.x4),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _CashButton(
+                            icon: Icons.south_west,
+                            label: 'Withdraw cash',
+                            onTap: () =>
+                                showCashMoveSheet(context, withdraw: true),
+                          ),
                         ),
-                      for (final a in accounts)
-                        _chip('${a.name}  ${Money.format(bal[a.id] ?? 0)}'),
-                    ],
-                  ),
-                  const SizedBox(height: Sp.x4),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _CashButton(
-                          icon: Icons.south_west,
-                          label: 'Withdraw cash',
-                          onTap: () =>
-                              showCashMoveSheet(context, withdraw: true),
+                        const SizedBox(width: Sp.x2),
+                        Expanded(
+                          child: _CashButton(
+                            icon: Icons.north_east,
+                            label: 'Deposit cash',
+                            onTap: () =>
+                                showCashMoveSheet(context, withdraw: false),
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: Sp.x2),
-                      Expanded(
-                        child: _CashButton(
-                          icon: Icons.north_east,
-                          label: 'Deposit cash',
-                          onTap: () =>
-                              showCashMoveSheet(context, withdraw: false),
-                        ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -468,8 +469,7 @@ class PillarCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(Sp.rCard),
           onTap: () {
             haptic();
-            Navigator.of(context)
-                .push(softRoute(PillarDetailPage(pillar: pillar)));
+            pushReveal(context, PillarDetailPage(pillar: pillar));
           },
           child: Padding(
             padding: const EdgeInsets.all(Sp.x4),

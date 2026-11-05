@@ -29,7 +29,7 @@ class CashColors extends ThemeExtension<CashColors> {
     debtIn: Color(0xFFD97706),
     liability: Color(0xFF7C3AED),
     surfaceRaised: Color(0xFFFFFFFF),
-    textMuted: Color(0xFF6B7280),
+    textMuted: Color(0xFF596070),
     positiveBg: Color(0xFFE7F7F0),
     negativeBg: Color(0xFFFDEBEF),
   );
@@ -259,6 +259,78 @@ class AppTheme {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       ),
       listTileTheme: ListTileThemeData(iconColor: colors.textMuted),
+      // Every popup surface is set explicitly so dialogs, sheets, menus and
+      // pickers look right in both light and dark (no default tinting).
+      dialogTheme: DialogThemeData(
+        backgroundColor: colors.surfaceRaised,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        titleTextStyle: tt.titleLarge?.copyWith(
+          fontWeight: FontWeight.w800,
+          color: ink,
+        ),
+        contentTextStyle: tt.bodyMedium?.copyWith(color: ink),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: colors.surfaceRaised,
+        surfaceTintColor: Colors.transparent,
+        modalBackgroundColor: colors.surfaceRaised,
+        showDragHandle: true,
+        dragHandleColor: scheme.outline,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+      ),
+      popupMenuTheme: PopupMenuThemeData(
+        color: colors.surfaceRaised,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: hairline),
+        ),
+      ),
+      datePickerTheme: DatePickerThemeData(
+        backgroundColor: colors.surfaceRaised,
+        surfaceTintColor: Colors.transparent,
+        headerBackgroundColor: colors.surfaceRaised,
+        headerForegroundColor: ink,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      ),
+      timePickerTheme: TimePickerThemeData(
+        backgroundColor: colors.surfaceRaised,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      ),
+      dropdownMenuTheme: DropdownMenuThemeData(
+        menuStyle: MenuStyle(
+          backgroundColor: WidgetStatePropertyAll(colors.surfaceRaised),
+          surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+        ),
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith(
+          (st) => st.contains(WidgetState.selected)
+              ? scheme.onPrimary
+              : (dark ? const Color(0xFF9AA1AD) : Colors.white),
+        ),
+        trackColor: WidgetStateProperty.resolveWith(
+          (st) => st.contains(WidgetState.selected)
+              ? accent
+              : (dark ? const Color(0xFF2B2E36) : const Color(0xFFD5D8DF)),
+        ),
+        trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
+      ),
+      progressIndicatorTheme: ProgressIndicatorThemeData(
+        color: accent,
+        linearTrackColor: hairline,
+        circularTrackColor: hairline,
+      ),
+      tooltipTheme: TooltipThemeData(
+        decoration: BoxDecoration(
+          color: dark ? const Color(0xFF2B2E36) : const Color(0xFF1F2330),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        textStyle: const TextStyle(color: Colors.white, fontSize: 12),
+      ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         backgroundColor: ink,

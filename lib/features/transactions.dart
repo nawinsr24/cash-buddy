@@ -8,6 +8,8 @@ import '../domain/dates.dart';
 import '../domain/money.dart';
 import '../providers.dart';
 import '../ui/art.dart';
+import 'category_picker.dart';
+import '../ui/celebrate.dart';
 import '../ui/emoji.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
@@ -720,7 +722,19 @@ class _TxnFormState extends ConsumerState<_TxnForm> {
         );
       }
       haptic();
-      if (mounted) Navigator.pop(context);
+      // money sent home gets a little party (new entries only)
+      final cats = ref.read(categoriesProvider).value ?? const <Category>[];
+      final chosen = cats.where((c) => c.id == categoryId).firstOrNull;
+      final toHome =
+          widget.edit == null &&
+          type == 'debit' &&
+          chosen != null &&
+          (chosen.id == 'cat_sent_home' || chosen.parentId == 'cat_sent_home');
+      if (!mounted) return;
+      final nav = Navigator.of(context, rootNavigator: true);
+      final shown = Money.format(amt);
+      Navigator.pop(context);
+      if (toHome) showHomeCelebration(nav, shown);
     } on ValidationException catch (e) {
       setState(() {
         error = e.message;
@@ -738,7 +752,6 @@ class _TxnFormState extends ConsumerState<_TxnForm> {
         .toList();
     final split = settings?.split ?? false;
     final c = context.cash;
-    final mains = cats.where((x) => x.parentId == null).toList();
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(Sp.x5, 0, Sp.x5, Sp.x5),
@@ -780,44 +793,26 @@ class _TxnFormState extends ConsumerState<_TxnForm> {
                 padding: const EdgeInsets.only(top: Sp.x2),
                 child: Text(error!, style: TextStyle(color: c.spending)),
               ),
+            if (type == 'debit' && widget.edit == null)
+              Padding(
+                padding: const EdgeInsets.only(top: Sp.x3),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: ActionChip(
+                    avatar: const Text('🏡', style: TextStyle(fontSize: 16)),
+                    label: const Text('Sent money home'),
+                    onPressed: () {
+                      haptic();
+                      setState(() => categoryId = 'cat_sent_home');
+                    },
+                  ),
+                ),
+              ),
             if (type != 'transfer') ...[
               const SizedBox(height: Sp.x4),
-              DropdownButtonFormField<String?>(
-                initialValue: categoryId,
-                isExpanded: true,
-                decoration: const InputDecoration(labelText: 'Category'),
-                items: [
-                  const DropdownMenuItem(
-                    value: null,
-                    child: Text('Uncategorised'),
-                  ),
-                  for (final m in mains) ...[
-                    DropdownMenuItem(
-                      value: m.id,
-                      child: Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 6,
-                            backgroundColor: colorOf(m.colorValue),
-                          ),
-                          const SizedBox(width: Sp.x2),
-                          Text(
-                            m.name,
-                            style: const TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                        ],
-                      ),
-                    ),
-                    for (final s in cats.where((x) => x.parentId == m.id))
-                      DropdownMenuItem(
-                        value: s.id,
-                        child: Padding(
-                          padding: const EdgeInsets.only(left: Sp.x6),
-                          child: Text(s.name),
-                        ),
-                      ),
-                  ],
-                ],
+              CategoryField(
+                cats: cats,
+                categoryId: categoryId,
                 onChanged: (v) => setState(() => categoryId = v),
               ),
             ],

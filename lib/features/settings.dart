@@ -18,6 +18,7 @@ import '../providers.dart';
 import '../sync/backup.dart';
 import '../sync/drive_remote.dart';
 import '../sync/sync_service.dart';
+import '../ui/emoji.dart';
 import '../ui/loaders.dart';
 import '../ui/motion.dart';
 import '../ui/theme.dart';
@@ -861,9 +862,18 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage>
                 child: Column(
                   children: [
                     ListTile(
-                      leading: CircleAvatar(
-                        radius: 12,
-                        backgroundColor: colorOf(m.colorValue),
+                      leading: Container(
+                        width: 44,
+                        height: 44,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: colorOf(m.colorValue).withValues(alpha: 0.16),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Text(
+                          emojiForCategory(m.name),
+                          style: const TextStyle(fontSize: 24),
+                        ),
                       ),
                       title: Text(
                         m.name,
@@ -885,6 +895,11 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage>
                           right: Sp.x4,
                         ),
                         dense: true,
+                        leading: Text(
+                          emojiForCategory(s.name, m.name),
+                          style: const TextStyle(fontSize: 20),
+                        ),
+                        horizontalTitleGap: Sp.x2,
                         title: Text(s.name),
                         onTap: () => _edit(s, kind),
                       ),

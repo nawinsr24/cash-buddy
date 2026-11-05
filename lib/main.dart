@@ -34,6 +34,7 @@ Future<void> main() async {
     if (v != null) repo.clock.observe(v);
   }
   await repo.migrateBudgetSettings();
+  if (await repo.isOnboarded) await repo.ensureDefaultCategories();
   await Notifications.instance.init();
   runApp(
     ProviderScope(

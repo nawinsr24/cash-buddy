@@ -415,6 +415,72 @@ void main() {
     expect(find.text('INSIGHTS'), findsOneWidget);
   });
 
+  testWidgets('category picker: emoji tiles, subcategories, new categories', (
+    tester,
+  ) async {
+    final env = await pump(tester, opening: 1000000);
+    await tapText(tester, 'Add');
+    await tapText(tester, 'Uncategorised'); // the category field
+    // main tiles, including the new life categories
+    for (final n in [
+      'Cigarettes',
+      'Liquor',
+      'Hobbies',
+      'Friends',
+      'Tours & Trips',
+      'Sent Home',
+    ]) {
+      await tester.scrollUntilVisible(
+        find.text(n),
+        120,
+        scrollable: find.byType(Scrollable).last,
+      );
+      expect(find.text(n), findsWidgets, reason: n);
+    }
+    await tapText(tester, 'Hobbies');
+    expect(find.text('INSIDE'), findsOneWidget);
+    await tapText(tester, 'Cycling');
+    // back in the form the field shows the choice
+    expect(find.text('Hobbies › Cycling'), findsOneWidget);
+    await tester.enterText(find.byType(TextField).first, '1200');
+    await tapText(tester, 'Add', last: true);
+    await settle(tester);
+    final t = (await tester.runAsync(
+      () => env.repo.searchTransactions(const TxnFilter()),
+    ))!;
+    expect(t.single.categoryId, 'cat_hobbies_cycling');
+    expect(find.text('Home is proud of you'), findsNothing); // only for home
+  });
+
+  testWidgets('money sent home is celebrated with party paper and hearts', (
+    tester,
+  ) async {
+    final env = await pump(tester, opening: 1000000);
+    await tapText(tester, 'Add');
+    await tapText(tester, 'Sent money home'); // quick chip
+    expect(find.text('Sent Home'), findsOneWidget);
+    await tester.enterText(find.byType(TextField).first, '5000');
+    await tapText(tester, 'Add', last: true);
+    await settle(tester);
+    await tester.pump(const Duration(milliseconds: 700));
+    expect(find.text('Home is proud of you'), findsOneWidget);
+    expect(find.text('₹5,000.00 sent home'), findsOneWidget);
+    final t = (await tester.runAsync(
+      () => env.repo.searchTransactions(const TxnFilter()),
+    ))!;
+    expect(t.single.categoryId, 'cat_sent_home');
+    // tap to dismiss
+    await tester.tap(find.text('Home is proud of you'));
+    await tester.pump(const Duration(milliseconds: 600));
+    await settle(tester);
+    expect(find.text('Home is proud of you'), findsNothing);
+    // let the auto-close timer finish so the test ends cleanly
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 4300)),
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+  });
+
   testWidgets('settings: switch to split accounts keeps total balance', (
     tester,
   ) async {

@@ -16,7 +16,8 @@ import '../ui/widgets.dart';
 
 Color budgetColor(BuildContext c, BudgetState s) => switch (s) {
   BudgetState.under => c.cash.income,
-  BudgetState.exact => const Color(0xFFF59E0B),
+  BudgetState.exact =>
+    c.cash.debtIn, // amber that stays readable in both themes
   BudgetState.over => c.cash.spending,
 };
 
@@ -92,7 +93,7 @@ class BudgetCard extends ConsumerWidget {
     final async = ref.watch(budgetStatusProvider);
     if (!async.hasValue) return const SizedBox.shrink();
     final b = async.value;
-    void go() => Navigator.of(context).push(softRoute(const BudgetPage()));
+    void go() => pushReveal(context, const BudgetPage());
     if (b == null) {
       return Pressable(
         onTap: go,

@@ -28,6 +28,16 @@ class MonthStats {
   /// payments that was.
   final int healthSpending, healthCount;
 
+  /// Spending in the everyday-life categories (each includes its subcategories).
+  final int smokeSpending,
+      liquorSpending,
+      friendsSpending,
+      hobbySpending,
+      tripSpending;
+
+  /// Money sent home to family.
+  final int homeSent;
+
   /// The month's budget, when one is set.
   final int? budgetMinor;
 
@@ -48,6 +58,12 @@ class MonthStats {
     this.daysElapsed = 30,
     this.healthSpending = 0,
     this.healthCount = 0,
+    this.smokeSpending = 0,
+    this.liquorSpending = 0,
+    this.friendsSpending = 0,
+    this.hobbySpending = 0,
+    this.tripSpending = 0,
+    this.homeSent = 0,
     this.budgetMinor,
   });
 
@@ -75,6 +91,12 @@ class MonthStats {
           daysElapsed: daysInMonth,
           healthSpending: healthSpending,
           healthCount: healthCount,
+          smokeSpending: smokeSpending,
+          liquorSpending: liquorSpending,
+          friendsSpending: friendsSpending,
+          hobbySpending: hobbySpending,
+          tripSpending: tripSpending,
+          homeSent: homeSent,
           budgetMinor: budgetMinor,
         );
   int get saved => income - spending;
@@ -92,6 +114,13 @@ class MonthStats {
   /// Health took a big part of the month (30%+ of spending): never roast that.
   bool get healthDriven =>
       healthSpending > 0 && spending > 0 && healthSpending * 10 >= spending * 3;
+
+  /// Cigarettes and liquor together.
+  int get viceSpending => smokeSpending + liquorSpending;
+
+  /// A big part of the month (30%+) went to family: never roast that either.
+  bool get homeDriven =>
+      homeSent > 0 && spending > 0 && homeSent * 10 >= spending * 3;
 
   /// Several payments or a real share of spending: a rough health month.
   bool get healthHeavy =>
@@ -113,8 +142,13 @@ enum TitleId {
   comebackKid,
   consistencyHero,
   salaryEvaporator,
+  smokeSignal,
   foodieBankrupt,
+  socialButterfly,
+  wanderlust,
+  gearAddict,
   treatChampion,
+  homeHero,
   balancedSpender,
 }
 
@@ -134,6 +168,11 @@ extension TitleInfo on TitleId {
     TitleId.salaryEvaporator => '💸',
     TitleId.foodieBankrupt => '🍔',
     TitleId.treatChampion => '🛍️',
+    TitleId.smokeSignal => '💨',
+    TitleId.socialButterfly => '🏧',
+    TitleId.wanderlust => '🧳',
+    TitleId.gearAddict => '🚴',
+    TitleId.homeHero => '🏡',
     TitleId.balancedSpender => '🧭',
   };
 
@@ -152,6 +191,11 @@ extension TitleInfo on TitleId {
     TitleId.salaryEvaporator => 'Salary Evaporator',
     TitleId.foodieBankrupt => 'Foodie Bankrupt',
     TitleId.treatChampion => 'Treat Yourself Champion',
+    TitleId.smokeSignal => 'Smoke Signal',
+    TitleId.socialButterfly => 'Friend ATM',
+    TitleId.wanderlust => 'Wanderlust Wallet',
+    TitleId.gearAddict => 'Gear Addict',
+    TitleId.homeHero => 'Home Hero',
     TitleId.balancedSpender => 'Balanced Spender',
   };
 
@@ -171,6 +215,11 @@ extension TitleInfo on TitleId {
     TitleId.salaryEvaporator => 'Spent 95%+ of your income.',
     TitleId.foodieBankrupt => 'Food was your top spend at 30%+.',
     TitleId.treatChampion => 'Shopping or fun was your top spend.',
+    TitleId.smokeSignal => 'Cigarettes and liquor took 12%+ of your spending.',
+    TitleId.socialButterfly => 'Friends took 20%+ of your spending.',
+    TitleId.wanderlust => 'Tours and trips took 30%+ of your spending.',
+    TitleId.gearAddict => 'Hobbies took 15%+ of your spending.',
+    TitleId.homeHero => 'You sent 10%+ of your income home.',
     TitleId.balancedSpender => 'Nothing stood out, good or bad.',
   };
 
@@ -181,6 +230,7 @@ extension TitleInfo on TitleId {
     TitleId.steadySaver ||
     TitleId.budgetNinja ||
     TitleId.comebackKid ||
+    TitleId.homeHero ||
     TitleId.consistencyHero => true,
     _ => false,
   };
@@ -208,6 +258,7 @@ TitleId pickTitle(MonthStats s) {
     return TitleId.debtCrusher;
   }
   if (s.saveRate >= 0.2) return TitleId.steadySaver;
+  if (s.income > 0 && s.homeSent * 10 >= s.income) return TitleId.homeHero;
   if (s.prevAvgSpending > 0 && s.spending <= s.prevAvgSpending * 0.9) {
     return TitleId.budgetNinja;
   }
@@ -216,9 +267,16 @@ TitleId pickTitle(MonthStats s) {
   if (s.income > 0 && s.spending >= s.income * 0.95) {
     return TitleId.salaryEvaporator;
   }
+  final sp = s.spending;
+  if (sp > 0 && s.viceSpending * 100 >= sp * 12) return TitleId.smokeSignal;
   if (_isFood(s.topCategory) && s.topShareBps >= 3000) {
     return TitleId.foodieBankrupt;
   }
+  if (sp > 0 && s.friendsSpending * 100 >= sp * 20) {
+    return TitleId.socialButterfly;
+  }
+  if (sp > 0 && s.tripSpending * 100 >= sp * 30) return TitleId.wanderlust;
+  if (sp > 0 && s.hobbySpending * 100 >= sp * 15) return TitleId.gearAddict;
   if (_isFun(s.topCategory)) return TitleId.treatChampion;
   return TitleId.balancedSpender;
 }
@@ -367,7 +425,7 @@ String _m(int minor) => Money.format(minor.abs());
 
 /// One concrete next step toward a better title.
 String nextStep(MonthStats s, {bool roast = true}) {
-  if (s.healthDriven) roast = false;
+  if (s.healthDriven || s.homeDriven) roast = false;
   if (s.income <= 0) {
     return roast
         ? 'Log your income. Right now the app thinks you live on air.'
@@ -395,7 +453,12 @@ String nextStep(MonthStats s, {bool roast = true}) {
 /// always shows the same line. Numbers are filled in from [s].
 List<String> titleLines(TitleId t, MonthStats s, {required bool roast}) {
   // A medical month is never a joke, whatever the setting.
-  if (s.healthDriven) roast = false;
+  if (s.healthDriven || s.homeDriven) roast = false;
+  final vice = _m(s.viceSpending);
+  final friends = _m(s.friendsSpending);
+  final trip = _m(s.tripSpending);
+  final hobby = _m(s.hobbySpending);
+  final home = _m(s.homeSent);
   final over = _m(s.spending - s.income);
   final spent = _m(s.spending);
   final saved = _m(s.saved);
@@ -442,6 +505,21 @@ List<String> titleLines(TitleId t, MonthStats s, {required bool roast}) {
       ],
       TitleId.treatChampion => [
         '$cat was your biggest spend at $catAmt. Treats are fine in balance.',
+      ],
+      TitleId.smokeSignal => [
+        'Cigarettes and liquor came to $vice this month. Cutting back would help your health and your wallet.',
+      ],
+      TitleId.socialButterfly => [
+        'You spent $friends on friends this month. Good people are worth it, just keep an eye on the total.',
+      ],
+      TitleId.wanderlust => [
+        'Tours and trips came to $trip. Memories well spent.',
+      ],
+      TitleId.gearAddict => [
+        'You spent $hobby on your hobbies. Staying active is worth it.',
+      ],
+      TitleId.homeHero => [
+        'You sent $home home. Looking after family is the best spend there is.',
       ],
       TitleId.balancedSpender => [
         'A steady month with nothing out of the ordinary.',
@@ -506,6 +584,28 @@ List<String> titleLines(TitleId t, MonthStats s, {required bool roast}) {
     TitleId.treatChampion => [
       '$cat cost you $catAmt. Retail therapy is billing you monthly.',
       '"I deserve it" has cost you $catAmt this month. You deserve a budget.',
+    ],
+    TitleId.smokeSignal => [
+      'You put $vice into cigarettes and liquor. Your lungs and liver filed a joint complaint.',
+      '$vice went up in smoke and down the hatch. Dedicated to expensive bad habits, aren\'t you?',
+      'Cigarettes and liquor cost $vice. Your wallet needs a break more than you do.',
+    ],
+    TitleId.socialButterfly => [
+      'You spent $friends on friends. Do they know your birthday, or just your UPI?',
+      'Friends cost you $friends. Real friends split the bill. Check yours.',
+      '$friends on friends this month. You are not a friend, you are an ATM with legs.',
+    ],
+    TitleId.wanderlust => [
+      'Trips took $trip. Your passport has more stamps than your savings have zeros.',
+      '$trip on tours and trips. See the world, ignore the balance. Classic.',
+    ],
+    TitleId.gearAddict => [
+      '$hobby on hobbies. Cycling shorts are not an investment.',
+      'Hobbies took $hobby. The gear is fabulous; the actual cycling happens twice a year.',
+    ],
+    TitleId.homeHero => [
+      'You sent $home home. Nothing to roast here. Home is proud of you.',
+      'Family first: $home sent home. Respect. The roast takes the day off.',
     ],
     TitleId.balancedSpender => [
       'Not rich, not broke, just vibing on the edge of mediocrity.',

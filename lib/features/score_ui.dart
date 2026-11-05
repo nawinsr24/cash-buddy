@@ -129,8 +129,7 @@ class PlusScoreCard extends ConsumerWidget {
     final c = context.cash;
     final delta = async.prevScore == null ? null : g.score - async.prevScore!;
     return Pressable(
-      onTap: () =>
-          Navigator.of(context).push(softRoute(const PlusScoreDetailPage())),
+      onTap: () => pushReveal(context, const PlusScoreDetailPage()),
       child: Card(
         child: Padding(
           padding: const EdgeInsets.all(Sp.x4),

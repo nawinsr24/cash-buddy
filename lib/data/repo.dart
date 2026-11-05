@@ -271,6 +271,7 @@ class Repo {
       'Health': (_palette[9], []),
       'Education': (_palette[10], []),
       'Travel': (_palette[5], []),
+      ..._lifeTree,
       'Interest Paid': (_palette[2], []),
       'Other': (_palette[11], []),
     };
@@ -279,6 +280,77 @@ class Repo {
       await cat(pid, e.key, 'debit', e.value.$1);
       for (final s in e.value.$2) {
         await cat('${pid}_${_slug(s)}', s, 'debit', e.value.$1, parent: pid);
+      }
+    }
+  }
+
+  /// Everyday-life categories added after the first release. New installs get
+  /// them from [seedCategories]; existing ones through [ensureDefaultCategories].
+  static const _lifeTree = <String, (int, List<String>)>{
+    'Cigarettes': (0xFF78716C, []),
+    'Liquor': (0xFFB45309, []),
+    'Hobbies': (
+      0xFF0EA5E9,
+      ['Cycling', 'Jogging', 'Gym & Fitness', 'Sports', 'Other Hobbies'],
+    ),
+    'Friends': (
+      0xFFEC4899,
+      ['Food & Treats', 'Movies & Outings', 'Clothes', 'Gifts'],
+    ),
+    'Tours & Trips': (
+      0xFF14B8A6,
+      [
+        'Stay',
+        'Tickets & Transport',
+        'Food on Trip',
+        'Activities',
+        'Souvenirs',
+      ],
+    ),
+    'Sent Home': (0xFFF43F5E, ['Parents', 'Family']),
+  };
+
+  /// Adds any default category an existing install is missing. Safe to run
+  /// on every launch: a category that already exists (even one the user
+  /// renamed or deleted) is left alone.
+  Future<void> ensureDefaultCategories() async {
+    final have = {for (final c in await (db.select(db.categories)).get()) c.id};
+    var order =
+        await db
+            .customSelect(
+              'SELECT COALESCE(MAX(sort_order),0) AS m FROM categories',
+            )
+            .getSingle()
+            .then((r) => r.read<int>('m')) +
+        1;
+    for (final e in _lifeTree.entries) {
+      final pid = 'cat_${_slug(e.key)}';
+      if (!have.contains(pid)) {
+        await _putCategory(
+          CategoriesCompanion.insert(
+            id: pid,
+            name: e.key,
+            kind: 'debit',
+            colorValue: e.value.$1,
+            hlc: clock.next(),
+            sortOrder: Value(order++),
+          ),
+        );
+      }
+      for (final sub in e.value.$2) {
+        final sid = '${pid}_${_slug(sub)}';
+        if (have.contains(sid)) continue;
+        await _putCategory(
+          CategoriesCompanion.insert(
+            id: sid,
+            name: sub,
+            kind: 'debit',
+            colorValue: e.value.$1,
+            hlc: clock.next(),
+            parentId: Value(pid),
+            sortOrder: Value(order++),
+          ),
+        );
       }
     }
   }
