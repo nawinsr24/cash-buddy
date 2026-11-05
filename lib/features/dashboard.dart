@@ -53,7 +53,6 @@ class DashboardPage extends ConsumerWidget {
         data: (d) => ListView(
           padding: const EdgeInsets.fromLTRB(Sp.x4, 0, Sp.x4, 96),
           children: [
-            const _Greeting(),
             const TitleBanner(),
             const LiveTitleChip(),
             const PeriodBar(),
@@ -64,6 +63,8 @@ class DashboardPage extends ConsumerWidget {
               total: d.totalBalance,
               split: settings?.split ?? false,
               trend: _trend(d),
+              income: d.income,
+              spent: d.spending,
             ),
             const SizedBox(height: Sp.x3),
             const BudgetCard(),
@@ -79,8 +80,8 @@ class DashboardPage extends ConsumerWidget {
                 crossAxisSpacing: Sp.x3,
                 // Height grows with the user's text size so nothing clips.
                 mainAxisExtent:
-                    86 +
-                    96 *
+                    68 +
+                    92 *
                         MediaQuery.textScalerOf(context)
                             .scale(1)
                             .clamp(1.0, 2.2),
@@ -233,10 +234,13 @@ class _BalanceCard extends ConsumerWidget {
   final int total;
   final bool split;
   final List<double> trend;
+  final int income, spent;
   const _BalanceCard({
     required this.total,
     required this.split,
     this.trend = const [],
+    this.income = 0,
+    this.spent = 0,
   });
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -341,6 +345,28 @@ class _BalanceCard extends ConsumerWidget {
                       ),
                     ),
                   ),
+                  const SizedBox(height: Sp.x4),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _flow(
+                          Icons.south_west,
+                          'In',
+                          income,
+                          const Color(0xFF9CF0D2),
+                        ),
+                      ),
+                      const SizedBox(width: Sp.x3),
+                      Expanded(
+                        child: _flow(
+                          Icons.north_east,
+                          'Out',
+                          spent,
+                          const Color(0xFFFFC2CF),
+                        ),
+                      ),
+                    ],
+                  ),
                   if (split && accounts.isNotEmpty) ...[
                     const SizedBox(height: Sp.x4),
                     Wrap(
@@ -394,6 +420,34 @@ class _BalanceCard extends ConsumerWidget {
     );
   }
 }
+
+Widget _flow(IconData icon, String label, int minor, Color tint) => Container(
+  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+  decoration: BoxDecoration(
+    color: Colors.white.withValues(alpha: 0.12),
+    borderRadius: BorderRadius.circular(16),
+  ),
+  child: Row(
+    children: [
+      Icon(icon, size: 18, color: tint),
+      const SizedBox(width: 8),
+      Expanded(
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            '$label  ${Money.compact(minor)}',
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+              fontSize: 14,
+            ),
+          ),
+        ),
+      ),
+    ],
+  ),
+);
 
 Widget _chip(String text, {bool strong = false, bool dark = true}) => Container(
   padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
@@ -1223,51 +1277,6 @@ class _SparkPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_SparkPainter o) => o.t != t || o.v != v;
-}
-
-class _Greeting extends StatelessWidget {
-  const _Greeting();
-  @override
-  Widget build(BuildContext context) {
-    final h = DateTime.now().hour;
-    final hello = h < 12
-        ? 'Good morning'
-        : h < 17
-        ? 'Good afternoon'
-        : 'Good evening';
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(Sp.x1, Sp.x1, Sp.x1, Sp.x3),
-      child: Reveal(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text.rich(
-              TextSpan(
-                children: [
-                  TextSpan(text: '$hello, '),
-                  TextSpan(
-                    text: 'friend 👋',
-                    style: TextStyle(color: context.scheme.primary),
-                  ),
-                ],
-              ),
-              style: context.text.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.5,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              "Here's your money overview",
-              style: context.text.bodyMedium?.copyWith(
-                color: context.cash.textMuted,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 /// Money in vs money out, grouped into five slices of the chosen period.
