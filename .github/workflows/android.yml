@@ -36,7 +36,7 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          if [ -n "$KEYSTORE_B64" ]; then
+          if [ -n "$KEYSTORE_B64" ] && [ -n "$KEYSTORE_PASSWORD" ] && [ -n "$KEY_ALIAS" ] && [ -n "$KEY_PASSWORD" ]; then
             echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
             {
               echo "CB_KEYSTORE_PATH=$RUNNER_TEMP/release.jks"
@@ -46,7 +46,7 @@ jobs:
             } >> "$GITHUB_ENV"
             echo "Signing with the release key"
           else
-            echo "No release key configured: debug-signed build (updates will not install over older builds)"
+            echo "Release key not fully configured (need all four secrets): debug-signed build"
           fi
       - run: flutter build apk --release
       - name: Name the APK
