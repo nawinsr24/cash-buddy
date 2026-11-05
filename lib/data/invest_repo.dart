@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:drift/drift.dart';
 
 import '../domain/dates.dart';
@@ -471,8 +473,7 @@ extension InvestRepo on Repo {
             asOf,
           );
     // With no value entered, show what is still invested (not a made-up gain).
-    final value =
-        entered ?? (contributed - withdrawn - dividends).clamp(0, 1 << 62);
+    final value = entered ?? math.max(0, contributed - withdrawn - dividends);
     final flows = <Flow>[
       for (final e in entries)
         Flow(
