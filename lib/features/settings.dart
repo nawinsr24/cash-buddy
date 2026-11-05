@@ -133,7 +133,7 @@ class SettingsPage extends ConsumerWidget {
                     secondary: const Text('📈', style: TextStyle(fontSize: 22)),
                     title: const Text('Investments reduce my balance'),
                     subtitle: const Text(
-                      'Money put into funds, stocks and chits leaves your account. Withdrawals come back.',
+                      'Money put into funds, stocks and custom investments leaves your account. Withdrawals come back.',
                     ),
                     value: s.investReducesBalance,
                     onChanged: (v) async {

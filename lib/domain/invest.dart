@@ -57,12 +57,3 @@ int projectedValue(
   }
   return total.round();
 }
-
-/// Date of chit month [k] (0-based) for a chit starting on [start].
-DateTime chitMonthDate(DateTime start, int k) {
-  final m = start.month - 1 + k;
-  final y = start.year + m ~/ 12;
-  final mo = m % 12 + 1;
-  final last = DateTime(y, mo + 1, 0).day;
-  return DateTime(y, mo, min(start.day, last));
-}

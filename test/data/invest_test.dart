@@ -1,3 +1,4 @@
+import 'package:cash_buddy/data/db.dart';
 import 'package:cash_buddy/data/invest_repo.dart';
 import 'package:cash_buddy/data/repo.dart';
 import 'package:cash_buddy/domain/dates.dart';
@@ -29,10 +30,6 @@ void main() {
         DateTime(2026, 1, 1),
       );
       expect(v, closeTo(112000, 50));
-    });
-    test('chit month dates clamp to month end', () {
-      expect(chitMonthDate(DateTime(2026, 1, 31), 1), DateTime(2026, 2, 28));
-      expect(chitMonthDate(DateTime(2026, 11, 5), 2), DateTime(2027, 1, 5));
     });
   });
 
@@ -132,13 +129,13 @@ void main() {
       expect(await e.repo.checkInvariants(), isEmpty);
     });
 
-    test('validation and duplicate chit month', () async {
+    test('validation and duplicate instalment', () async {
       final e = await newEnv();
       expect(
         () => e.repo.createInvestment(kind: 'stock', name: '  '),
         throwsA(isA<ValidationException>()),
       );
-      final id = await e.repo.createInvestment(kind: 'chit', name: 'Chit');
+      final id = await e.repo.createInvestment(kind: 'custom', name: 'Chit');
       await e.repo.addInvestmentEntry(
         id,
         type: 'contribute',
@@ -177,5 +174,122 @@ void main() {
     s = await e.repo.investSummary(await e.repo.getInvestment(id));
     expect(s.gain, 20000);
     expect(s.gainPct, closeTo(0.2, 1e-9));
+  });
+
+  group('custom investments', () {
+    test(
+      'one-time and recurring are stored and read back as a schedule',
+      () async {
+        final e = await newEnv();
+        final one = await e.repo.createInvestment(kind: 'custom', name: 'Gold');
+        expect((await e.repo.getInvestment(one)).schedule, isNull);
+        final rec = await e.repo.createInvestment(
+          kind: 'custom',
+          name: 'Gold SIP',
+          sipMinor: 100000,
+          startDate: DateTime.utc(2026, 11, 5),
+          recurring: true,
+          cycle: 'weekly',
+          everyN: 2,
+          weekday: 1,
+          installments: 6,
+        );
+        final sch = (await e.repo.getInvestment(rec)).schedule!;
+        expect(sch.describe(), 'Every 2 weeks on Mon');
+        expect(sch.total, 6);
+        expect(sch.at(0), DateTime.utc(2026, 11, 9));
+      },
+    );
+
+    test('recurring needs a start date and a valid rule', () async {
+      final e = await newEnv();
+      expect(
+        () => e.repo.createInvestment(
+          kind: 'custom',
+          name: 'X',
+          recurring: true,
+          cycle: 'monthly',
+        ),
+        throwsA(isA<ValidationException>()),
+      );
+      expect(
+        () => e.repo.createInvestment(
+          kind: 'custom',
+          name: 'X',
+          recurring: true,
+          cycle: 'monthly',
+          startDate: DateTime.utc(2026, 1, 1),
+          monthDay: 40,
+        ),
+        throwsA(isA<ValidationException>()),
+      );
+      expect(
+        () => e.repo.createInvestment(
+          kind: 'custom',
+          name: 'X',
+          recurring: true,
+          cycle: 'daily',
+          startDate: DateTime.utc(2026, 1, 5),
+          endDate: DateTime.utc(2026, 1, 1),
+        ),
+        throwsA(isA<ValidationException>()),
+      );
+    });
+
+    test(
+      'paying instalments tracks progress; one payment per instalment',
+      () async {
+        final e = await newEnv(opening: 1000000);
+        final id = await e.repo.createInvestment(
+          kind: 'custom',
+          name: 'Chit',
+          sipMinor: 100000,
+          startDate: DateTime.utc(2026, 10, 1),
+          recurring: true,
+          cycle: 'monthly',
+          installments: 12,
+        );
+        for (var k = 0; k < 3; k++) {
+          await e.repo.addInvestmentEntry(
+            id,
+            type: 'contribute',
+            amountMinor: 100000,
+            periodKey: k,
+          );
+        }
+        expect(await e.repo.totalBalance(), 700000);
+        final inv = await e.repo.getInvestment(id);
+        // clock is 4 Nov 2026: instalments of 1 Oct and 1 Nov are due, 1 Dec is not
+        expect(inv.schedule!.dueCount(e.repo.today), 2);
+        expect(
+          () => e.repo.addInvestmentEntry(
+            id,
+            type: 'contribute',
+            amountMinor: 1,
+            periodKey: 1,
+          ),
+          throwsA(isA<ValidationException>()),
+        );
+      },
+    );
+
+    test('old chit funds migrate to custom monthly plans', () async {
+      final e = await newEnv();
+      final id = await e.repo.createInvestment(
+        kind: 'custom',
+        name: 'Old chit',
+      );
+      await e.db.customStatement(
+        "UPDATE investments SET kind='chit', tenure_months=10, "
+        "monthly_minor=250000 WHERE id='$id'",
+      );
+      await e.db.customStatement(AppDatabase.chitMigrationSql);
+      final inv = await e.repo.getInvestment(id);
+      expect(inv.kind, 'custom');
+      expect(inv.recurring, isTrue);
+      expect(inv.cycle, 'monthly');
+      expect(inv.installments, 10);
+      expect(inv.sipMinor, 250000);
+    });
   });
 }

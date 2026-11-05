@@ -199,17 +199,15 @@ void main() {
           currentValueMinor: 1480000,
         );
         final chit = await r.createInvestment(
-          kind: 'chit',
+          kind: 'custom',
           name: 'Family Chit 2026',
-          chitValueMinor: 10000000,
-          tenureMonths: 12,
-          members: 12,
-          monthlyMinor: 800000,
-          commissionBps: 500,
-          organiser: 'Murugan',
+          sipMinor: 800000,
           startDate: d.subtract(const Duration(days: 75)),
+          recurring: true,
+          cycle: 'monthly',
+          installments: 12,
         );
-        for (var k = 0; k < 3; k++) {
+        for (var k = 0; k < 2; k++) {
           await r.addInvestmentEntry(
             chit,
             type: 'contribute',
@@ -218,11 +216,20 @@ void main() {
             date: d.subtract(Duration(days: 75 - k * 30)),
           );
         }
+        final weekly = await r.createInvestment(
+          kind: 'custom',
+          name: 'Gold savings',
+          sipMinor: 50000,
+          startDate: d.subtract(const Duration(days: 20)),
+          recurring: true,
+          cycle: 'weekly',
+          weekday: 1,
+        );
         await r.addInvestmentEntry(
-          chit,
-          type: 'dividend',
-          amountMinor: 60000,
-          periodKey: 1,
+          weekly,
+          type: 'contribute',
+          amountMinor: 50000,
+          periodKey: 0,
         );
         await r.ingestSms([
           (
@@ -276,8 +283,21 @@ void main() {
       await shot(tester, '$p-9-inbox');
       await tester.tap(find.byTooltip('Back'));
       await settle(tester);
+      await tapText(tester, 'Invest', last: true);
+      await tapText(tester, 'Gold savings');
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, -350));
+      await shot(tester, '$p-12-weekly-plan');
+      await tester.tap(find.byTooltip('Back'));
+      await settle(tester);
       await tapText(tester, 'Settings', last: true);
       await shot(tester, '$p-10-settings');
+      // the new-investment form (recurring) and a schedule detail
+      await tapText(tester, 'Invest', last: true);
+      await tapText(tester, 'Add investment');
+      await tapText(tester, 'Custom investment');
+      await tapText(tester, 'Recurring');
+      await tapText(tester, 'Weekly');
+      await shot(tester, '$p-11-custom-form');
       await tester.runAsync(() => env.db.close());
     });
   }

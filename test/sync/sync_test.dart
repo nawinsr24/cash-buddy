@@ -330,7 +330,7 @@ void main() {
     final a = await dev('A', remote);
     final b = await dev('B', remote);
     await syncAll([a, b]);
-    final id = await a.repo.createInvestment(kind: 'chit', name: 'Chit');
+    final id = await a.repo.createInvestment(kind: 'custom', name: 'Chit');
     await a.repo.addInvestmentEntry(
       id,
       type: 'contribute',

@@ -98,11 +98,11 @@ class DebtEvents extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-/// Something money was put into: mutual fund, stock or chit fund. Only the
+/// Something money was put into: mutual fund, stock or a custom investment. Only the
 /// name and kind are required; every other field is optional.
 class Investments extends Table {
   TextColumn get id => text()();
-  TextColumn get kind => text()(); // mutual_fund | stock | chit
+  TextColumn get kind => text()(); // mutual_fund | stock | custom
   TextColumn get name => text()();
   TextColumn get accountId => text().nullable()(); // default paying account
   TextColumn get startDate => text().nullable()();
@@ -112,7 +112,17 @@ class Investments extends Table {
   RealColumn get units => real().nullable()();
   IntColumn get buyPriceMinor => integer().nullable()();
   IntColumn get sipMinor => integer().nullable()();
-  // chit fund
+  // Recurring plan (custom investments; see domain/schedule.dart). The amount
+  // of each instalment is [sipMinor]; start is [startDate].
+  BoolColumn get recurring => boolean().withDefault(const Constant(false))();
+  TextColumn get cycle => text().nullable()(); // daily|weekly|monthly|yearly
+  IntColumn get everyN => integer().withDefault(const Constant(1))();
+  IntColumn get weekday => integer().nullable()(); // 1 = Mon .. 7 = Sun
+  IntColumn get monthDay => integer().nullable()();
+  TextColumn get timeOfDay => text().nullable()(); // HH:mm, daily only
+  IntColumn get installments => integer().nullable()(); // null = no count limit
+  TextColumn get endDate => text().nullable()(); // null = no end date
+  // Legacy chit-fund columns (chit funds were folded into custom investments).
   IntColumn get chitValueMinor => integer().nullable()();
   IntColumn get tenureMonths => integer().nullable()();
   IntColumn get members => integer().nullable()();
@@ -187,11 +197,18 @@ class Settings extends Table {
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
+  /// Chit funds became custom monthly plans: one instalment per month for the
+  /// old tenure, of the old monthly amount.
+  static const chitMigrationSql =
+      "UPDATE investments SET kind='custom', recurring=1, cycle='monthly', "
+      "every_n=1, installments=tenure_months, sip_minor=monthly_minor "
+      "WHERE kind='chit'";
+
   /// Native file on mobile, WASM/IndexedDB in the browser (see db_open.dart).
   static AppDatabase open() => AppDatabase(openAppDatabase());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -200,6 +217,21 @@ class AppDatabase extends _$AppDatabase {
       if (from < 2) {
         await m.createTable(investments);
         await m.createTable(investmentEntries);
+      }
+      if (from == 2) {
+        await m.addColumn(investments, investments.recurring);
+        await m.addColumn(investments, investments.cycle);
+        await m.addColumn(investments, investments.everyN);
+        await m.addColumn(investments, investments.weekday);
+        await m.addColumn(investments, investments.monthDay);
+        await m.addColumn(investments, investments.timeOfDay);
+        await m.addColumn(investments, investments.installments);
+        await m.addColumn(investments, investments.endDate);
+      }
+      if (from < 3) {
+        // Chit funds became custom monthly plans: instalment = monthly amount,
+        // number of instalments = tenure.
+        await customStatement(chitMigrationSql);
       }
     },
     beforeOpen: (details) async {

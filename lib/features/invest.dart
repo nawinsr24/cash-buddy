@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../data/db.dart';
 import '../data/invest_repo.dart';
 import '../data/repo.dart' show ValidationException;
+import '../domain/schedule.dart';
 import '../domain/dates.dart';
 import '../domain/money.dart';
 import '../providers.dart';
@@ -17,7 +18,7 @@ import '../ui/widgets.dart';
 Color kindColor(String kind) => switch (kind) {
   'mutual_fund' => const Color(0xFF8B5CF6),
   'stock' => const Color(0xFF22B573),
-  'chit' => const Color(0xFFFF8A3D),
+  'custom' => const Color(0xFFFF8A3D),
   _ => const Color(0xFF2F6BFF),
 };
 
@@ -140,7 +141,7 @@ class InvestPage extends ConsumerWidget {
               art: Art.growth,
               icon: Icons.trending_up,
               title: 'Grow your money',
-              body: 'Track mutual funds, stocks and chit funds in one place. Every field except the name is optional.',
+              body: 'Track mutual funds, stocks and anything else you put money into, once or on a schedule. Every field except the name is optional.',
               action: FilledButton.icon(
                 style: FilledButton.styleFrom(minimumSize: const Size(220, 52)),
                 icon: const Icon(Icons.add),
@@ -320,7 +321,7 @@ Future<void> pickInvestmentKind(BuildContext context) => showSheet(context, (
           const SizedBox(height: Sp.x4),
           tile('mutual_fund', 'SIP or lump sum in a fund'),
           tile('stock', 'Shares you buy and hold'),
-          tile('chit', 'Monthly chit with tenure and payout'),
+          tile('custom', 'Gold, chit, PPF, deposits: one time or recurring'),
         ],
       ),
     ),
@@ -344,6 +345,7 @@ class _InvestForm extends ConsumerStatefulWidget {
 class _InvestFormState extends ConsumerState<_InvestForm> {
   Investment? get e => widget.edit;
   String get kind => widget.kind;
+  bool get isCustom => kind == 'custom';
 
   String _m(int? v) => v == null ? '' : (v / 100).toStringAsFixed(2);
   late final name = TextEditingController(text: e?.name ?? '');
@@ -353,25 +355,28 @@ class _InvestFormState extends ConsumerState<_InvestForm> {
         : (e!.expectedGrowthBps! / 100).toString(),
   );
   late final value = TextEditingController(text: _m(e?.currentValueMinor));
-  late final sip = TextEditingController(text: _m(e?.sipMinor));
+  late final amount = TextEditingController(text: _m(e?.sipMinor));
   late final units = TextEditingController(text: e?.units?.toString() ?? '');
   late final buy = TextEditingController(text: _m(e?.buyPriceMinor));
-  late final chitValue = TextEditingController(text: _m(e?.chitValueMinor));
-  late final tenure = TextEditingController(
-    text: e?.tenureMonths?.toString() ?? '',
-  );
-  late final members = TextEditingController(
-    text: e?.members?.toString() ?? '',
-  );
-  late final monthly = TextEditingController(text: _m(e?.monthlyMinor));
-  late final commission = TextEditingController(
-    text: e?.commissionBps == null ? '' : (e!.commissionBps! / 100).toString(),
-  );
-  late final organiser = TextEditingController(text: e?.organiser ?? '');
   late final note = TextEditingController(text: e?.note ?? '');
+  late final every = TextEditingController(text: '${e?.everyN ?? 1}');
+  late final count = TextEditingController(
+    text: e?.installments?.toString() ?? '',
+  );
+
+  late bool recurring = e?.recurring ?? false;
+  late String cycle = e?.cycle ?? 'monthly';
   late DateTime? start = e?.startDate == null
-      ? null
+      ? (isCustom ? Dates.today() : null)
       : Dates.parse(e!.startDate!);
+  late int? weekday = e?.weekday;
+  late int? monthDay = e?.monthDay;
+  late String? timeOfDay = e?.timeOfDay;
+  late String ends = e?.installments != null
+      ? 'count'
+      : (e?.endDate != null ? 'date' : 'never');
+  late DateTime? endDate = e?.endDate == null ? null : Dates.parse(e!.endDate!);
+  DateTime oneTimeDate = Dates.today();
   late String? accountId = e?.accountId;
   String? error;
 
@@ -380,18 +385,34 @@ class _InvestFormState extends ConsumerState<_InvestForm> {
   double? _num(TextEditingController c) =>
       c.text.trim().isEmpty ? null : double.tryParse(c.text.trim());
 
+  /// One-time custom investments keep the date they were created with.
+  DateTime? get _keptStart => isCustom
+      ? (e!.startDate == null ? null : Dates.parse(e!.startDate!))
+      : start;
+
+  /// The schedule as currently filled in (for the live preview and saving).
+  Schedule? _schedule() {
+    if (!(isCustom && recurring) || start == null) return null;
+    return Schedule(
+      cycle: cycle,
+      every: int.tryParse(every.text.trim()) ?? 0,
+      start: start!,
+      weekday: cycle == 'weekly' ? (weekday ?? start!.weekday) : null,
+      monthDay: cycle == 'monthly' ? (monthDay ?? start!.day) : null,
+      count: ends == 'count' ? int.tryParse(count.text.trim()) ?? 0 : null,
+      until: ends == 'date' ? endDate : null,
+      timeOfDay: cycle == 'daily' ? timeOfDay : null,
+    );
+  }
+
   Future<void> _save() async {
     final repo = ref.read(repoProvider);
     final g = _num(growth);
     final bad = <String>[
       if (value.text.trim().isNotEmpty && _money(value) == null)
         'current value',
-      if (sip.text.trim().isNotEmpty && _money(sip) == null) 'SIP amount',
+      if (amount.text.trim().isNotEmpty && _money(amount) == null) 'amount',
       if (buy.text.trim().isNotEmpty && _money(buy) == null) 'buy price',
-      if (chitValue.text.trim().isNotEmpty && _money(chitValue) == null)
-        'chit value',
-      if (monthly.text.trim().isNotEmpty && _money(monthly) == null)
-        'instalment',
       if (growth.text.trim().isNotEmpty && g == null) 'growth %',
       if (units.text.trim().isNotEmpty && _num(units) == null) 'units',
     ];
@@ -399,52 +420,73 @@ class _InvestFormState extends ConsumerState<_InvestForm> {
       setState(() => error = 'Check: ${bad.join(', ')}');
       return;
     }
-    final isChit = kind == 'chit';
+    final sch = _schedule();
+    if (isCustom && recurring) {
+      if (ends == 'count' && (int.tryParse(count.text.trim()) ?? 0) < 1) {
+        setState(() => error = 'Enter how many instalments');
+        return;
+      }
+      if (ends == 'date' && endDate == null) {
+        setState(() => error = 'Pick an end date');
+        return;
+      }
+      final v = sch?.validate();
+      if (v != null) {
+        setState(() => error = v);
+        return;
+      }
+    }
+    final rec = isCustom && recurring;
     try {
       if (e == null) {
-        await repo.createInvestment(
+        final id = await repo.createInvestment(
           kind: kind,
           name: name.text,
           accountId: accountId,
-          startDate: start,
+          startDate: rec ? start : (isCustom ? oneTimeDate : start),
           expectedGrowthBps: g == null ? null : (g * 100).round(),
           currentValueMinor: _money(value),
           units: _num(units),
           buyPriceMinor: _money(buy),
-          sipMinor: _money(sip),
-          chitValueMinor: isChit ? _money(chitValue) : null,
-          tenureMonths: isChit ? int.tryParse(tenure.text.trim()) : null,
-          members: isChit ? int.tryParse(members.text.trim()) : null,
-          monthlyMinor: isChit ? _money(monthly) : null,
-          commissionBps: isChit && _num(commission) != null
-              ? (_num(commission)! * 100).round()
-              : null,
-          organiser: organiser.text.trim().isEmpty
-              ? null
-              : organiser.text.trim(),
+          sipMinor: _money(amount),
+          recurring: rec,
+          cycle: rec ? cycle : null,
+          everyN: rec ? sch!.every : 1,
+          weekday: rec ? sch!.weekday : null,
+          monthDay: rec ? sch!.monthDay : null,
+          timeOfDay: rec ? timeOfDay : null,
+          installments: rec ? sch!.count : null,
+          endDate: rec ? sch!.until : null,
           note: note.text.trim(),
         );
+        // A one-time custom investment with an amount is recorded right away.
+        if (isCustom && !recurring && _money(amount) != null) {
+          await repo.addInvestmentEntry(
+            id,
+            type: 'contribute',
+            amountMinor: _money(amount)!,
+            date: oneTimeDate,
+          );
+        }
       } else {
         await repo.updateInvestment(
           e!.id,
           name: name.text,
           accountId: accountId,
-          startDate: start,
+          startDate: rec ? start : _keptStart,
           expectedGrowthBps: g == null ? null : (g * 100).round(),
           currentValueMinor: _money(value),
           units: _num(units),
           buyPriceMinor: _money(buy),
-          sipMinor: _money(sip),
-          chitValueMinor: isChit ? _money(chitValue) : null,
-          tenureMonths: isChit ? int.tryParse(tenure.text.trim()) : null,
-          members: isChit ? int.tryParse(members.text.trim()) : null,
-          monthlyMinor: isChit ? _money(monthly) : null,
-          commissionBps: isChit && _num(commission) != null
-              ? (_num(commission)! * 100).round()
-              : null,
-          organiser: organiser.text.trim().isEmpty
-              ? null
-              : organiser.text.trim(),
+          sipMinor: _money(amount),
+          recurring: rec,
+          cycle: rec ? cycle : null,
+          everyN: rec ? sch!.every : 1,
+          weekday: rec ? sch!.weekday : null,
+          monthDay: rec ? sch!.monthDay : null,
+          timeOfDay: rec ? timeOfDay : null,
+          installments: rec ? sch!.count : null,
+          endDate: rec ? sch!.until : null,
           note: note.text.trim(),
         );
       }
@@ -475,10 +517,12 @@ class _InvestFormState extends ConsumerState<_InvestForm> {
     bool number = false,
     String? suffix,
     String? hint,
+    ValueChanged<String>? onChanged,
   }) => Padding(
     padding: const EdgeInsets.only(bottom: Sp.x3),
     child: TextField(
       controller: c,
+      onChanged: onChanged,
       keyboardType: number
           ? const TextInputType.numberWithOptions(decimal: true)
           : TextInputType.text,
@@ -492,6 +536,217 @@ class _InvestFormState extends ConsumerState<_InvestForm> {
       ),
     ),
   );
+
+  Future<DateTime?> _pickDate(DateTime initial) async {
+    final d = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    return d == null ? null : Dates.fromLocal(d);
+  }
+
+  Widget _dateButton(String label, DateTime? d, ValueChanged<DateTime> set) =>
+      Padding(
+        padding: const EdgeInsets.only(bottom: Sp.x3),
+        child: OutlinedButton.icon(
+          style: OutlinedButton.styleFrom(
+            minimumSize: const Size.fromHeight(52),
+            alignment: Alignment.centerLeft,
+          ),
+          icon: const Icon(Icons.event),
+          label: Text(
+            d == null
+                ? label
+                : '$label: ${DateFormat('EEE, d MMM y').format(d)}',
+          ),
+          onPressed: () async {
+            final p = await _pickDate(d ?? Dates.today());
+            if (p != null) setState(() => set(p));
+          },
+        ),
+      );
+
+  static const _weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  Widget _scheduleFields(BuildContext context) {
+    final unit = switch (cycle) {
+      'daily' => 'day(s)',
+      'weekly' => 'week(s)',
+      'monthly' => 'month(s)',
+      _ => 'year(s)',
+    };
+    final sch = _schedule();
+    final problem = sch?.validate();
+    final next = problem == null ? sch?.upcoming(limit: 3) : null;
+    final total = problem == null ? sch?.total : null;
+    final c = context.cash;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _dateButton('Starts', start, (d) => start = d),
+        Text('Repeats', style: context.text.labelLarge),
+        const SizedBox(height: Sp.x2),
+        SegmentedButton<String>(
+          showSelectedIcon: false,
+          segments: const [
+            ButtonSegment(value: 'daily', label: Text('Daily')),
+            ButtonSegment(value: 'weekly', label: Text('Weekly')),
+            ButtonSegment(value: 'monthly', label: Text('Monthly')),
+            ButtonSegment(value: 'yearly', label: Text('Yearly')),
+          ],
+          selected: {cycle},
+          onSelectionChanged: (v) => setState(() => cycle = v.first),
+        ),
+        const SizedBox(height: Sp.x3),
+        _plain(
+          every,
+          'Every',
+          number: true,
+          suffix: unit,
+          onChanged: (_) => setState(() {}),
+        ),
+        if (cycle == 'weekly') ...[
+          Text('On', style: context.text.labelLarge),
+          const SizedBox(height: Sp.x2),
+          Wrap(
+            spacing: Sp.x2,
+            children: [
+              for (var i = 1; i <= 7; i++)
+                ChoiceChip(
+                  label: Text(_weekdays[i - 1]),
+                  selected: (weekday ?? start?.weekday) == i,
+                  onSelected: (_) => setState(() => weekday = i),
+                ),
+            ],
+          ),
+          const SizedBox(height: Sp.x3),
+        ],
+        if (cycle == 'monthly')
+          Padding(
+            padding: const EdgeInsets.only(bottom: Sp.x3),
+            child: DropdownButtonFormField<int>(
+              initialValue: monthDay ?? start?.day ?? 1,
+              decoration: const InputDecoration(
+                labelText: 'Day of the month',
+                helperText: 'Short months use their last day (31 → 28/30)',
+              ),
+              items: [
+                for (var i = 1; i <= 31; i++)
+                  DropdownMenuItem(value: i, child: Text('$i')),
+              ],
+              onChanged: (v) => setState(() => monthDay = v),
+            ),
+          ),
+        if (cycle == 'yearly' && start != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: Sp.x3),
+            child: Text(
+              'Repeats on ${DateFormat('d MMMM').format(start!)} each year.',
+              style: TextStyle(color: c.textMuted),
+            ),
+          ),
+        if (cycle == 'daily')
+          Padding(
+            padding: const EdgeInsets.only(bottom: Sp.x3),
+            child: Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(52),
+                      alignment: Alignment.centerLeft,
+                    ),
+                    icon: const Icon(Icons.schedule),
+                    label: Text(
+                      timeOfDay == null
+                          ? 'Time of day (optional)'
+                          : 'Time: $timeOfDay',
+                    ),
+                    onPressed: () async {
+                      final t = await showTimePicker(
+                        context: context,
+                        initialTime: const TimeOfDay(hour: 9, minute: 0),
+                      );
+                      if (t != null) {
+                        setState(
+                          () => timeOfDay =
+                              '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}',
+                        );
+                      }
+                    },
+                  ),
+                ),
+                if (timeOfDay != null)
+                  IconButton(
+                    tooltip: 'Clear time',
+                    icon: const Icon(Icons.close),
+                    onPressed: () => setState(() => timeOfDay = null),
+                  ),
+              ],
+            ),
+          ),
+        Text('Ends', style: context.text.labelLarge),
+        const SizedBox(height: Sp.x2),
+        SegmentedButton<String>(
+          showSelectedIcon: false,
+          segments: const [
+            ButtonSegment(value: 'never', label: Text('Never')),
+            ButtonSegment(value: 'count', label: Text('After N')),
+            ButtonSegment(value: 'date', label: Text('On a date')),
+          ],
+          selected: {ends},
+          onSelectionChanged: (v) => setState(() => ends = v.first),
+        ),
+        const SizedBox(height: Sp.x3),
+        if (ends == 'count')
+          _plain(
+            count,
+            'Number of instalments',
+            number: true,
+            onChanged: (_) => setState(() {}),
+          ),
+        if (ends == 'date') _dateButton('Ends', endDate, (d) => endDate = d),
+        // Live preview so the rule can be checked before saving.
+        Container(
+          width: double.infinity,
+          margin: const EdgeInsets.only(bottom: Sp.x3),
+          padding: const EdgeInsets.all(Sp.x3),
+          decoration: BoxDecoration(
+            color: kindColor('custom').withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(Sp.rChip),
+          ),
+          child: problem != null
+              ? Text(problem, style: TextStyle(color: c.spending))
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      sch!.describe(),
+                      style: context.text.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      [
+                        if (next != null && next.isNotEmpty)
+                          'Next: ${next.map((d) => DateFormat('d MMM y').format(d)).join(', ')}',
+                        total == null
+                            ? 'No end'
+                            : '$total instalment${total == 1 ? '' : 's'}',
+                      ].join(' · '),
+                      style: context.text.bodySmall?.copyWith(
+                        color: c.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+        ),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -535,46 +790,40 @@ class _InvestFormState extends ConsumerState<_InvestForm> {
               name,
               kind == 'stock'
                   ? 'Stock name or symbol'
-                  : kind == 'chit'
-                  ? 'Chit name'
+                  : isCustom
+                  ? 'What is it? (e.g. Gold, Chit, PPF)'
                   : 'Fund name',
             ),
-            if (kind == 'mutual_fund') _money_(sip, 'SIP amount per month'),
+            if (isCustom) ...[
+              SegmentedButton<bool>(
+                showSelectedIcon: false,
+                segments: const [
+                  ButtonSegment(value: false, label: Text('One time')),
+                  ButtonSegment(value: true, label: Text('Recurring')),
+                ],
+                selected: {recurring},
+                onSelectionChanged: (v) => setState(() => recurring = v.first),
+              ),
+              const SizedBox(height: Sp.x4),
+              _money_(
+                amount,
+                recurring ? 'Amount each time' : 'Amount invested',
+              ),
+              if (recurring)
+                _scheduleFields(context)
+              else if (e == null)
+                _dateButton('Date', oneTimeDate, (d) => oneTimeDate = d),
+            ],
+            if (kind == 'mutual_fund') _money_(amount, 'SIP amount per month'),
             if (kind == 'stock') ...[
               _plain(units, 'Units held (optional)', number: true),
               _money_(buy, 'Average buy price per unit'),
             ],
-            if (kind == 'chit') ...[
-              _money_(chitValue, 'Chit value'),
-              Row(
-                children: [
-                  Expanded(
-                    child: _plain(
-                      tenure,
-                      'Tenure',
-                      number: true,
-                      suffix: 'months',
-                    ),
-                  ),
-                  const SizedBox(width: Sp.x3),
-                  Expanded(child: _plain(members, 'Members', number: true)),
-                ],
-              ),
-              _money_(monthly, 'Monthly instalment'),
-              _plain(
-                commission,
-                'Foreman commission',
-                number: true,
-                suffix: '%',
-              ),
-              _plain(organiser, 'Organiser / foreman'),
-            ],
-            if (kind != 'chit')
-              _money_(
-                value,
-                'Current value',
-                hint: 'Update it any time; leave blank if unknown',
-              ),
+            _money_(
+              value,
+              'Current value',
+              hint: 'Update it any time; leave blank if unknown',
+            ),
             _plain(
               growth,
               'Expected growth per year (optional)',
@@ -582,29 +831,8 @@ class _InvestFormState extends ConsumerState<_InvestForm> {
               suffix: '%',
               hint: 'Only used for an estimate, never your balance',
             ),
-            Padding(
-              padding: const EdgeInsets.only(bottom: Sp.x3),
-              child: OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(52),
-                ),
-                icon: const Icon(Icons.event),
-                label: Text(
-                  start == null
-                      ? 'Start date (optional)'
-                      : 'Started ${DateFormat('d MMM y').format(start!)}',
-                ),
-                onPressed: () async {
-                  final d = await showDatePicker(
-                    context: context,
-                    initialDate: start ?? DateTime.now(),
-                    firstDate: DateTime(2000),
-                    lastDate: DateTime(2100),
-                  );
-                  if (d != null) setState(() => start = Dates.fromLocal(d));
-                },
-              ),
-            ),
+            if (!isCustom)
+              _dateButton('Start date (optional)', start, (d) => start = d),
             if ((settings?.split ?? false) && accounts.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(bottom: Sp.x3),
@@ -855,30 +1083,29 @@ class InvestDetailPage extends ConsumerWidget {
               ],
             ),
           ),
-          if (inv.kind != 'chit')
-            Padding(
-              padding: const EdgeInsets.only(top: Sp.x2),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextButton.icon(
-                      icon: const Icon(Icons.edit_note),
-                      label: const Text('Update current value'),
-                      onPressed: () => _updateValue(context, repo, inv),
-                    ),
+          Padding(
+            padding: const EdgeInsets.only(top: Sp.x2),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextButton.icon(
+                    icon: const Icon(Icons.edit_note),
+                    label: const Text('Update current value'),
+                    onPressed: () => _updateValue(context, repo, inv),
                   ),
-                  Expanded(
-                    child: TextButton.icon(
-                      icon: const Icon(Icons.redeem),
-                      label: const Text('Dividend'),
-                      onPressed: () =>
-                          showEntrySheet(context, inv, type: 'dividend'),
-                    ),
+                ),
+                Expanded(
+                  child: TextButton.icon(
+                    icon: const Icon(Icons.redeem),
+                    label: const Text('Dividend'),
+                    onPressed: () =>
+                        showEntrySheet(context, inv, type: 'dividend'),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          if (inv.kind == 'chit') ChitSection(s: s),
+          ),
+          if (inv.recurring) ScheduleSection(s: s),
           const SectionTitle('History'),
           if (s.entries.isEmpty)
             Padding(
@@ -983,7 +1210,7 @@ class _EntryRow extends ConsumerWidget {
         en.periodKey != null
             ? 'Dividend, month ${en.periodKey! + 1}'
             : 'Dividend',
-      _ => 'Chit payout',
+      _ => 'Payout',
     };
     return Dismissible(
       key: ValueKey(en.id),
@@ -1078,7 +1305,7 @@ class _EntrySheetState extends ConsumerState<_EntrySheet> {
           : 'Add money',
     'withdraw' => 'Withdraw',
     'dividend' => 'Record dividend',
-    _ => 'Record chit payout',
+    _ => 'Record payout',
   };
 
   Future<void> _save() async {
@@ -1175,160 +1402,152 @@ class _EntrySheetState extends ConsumerState<_EntrySheet> {
   }
 }
 
-// ───────────────────────── chit fund ─────────────────────────
-class ChitSection extends ConsumerWidget {
+// ───────────────────────── recurring schedule ─────────────────────────
+class ScheduleSection extends ConsumerWidget {
   final InvestSummary s;
-  const ChitSection({super.key, required this.s});
+  const ScheduleSection({super.key, required this.s});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final inv = s.inv;
+    final sch = inv.schedule;
     final c = context.cash;
-    final months = inv.tenureMonths ?? 0;
-    final start = inv.startDate == null ? null : Dates.parse(inv.startDate!);
+    if (sch == null) return const SizedBox.shrink();
+    final color = kindColor('custom');
+    final today = ref.read(repoProvider).today;
     final paid = {
       for (final e in s.entries)
         if (e.type == 'contribute' && e.periodKey != null) e.periodKey!: e,
     };
-    final divs = {
-      for (final e in s.entries)
-        if (e.type == 'dividend' && e.periodKey != null) e.periodKey!: e,
-    };
-    final payouts = s.entries.where((e) => e.type == 'payout').toList();
-    final monthly = inv.monthlyMinor;
-    final remaining = months == 0 ? null : months - paid.length;
-    final owed = payouts.isNotEmpty && monthly != null && remaining != null
-        ? remaining * monthly
-        : null;
-    final color = kindColor('chit');
+    final total = sch.total;
+    final dueN = sch.dueCount(today);
+    final overdue = [
+      for (var k = 0; k < dueN; k++)
+        if (!paid.containsKey(k)) k,
+    ];
+    // next instalment that is not yet due
+    final upcoming = sch.upcoming(from: dueN, limit: 3);
+    final paidCount = paid.length;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SectionTitle(
-          'Chit schedule',
-          trailing: TextButton.icon(
-            icon: const Icon(Icons.emoji_events_outlined, size: 18),
-            label: const Text('Record payout'),
-            onPressed: () => showEntrySheet(
-              context,
-              inv,
-              type: 'payout',
-              suggest: inv.chitValueMinor,
+        const SectionTitle('Schedule'),
+        SizedBox(
+          width: double.infinity,
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.all(Sp.x4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    sch.describe(),
+                    style: context.text.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    [
+                      if (inv.sipMinor != null) Money.format(inv.sipMinor!),
+                      'from ${DateFormat('d MMM y').format(sch.start)}',
+                      if (sch.until != null)
+                        'until ${DateFormat('d MMM y').format(sch.until!)}',
+                    ].join(' · '),
+                    style: context.text.bodySmall?.copyWith(color: c.textMuted),
+                  ),
+                  if (total != null && total > 0) ...[
+                    const SizedBox(height: Sp.x3),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: TweenAnimationBuilder<double>(
+                        tween: Tween(end: (paidCount / total).clamp(0, 1)),
+                        duration: const Duration(milliseconds: 700),
+                        curve: Curves.easeOutCubic,
+                        builder: (_, v, _) => LinearProgressIndicator(
+                          value: v,
+                          minHeight: 10,
+                          color: color,
+                          backgroundColor: color.withValues(alpha: 0.15),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: Sp.x2),
+                    Text(
+                      '$paidCount of $total instalments paid'
+                      '${total - paidCount > 0 ? ' · ${total - paidCount} to go' : ' · complete 🎉'}',
+                    ),
+                  ] else
+                    Padding(
+                      padding: const EdgeInsets.only(top: Sp.x2),
+                      child: Text('$paidCount paid so far · no end date'),
+                    ),
+                ],
+              ),
             ),
           ),
         ),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(Sp.x4),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (months > 0) ...[
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: TweenAnimationBuilder<double>(
-                      tween: Tween(end: paid.length / months),
-                      duration: const Duration(milliseconds: 700),
-                      curve: Curves.easeOutCubic,
-                      builder: (_, v, _) => LinearProgressIndicator(
-                        value: v.clamp(0, 1),
-                        minHeight: 10,
-                        color: color,
-                        backgroundColor: color.withValues(alpha: 0.15),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: Sp.x2),
-                  Text(
-                    '${paid.length} of $months instalments paid'
-                    '${remaining != null && remaining > 0 ? ' · $remaining to go' : ''}',
-                    style: context.text.bodyMedium,
-                  ),
-                ] else
-                  Text(
-                    'Add a tenure (in Edit) to see the month-by-month schedule.',
-                    style: TextStyle(color: c.textMuted),
-                  ),
-                if (inv.chitValueMinor != null ||
-                    inv.members != null ||
-                    inv.organiser != null ||
-                    inv.commissionBps != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: Sp.x2),
-                    child: Text(
-                      [
-                        if (inv.chitValueMinor != null)
-                          'Chit ${Money.format(inv.chitValueMinor!)}',
-                        if (inv.members != null) '${inv.members} members',
-                        if (inv.commissionBps != null)
-                          '${(inv.commissionBps! / 100).toStringAsFixed(1)}% commission',
-                        if (inv.organiser != null) inv.organiser!,
-                      ].join(' · '),
-                      style: context.text.bodySmall?.copyWith(
-                        color: c.textMuted,
-                      ),
-                    ),
-                  ),
-                if (payouts.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: Sp.x3),
-                    child: Container(
-                      padding: const EdgeInsets.all(Sp.x3),
-                      decoration: BoxDecoration(
-                        color: c.income.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(Sp.rChip),
-                      ),
-                      child: Text(
-                        '🎉 Payout ${Money.format(payouts.first.amountMinor)} received on '
-                        '${DateFormat('d MMM y').format(Dates.parse(payouts.first.date))}.'
-                        '${owed != null && owed > 0 ? ' About ${Money.format(owed)} of instalments still to pay.' : ''}',
-                      ),
-                    ),
-                  ),
-              ],
+        if (overdue.isNotEmpty) ...[
+          SectionTitle(
+            'Due now',
+            trailing: Text(
+              '${overdue.length} unpaid',
+              style: TextStyle(color: c.spending, fontWeight: FontWeight.w700),
             ),
           ),
-        ),
-        if (months > 0 && start != null) ...[
-          const SizedBox(height: Sp.x3),
-          for (var k = 0; k < months; k++)
-            _MonthRow(
+          for (final k in overdue.reversed.take(10))
+            _InstalmentRow(
               k: k,
-              date: Dates.addMonths(start, k),
+              date: sch.at(k)!,
               inv: inv,
-              paid: paid[k],
-              dividend: divs[k],
+              paid: null,
+              today: today,
             ),
-        ] else if (months > 0)
-          Padding(
-            padding: const EdgeInsets.only(top: Sp.x3),
-            child: Text(
-              'Set a start date (in Edit) to date each month.',
-              style: TextStyle(color: c.textMuted),
+          if (overdue.length > 10)
+            Padding(
+              padding: const EdgeInsets.only(top: Sp.x1),
+              child: Text(
+                '+ ${overdue.length - 10} older unpaid instalments',
+                style: TextStyle(color: c.textMuted),
+              ),
             ),
-          ),
+        ],
+        if (upcoming.isNotEmpty) ...[
+          const SectionTitle('Coming up'),
+          for (var i = 0; i < upcoming.length; i++)
+            _InstalmentRow(
+              k: dueN + i,
+              date: upcoming[i],
+              inv: inv,
+              paid: paid[dueN + i],
+              today: today,
+            ),
+        ],
       ],
     );
   }
 }
 
-class _MonthRow extends ConsumerWidget {
+class _InstalmentRow extends ConsumerWidget {
   final int k;
-  final DateTime date;
+  final DateTime date, today;
   final Investment inv;
-  final InvestmentEntry? paid, dividend;
-  const _MonthRow({
+  final InvestmentEntry? paid;
+  const _InstalmentRow({
     required this.k,
     required this.date,
     required this.inv,
     required this.paid,
-    required this.dividend,
+    required this.today,
   });
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final c = context.cash;
     final done = paid != null;
-    final late = !done && date.isBefore(ref.read(repoProvider).today);
+    final late = !done && date.isBefore(today);
+    final time = inv.cycle == 'daily' && inv.timeOfDay != null
+        ? ' · ${inv.timeOfDay}'
+        : '';
     return Padding(
       padding: const EdgeInsets.only(bottom: Sp.x2),
       child: Container(
@@ -1343,13 +1562,9 @@ class _MonthRow extends ConsumerWidget {
         ),
         child: Row(
           children: [
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 250),
-              child: Icon(
-                done ? Icons.check_circle : Icons.radio_button_unchecked,
-                key: ValueKey(done),
-                color: done ? c.income : (late ? c.spending : c.textMuted),
-              ),
+            Icon(
+              done ? Icons.check_circle : Icons.radio_button_unchecked,
+              color: done ? c.income : (late ? c.spending : c.textMuted),
             ),
             const SizedBox(width: Sp.x3),
             Expanded(
@@ -1357,29 +1572,21 @@ class _MonthRow extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Month ${k + 1} · ${DateFormat('d MMM y').format(date)}',
+                    'Instalment ${k + 1} · ${DateFormat('EEE, d MMM y').format(date)}$time',
                     style: context.text.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  if (done || dividend != null)
-                    Text(
-                      [
-                        if (done) 'Paid ${Money.format(paid!.amountMinor)}',
-                        if (dividend != null)
-                          'dividend ${Money.format(dividend!.amountMinor)}',
-                      ].join(' · '),
-                      style: context.text.bodySmall?.copyWith(
-                        color: c.textMuted,
-                      ),
-                    )
-                  else if (late)
-                    Text(
-                      'Overdue',
-                      style: context.text.bodySmall?.copyWith(
-                        color: c.spending,
-                      ),
+                  Text(
+                    done
+                        ? 'Paid ${Money.format(paid!.amountMinor)}'
+                        : late
+                        ? 'Overdue'
+                        : 'Upcoming',
+                    style: context.text.bodySmall?.copyWith(
+                      color: late ? c.spending : c.textMuted,
                     ),
+                  ),
                 ],
               ),
             ),
@@ -1389,24 +1596,11 @@ class _MonthRow extends ConsumerWidget {
                   context,
                   inv,
                   type: 'contribute',
-                  suggest: inv.monthlyMinor,
+                  suggest: inv.sipMinor,
                   periodKey: k,
-                  date: date.isAfter(ref.read(repoProvider).today)
-                      ? ref.read(repoProvider).today
-                      : date,
+                  date: date.isAfter(today) ? today : date,
                 ),
                 child: const Text('Pay'),
-              )
-            else if (dividend == null)
-              TextButton(
-                onPressed: () => showEntrySheet(
-                  context,
-                  inv,
-                  type: 'dividend',
-                  periodKey: k,
-                  date: date,
-                ),
-                child: const Text('+ Dividend'),
               ),
           ],
         ),

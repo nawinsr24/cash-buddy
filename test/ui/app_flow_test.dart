@@ -252,14 +252,14 @@ void main() {
     expect(find.text('All caught up'), findsOneWidget);
   });
 
-  testWidgets('invest: add a chit, pay an instalment, balance follows', (
+  testWidgets('invest: add a custom recurring investment, balance follows', (
     tester,
   ) async {
     final env = await pump(tester, opening: 1000000);
     await tapText(tester, 'Invest', last: true);
     expect(find.text('Grow your money'), findsOneWidget);
     await tapText(tester, 'Add your first investment');
-    await tapText(tester, 'Chit fund');
+    await tapText(tester, 'Custom investment');
     await tester.enterText(find.byType(TextField).first, 'Office chit');
     await tapText(tester, 'Add', last: true);
     expect(find.text('Office chit'), findsOneWidget);

@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 
 import '../domain/dates.dart';
 import '../domain/invest.dart';
+import '../domain/schedule.dart';
 import 'db.dart';
 import 'repo.dart';
 
@@ -43,6 +44,23 @@ class InvestTotals {
   double? get pct => contributed == 0 ? null : gain / contributed;
 }
 
+extension InvestmentSchedule on Investment {
+  /// The repeat rule of a recurring plan, or null for one-off investments.
+  Schedule? get schedule {
+    if (!recurring || cycle == null || startDate == null) return null;
+    return Schedule(
+      cycle: cycle!,
+      every: everyN,
+      start: Dates.parse(startDate!),
+      weekday: weekday,
+      monthDay: monthDay,
+      count: installments,
+      until: endDate == null ? null : Dates.parse(endDate!),
+      timeOfDay: timeOfDay,
+    );
+  }
+}
+
 extension InvestRepo on Repo {
   String get _iso => now().toUtc().toIso8601String();
 
@@ -72,18 +90,31 @@ extension InvestRepo on Repo {
     double? units,
     int? buyPriceMinor,
     int? sipMinor,
-    int? chitValueMinor,
-    int? tenureMonths,
-    int? members,
-    int? monthlyMinor,
-    int? commissionBps,
-    String? organiser,
+    bool recurring = false,
+    String? cycle,
+    int everyN = 1,
+    int? weekday,
+    int? monthDay,
+    String? timeOfDay,
+    int? installments,
+    DateTime? endDate,
     String note = '',
   }) async {
-    if (!{'mutual_fund', 'stock', 'chit'}.contains(kind)) {
+    if (!{'mutual_fund', 'stock', 'custom'}.contains(kind)) {
       throw ValidationException('Unknown investment type');
     }
     if (name.trim().isEmpty) throw ValidationException('Give it a name');
+    _checkSchedule(
+      recurring: recurring,
+      cycle: cycle,
+      everyN: everyN,
+      weekday: weekday,
+      monthDay: monthDay,
+      timeOfDay: timeOfDay,
+      installments: installments,
+      endDate: endDate,
+      startDate: startDate,
+    );
     final id = Repo.newId('inv_');
     await db
         .into(db.investments)
@@ -103,16 +134,48 @@ extension InvestRepo on Repo {
             units: Value(units),
             buyPriceMinor: Value(buyPriceMinor),
             sipMinor: Value(sipMinor),
-            chitValueMinor: Value(chitValueMinor),
-            tenureMonths: Value(tenureMonths),
-            members: Value(members),
-            monthlyMinor: Value(monthlyMinor),
-            commissionBps: Value(commissionBps),
-            organiser: Value(organiser),
+            recurring: Value(recurring),
+            cycle: Value(recurring ? cycle : null),
+            everyN: Value(recurring ? everyN : 1),
+            weekday: Value(recurring ? weekday : null),
+            monthDay: Value(recurring ? monthDay : null),
+            timeOfDay: Value(recurring ? timeOfDay : null),
+            installments: Value(recurring ? installments : null),
+            endDate: Value(
+              recurring && endDate != null ? Dates.str(endDate) : null,
+            ),
             note: Value(note),
           ),
         );
     return id;
+  }
+
+  void _checkSchedule({
+    required bool recurring,
+    String? cycle,
+    required int everyN,
+    int? weekday,
+    int? monthDay,
+    String? timeOfDay,
+    int? installments,
+    DateTime? endDate,
+    DateTime? startDate,
+  }) {
+    if (!recurring) return;
+    if (startDate == null) {
+      throw ValidationException('A recurring plan needs a start date');
+    }
+    final bad = Schedule(
+      cycle: cycle ?? '',
+      every: everyN,
+      start: startDate,
+      weekday: weekday,
+      monthDay: monthDay,
+      count: installments,
+      until: endDate,
+      timeOfDay: timeOfDay,
+    ).validate();
+    if (bad != null) throw ValidationException(bad);
   }
 
   Future<Investment> getInvestment(String id) =>
@@ -129,15 +192,28 @@ extension InvestRepo on Repo {
     double? units,
     int? buyPriceMinor,
     int? sipMinor,
-    int? chitValueMinor,
-    int? tenureMonths,
-    int? members,
-    int? monthlyMinor,
-    int? commissionBps,
-    String? organiser,
+    bool recurring = false,
+    String? cycle,
+    int everyN = 1,
+    int? weekday,
+    int? monthDay,
+    String? timeOfDay,
+    int? installments,
+    DateTime? endDate,
     String note = '',
   }) async {
     if (name.trim().isEmpty) throw ValidationException('Give it a name');
+    _checkSchedule(
+      recurring: recurring,
+      cycle: cycle,
+      everyN: everyN,
+      weekday: weekday,
+      monthDay: monthDay,
+      timeOfDay: timeOfDay,
+      installments: installments,
+      endDate: endDate,
+      startDate: startDate,
+    );
     final cur = await getInvestment(id);
     final valueChanged = currentValueMinor != cur.currentValueMinor;
     await db
@@ -157,12 +233,16 @@ extension InvestRepo on Repo {
             units: Value(units),
             buyPriceMinor: Value(buyPriceMinor),
             sipMinor: Value(sipMinor),
-            chitValueMinor: Value(chitValueMinor),
-            tenureMonths: Value(tenureMonths),
-            members: Value(members),
-            monthlyMinor: Value(monthlyMinor),
-            commissionBps: Value(commissionBps),
-            organiser: Value(organiser),
+            recurring: recurring,
+            cycle: Value(recurring ? cycle : null),
+            everyN: recurring ? everyN : 1,
+            weekday: Value(recurring ? weekday : null),
+            monthDay: Value(recurring ? monthDay : null),
+            timeOfDay: Value(recurring ? timeOfDay : null),
+            installments: Value(recurring ? installments : null),
+            endDate: Value(
+              recurring && endDate != null ? Dates.str(endDate) : null,
+            ),
             note: note,
             hlc: clock.next(),
           ),
@@ -223,7 +303,7 @@ extension InvestRepo on Repo {
   Future<List<InvestmentEntry>> investmentEntries(String id) => _entries(id);
 
   /// [type]: contribute | withdraw | dividend | payout.
-  /// [periodKey]: chit month (0-based). One contribution / dividend per month.
+  /// [periodKey]: index of the scheduled instalment (0-based) this pays.
   Future<String> addInvestmentEntry(
     String investmentId, {
     required String type,

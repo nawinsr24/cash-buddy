@@ -42,13 +42,13 @@ String emojiForCategory(String name, [String? parent]) {
 String emojiForInvestment(String kind) => switch (kind) {
   'mutual_fund' => '📊',
   'stock' => '📈',
-  'chit' => '🪙',
+  'custom' => '🎯',
   _ => '💰',
 };
 
 String investKindLabel(String kind) => switch (kind) {
   'mutual_fund' => 'Mutual fund',
   'stock' => 'Stock',
-  'chit' => 'Chit fund',
+  'custom' => 'Custom investment',
   _ => 'Investment',
 };

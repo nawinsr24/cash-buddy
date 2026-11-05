@@ -3608,6 +3608,95 @@ class $InvestmentsTable extends Investments
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _recurringMeta = const VerificationMeta(
+    'recurring',
+  );
+  @override
+  late final GeneratedColumn<bool> recurring = GeneratedColumn<bool>(
+    'recurring',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("recurring" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _cycleMeta = const VerificationMeta('cycle');
+  @override
+  late final GeneratedColumn<String> cycle = GeneratedColumn<String>(
+    'cycle',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _everyNMeta = const VerificationMeta('everyN');
+  @override
+  late final GeneratedColumn<int> everyN = GeneratedColumn<int>(
+    'every_n',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _weekdayMeta = const VerificationMeta(
+    'weekday',
+  );
+  @override
+  late final GeneratedColumn<int> weekday = GeneratedColumn<int>(
+    'weekday',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _monthDayMeta = const VerificationMeta(
+    'monthDay',
+  );
+  @override
+  late final GeneratedColumn<int> monthDay = GeneratedColumn<int>(
+    'month_day',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _timeOfDayMeta = const VerificationMeta(
+    'timeOfDay',
+  );
+  @override
+  late final GeneratedColumn<String> timeOfDay = GeneratedColumn<String>(
+    'time_of_day',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _installmentsMeta = const VerificationMeta(
+    'installments',
+  );
+  @override
+  late final GeneratedColumn<int> installments = GeneratedColumn<int>(
+    'installments',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _endDateMeta = const VerificationMeta(
+    'endDate',
+  );
+  @override
+  late final GeneratedColumn<String> endDate = GeneratedColumn<String>(
+    'end_date',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _chitValueMinorMeta = const VerificationMeta(
     'chitValueMinor',
   );
@@ -3717,6 +3806,14 @@ class $InvestmentsTable extends Investments
     units,
     buyPriceMinor,
     sipMinor,
+    recurring,
+    cycle,
+    everyN,
+    weekday,
+    monthDay,
+    timeOfDay,
+    installments,
+    endDate,
     chitValueMinor,
     tenureMonths,
     members,
@@ -3818,6 +3915,57 @@ class $InvestmentsTable extends Investments
       context.handle(
         _sipMinorMeta,
         sipMinor.isAcceptableOrUnknown(data['sip_minor']!, _sipMinorMeta),
+      );
+    }
+    if (data.containsKey('recurring')) {
+      context.handle(
+        _recurringMeta,
+        recurring.isAcceptableOrUnknown(data['recurring']!, _recurringMeta),
+      );
+    }
+    if (data.containsKey('cycle')) {
+      context.handle(
+        _cycleMeta,
+        cycle.isAcceptableOrUnknown(data['cycle']!, _cycleMeta),
+      );
+    }
+    if (data.containsKey('every_n')) {
+      context.handle(
+        _everyNMeta,
+        everyN.isAcceptableOrUnknown(data['every_n']!, _everyNMeta),
+      );
+    }
+    if (data.containsKey('weekday')) {
+      context.handle(
+        _weekdayMeta,
+        weekday.isAcceptableOrUnknown(data['weekday']!, _weekdayMeta),
+      );
+    }
+    if (data.containsKey('month_day')) {
+      context.handle(
+        _monthDayMeta,
+        monthDay.isAcceptableOrUnknown(data['month_day']!, _monthDayMeta),
+      );
+    }
+    if (data.containsKey('time_of_day')) {
+      context.handle(
+        _timeOfDayMeta,
+        timeOfDay.isAcceptableOrUnknown(data['time_of_day']!, _timeOfDayMeta),
+      );
+    }
+    if (data.containsKey('installments')) {
+      context.handle(
+        _installmentsMeta,
+        installments.isAcceptableOrUnknown(
+          data['installments']!,
+          _installmentsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('end_date')) {
+      context.handle(
+        _endDateMeta,
+        endDate.isAcceptableOrUnknown(data['end_date']!, _endDateMeta),
       );
     }
     if (data.containsKey('chit_value_minor')) {
@@ -3941,6 +4089,38 @@ class $InvestmentsTable extends Investments
         DriftSqlType.int,
         data['${effectivePrefix}sip_minor'],
       ),
+      recurring: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}recurring'],
+      )!,
+      cycle: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cycle'],
+      ),
+      everyN: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}every_n'],
+      )!,
+      weekday: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}weekday'],
+      ),
+      monthDay: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}month_day'],
+      ),
+      timeOfDay: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}time_of_day'],
+      ),
+      installments: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}installments'],
+      ),
+      endDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}end_date'],
+      ),
       chitValueMinor: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}chit_value_minor'],
@@ -3998,6 +4178,14 @@ class Investment extends DataClass implements Insertable<Investment> {
   final double? units;
   final int? buyPriceMinor;
   final int? sipMinor;
+  final bool recurring;
+  final String? cycle;
+  final int everyN;
+  final int? weekday;
+  final int? monthDay;
+  final String? timeOfDay;
+  final int? installments;
+  final String? endDate;
   final int? chitValueMinor;
   final int? tenureMonths;
   final int? members;
@@ -4019,6 +4207,14 @@ class Investment extends DataClass implements Insertable<Investment> {
     this.units,
     this.buyPriceMinor,
     this.sipMinor,
+    required this.recurring,
+    this.cycle,
+    required this.everyN,
+    this.weekday,
+    this.monthDay,
+    this.timeOfDay,
+    this.installments,
+    this.endDate,
     this.chitValueMinor,
     this.tenureMonths,
     this.members,
@@ -4058,6 +4254,26 @@ class Investment extends DataClass implements Insertable<Investment> {
     }
     if (!nullToAbsent || sipMinor != null) {
       map['sip_minor'] = Variable<int>(sipMinor);
+    }
+    map['recurring'] = Variable<bool>(recurring);
+    if (!nullToAbsent || cycle != null) {
+      map['cycle'] = Variable<String>(cycle);
+    }
+    map['every_n'] = Variable<int>(everyN);
+    if (!nullToAbsent || weekday != null) {
+      map['weekday'] = Variable<int>(weekday);
+    }
+    if (!nullToAbsent || monthDay != null) {
+      map['month_day'] = Variable<int>(monthDay);
+    }
+    if (!nullToAbsent || timeOfDay != null) {
+      map['time_of_day'] = Variable<String>(timeOfDay);
+    }
+    if (!nullToAbsent || installments != null) {
+      map['installments'] = Variable<int>(installments);
+    }
+    if (!nullToAbsent || endDate != null) {
+      map['end_date'] = Variable<String>(endDate);
     }
     if (!nullToAbsent || chitValueMinor != null) {
       map['chit_value_minor'] = Variable<int>(chitValueMinor);
@@ -4114,6 +4330,26 @@ class Investment extends DataClass implements Insertable<Investment> {
       sipMinor: sipMinor == null && nullToAbsent
           ? const Value.absent()
           : Value(sipMinor),
+      recurring: Value(recurring),
+      cycle: cycle == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cycle),
+      everyN: Value(everyN),
+      weekday: weekday == null && nullToAbsent
+          ? const Value.absent()
+          : Value(weekday),
+      monthDay: monthDay == null && nullToAbsent
+          ? const Value.absent()
+          : Value(monthDay),
+      timeOfDay: timeOfDay == null && nullToAbsent
+          ? const Value.absent()
+          : Value(timeOfDay),
+      installments: installments == null && nullToAbsent
+          ? const Value.absent()
+          : Value(installments),
+      endDate: endDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endDate),
       chitValueMinor: chitValueMinor == null && nullToAbsent
           ? const Value.absent()
           : Value(chitValueMinor),
@@ -4157,6 +4393,14 @@ class Investment extends DataClass implements Insertable<Investment> {
       units: serializer.fromJson<double?>(json['units']),
       buyPriceMinor: serializer.fromJson<int?>(json['buyPriceMinor']),
       sipMinor: serializer.fromJson<int?>(json['sipMinor']),
+      recurring: serializer.fromJson<bool>(json['recurring']),
+      cycle: serializer.fromJson<String?>(json['cycle']),
+      everyN: serializer.fromJson<int>(json['everyN']),
+      weekday: serializer.fromJson<int?>(json['weekday']),
+      monthDay: serializer.fromJson<int?>(json['monthDay']),
+      timeOfDay: serializer.fromJson<String?>(json['timeOfDay']),
+      installments: serializer.fromJson<int?>(json['installments']),
+      endDate: serializer.fromJson<String?>(json['endDate']),
       chitValueMinor: serializer.fromJson<int?>(json['chitValueMinor']),
       tenureMonths: serializer.fromJson<int?>(json['tenureMonths']),
       members: serializer.fromJson<int?>(json['members']),
@@ -4183,6 +4427,14 @@ class Investment extends DataClass implements Insertable<Investment> {
       'units': serializer.toJson<double?>(units),
       'buyPriceMinor': serializer.toJson<int?>(buyPriceMinor),
       'sipMinor': serializer.toJson<int?>(sipMinor),
+      'recurring': serializer.toJson<bool>(recurring),
+      'cycle': serializer.toJson<String?>(cycle),
+      'everyN': serializer.toJson<int>(everyN),
+      'weekday': serializer.toJson<int?>(weekday),
+      'monthDay': serializer.toJson<int?>(monthDay),
+      'timeOfDay': serializer.toJson<String?>(timeOfDay),
+      'installments': serializer.toJson<int?>(installments),
+      'endDate': serializer.toJson<String?>(endDate),
       'chitValueMinor': serializer.toJson<int?>(chitValueMinor),
       'tenureMonths': serializer.toJson<int?>(tenureMonths),
       'members': serializer.toJson<int?>(members),
@@ -4207,6 +4459,14 @@ class Investment extends DataClass implements Insertable<Investment> {
     Value<double?> units = const Value.absent(),
     Value<int?> buyPriceMinor = const Value.absent(),
     Value<int?> sipMinor = const Value.absent(),
+    bool? recurring,
+    Value<String?> cycle = const Value.absent(),
+    int? everyN,
+    Value<int?> weekday = const Value.absent(),
+    Value<int?> monthDay = const Value.absent(),
+    Value<String?> timeOfDay = const Value.absent(),
+    Value<int?> installments = const Value.absent(),
+    Value<String?> endDate = const Value.absent(),
     Value<int?> chitValueMinor = const Value.absent(),
     Value<int?> tenureMonths = const Value.absent(),
     Value<int?> members = const Value.absent(),
@@ -4236,6 +4496,14 @@ class Investment extends DataClass implements Insertable<Investment> {
         ? buyPriceMinor.value
         : this.buyPriceMinor,
     sipMinor: sipMinor.present ? sipMinor.value : this.sipMinor,
+    recurring: recurring ?? this.recurring,
+    cycle: cycle.present ? cycle.value : this.cycle,
+    everyN: everyN ?? this.everyN,
+    weekday: weekday.present ? weekday.value : this.weekday,
+    monthDay: monthDay.present ? monthDay.value : this.monthDay,
+    timeOfDay: timeOfDay.present ? timeOfDay.value : this.timeOfDay,
+    installments: installments.present ? installments.value : this.installments,
+    endDate: endDate.present ? endDate.value : this.endDate,
     chitValueMinor: chitValueMinor.present
         ? chitValueMinor.value
         : this.chitValueMinor,
@@ -4271,6 +4539,16 @@ class Investment extends DataClass implements Insertable<Investment> {
           ? data.buyPriceMinor.value
           : this.buyPriceMinor,
       sipMinor: data.sipMinor.present ? data.sipMinor.value : this.sipMinor,
+      recurring: data.recurring.present ? data.recurring.value : this.recurring,
+      cycle: data.cycle.present ? data.cycle.value : this.cycle,
+      everyN: data.everyN.present ? data.everyN.value : this.everyN,
+      weekday: data.weekday.present ? data.weekday.value : this.weekday,
+      monthDay: data.monthDay.present ? data.monthDay.value : this.monthDay,
+      timeOfDay: data.timeOfDay.present ? data.timeOfDay.value : this.timeOfDay,
+      installments: data.installments.present
+          ? data.installments.value
+          : this.installments,
+      endDate: data.endDate.present ? data.endDate.value : this.endDate,
       chitValueMinor: data.chitValueMinor.present
           ? data.chitValueMinor.value
           : this.chitValueMinor,
@@ -4305,6 +4583,14 @@ class Investment extends DataClass implements Insertable<Investment> {
           ..write('units: $units, ')
           ..write('buyPriceMinor: $buyPriceMinor, ')
           ..write('sipMinor: $sipMinor, ')
+          ..write('recurring: $recurring, ')
+          ..write('cycle: $cycle, ')
+          ..write('everyN: $everyN, ')
+          ..write('weekday: $weekday, ')
+          ..write('monthDay: $monthDay, ')
+          ..write('timeOfDay: $timeOfDay, ')
+          ..write('installments: $installments, ')
+          ..write('endDate: $endDate, ')
           ..write('chitValueMinor: $chitValueMinor, ')
           ..write('tenureMonths: $tenureMonths, ')
           ..write('members: $members, ')
@@ -4319,7 +4605,7 @@ class Investment extends DataClass implements Insertable<Investment> {
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     kind,
     name,
@@ -4331,6 +4617,14 @@ class Investment extends DataClass implements Insertable<Investment> {
     units,
     buyPriceMinor,
     sipMinor,
+    recurring,
+    cycle,
+    everyN,
+    weekday,
+    monthDay,
+    timeOfDay,
+    installments,
+    endDate,
     chitValueMinor,
     tenureMonths,
     members,
@@ -4340,7 +4634,7 @@ class Investment extends DataClass implements Insertable<Investment> {
     note,
     hlc,
     deletedAt,
-  );
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -4356,6 +4650,14 @@ class Investment extends DataClass implements Insertable<Investment> {
           other.units == this.units &&
           other.buyPriceMinor == this.buyPriceMinor &&
           other.sipMinor == this.sipMinor &&
+          other.recurring == this.recurring &&
+          other.cycle == this.cycle &&
+          other.everyN == this.everyN &&
+          other.weekday == this.weekday &&
+          other.monthDay == this.monthDay &&
+          other.timeOfDay == this.timeOfDay &&
+          other.installments == this.installments &&
+          other.endDate == this.endDate &&
           other.chitValueMinor == this.chitValueMinor &&
           other.tenureMonths == this.tenureMonths &&
           other.members == this.members &&
@@ -4379,6 +4681,14 @@ class InvestmentsCompanion extends UpdateCompanion<Investment> {
   final Value<double?> units;
   final Value<int?> buyPriceMinor;
   final Value<int?> sipMinor;
+  final Value<bool> recurring;
+  final Value<String?> cycle;
+  final Value<int> everyN;
+  final Value<int?> weekday;
+  final Value<int?> monthDay;
+  final Value<String?> timeOfDay;
+  final Value<int?> installments;
+  final Value<String?> endDate;
   final Value<int?> chitValueMinor;
   final Value<int?> tenureMonths;
   final Value<int?> members;
@@ -4401,6 +4711,14 @@ class InvestmentsCompanion extends UpdateCompanion<Investment> {
     this.units = const Value.absent(),
     this.buyPriceMinor = const Value.absent(),
     this.sipMinor = const Value.absent(),
+    this.recurring = const Value.absent(),
+    this.cycle = const Value.absent(),
+    this.everyN = const Value.absent(),
+    this.weekday = const Value.absent(),
+    this.monthDay = const Value.absent(),
+    this.timeOfDay = const Value.absent(),
+    this.installments = const Value.absent(),
+    this.endDate = const Value.absent(),
     this.chitValueMinor = const Value.absent(),
     this.tenureMonths = const Value.absent(),
     this.members = const Value.absent(),
@@ -4424,6 +4742,14 @@ class InvestmentsCompanion extends UpdateCompanion<Investment> {
     this.units = const Value.absent(),
     this.buyPriceMinor = const Value.absent(),
     this.sipMinor = const Value.absent(),
+    this.recurring = const Value.absent(),
+    this.cycle = const Value.absent(),
+    this.everyN = const Value.absent(),
+    this.weekday = const Value.absent(),
+    this.monthDay = const Value.absent(),
+    this.timeOfDay = const Value.absent(),
+    this.installments = const Value.absent(),
+    this.endDate = const Value.absent(),
     this.chitValueMinor = const Value.absent(),
     this.tenureMonths = const Value.absent(),
     this.members = const Value.absent(),
@@ -4450,6 +4776,14 @@ class InvestmentsCompanion extends UpdateCompanion<Investment> {
     Expression<double>? units,
     Expression<int>? buyPriceMinor,
     Expression<int>? sipMinor,
+    Expression<bool>? recurring,
+    Expression<String>? cycle,
+    Expression<int>? everyN,
+    Expression<int>? weekday,
+    Expression<int>? monthDay,
+    Expression<String>? timeOfDay,
+    Expression<int>? installments,
+    Expression<String>? endDate,
     Expression<int>? chitValueMinor,
     Expression<int>? tenureMonths,
     Expression<int>? members,
@@ -4473,6 +4807,14 @@ class InvestmentsCompanion extends UpdateCompanion<Investment> {
       if (units != null) 'units': units,
       if (buyPriceMinor != null) 'buy_price_minor': buyPriceMinor,
       if (sipMinor != null) 'sip_minor': sipMinor,
+      if (recurring != null) 'recurring': recurring,
+      if (cycle != null) 'cycle': cycle,
+      if (everyN != null) 'every_n': everyN,
+      if (weekday != null) 'weekday': weekday,
+      if (monthDay != null) 'month_day': monthDay,
+      if (timeOfDay != null) 'time_of_day': timeOfDay,
+      if (installments != null) 'installments': installments,
+      if (endDate != null) 'end_date': endDate,
       if (chitValueMinor != null) 'chit_value_minor': chitValueMinor,
       if (tenureMonths != null) 'tenure_months': tenureMonths,
       if (members != null) 'members': members,
@@ -4498,6 +4840,14 @@ class InvestmentsCompanion extends UpdateCompanion<Investment> {
     Value<double?>? units,
     Value<int?>? buyPriceMinor,
     Value<int?>? sipMinor,
+    Value<bool>? recurring,
+    Value<String?>? cycle,
+    Value<int>? everyN,
+    Value<int?>? weekday,
+    Value<int?>? monthDay,
+    Value<String?>? timeOfDay,
+    Value<int?>? installments,
+    Value<String?>? endDate,
     Value<int?>? chitValueMinor,
     Value<int?>? tenureMonths,
     Value<int?>? members,
@@ -4521,6 +4871,14 @@ class InvestmentsCompanion extends UpdateCompanion<Investment> {
       units: units ?? this.units,
       buyPriceMinor: buyPriceMinor ?? this.buyPriceMinor,
       sipMinor: sipMinor ?? this.sipMinor,
+      recurring: recurring ?? this.recurring,
+      cycle: cycle ?? this.cycle,
+      everyN: everyN ?? this.everyN,
+      weekday: weekday ?? this.weekday,
+      monthDay: monthDay ?? this.monthDay,
+      timeOfDay: timeOfDay ?? this.timeOfDay,
+      installments: installments ?? this.installments,
+      endDate: endDate ?? this.endDate,
       chitValueMinor: chitValueMinor ?? this.chitValueMinor,
       tenureMonths: tenureMonths ?? this.tenureMonths,
       members: members ?? this.members,
@@ -4570,6 +4928,30 @@ class InvestmentsCompanion extends UpdateCompanion<Investment> {
     if (sipMinor.present) {
       map['sip_minor'] = Variable<int>(sipMinor.value);
     }
+    if (recurring.present) {
+      map['recurring'] = Variable<bool>(recurring.value);
+    }
+    if (cycle.present) {
+      map['cycle'] = Variable<String>(cycle.value);
+    }
+    if (everyN.present) {
+      map['every_n'] = Variable<int>(everyN.value);
+    }
+    if (weekday.present) {
+      map['weekday'] = Variable<int>(weekday.value);
+    }
+    if (monthDay.present) {
+      map['month_day'] = Variable<int>(monthDay.value);
+    }
+    if (timeOfDay.present) {
+      map['time_of_day'] = Variable<String>(timeOfDay.value);
+    }
+    if (installments.present) {
+      map['installments'] = Variable<int>(installments.value);
+    }
+    if (endDate.present) {
+      map['end_date'] = Variable<String>(endDate.value);
+    }
     if (chitValueMinor.present) {
       map['chit_value_minor'] = Variable<int>(chitValueMinor.value);
     }
@@ -4617,6 +4999,14 @@ class InvestmentsCompanion extends UpdateCompanion<Investment> {
           ..write('units: $units, ')
           ..write('buyPriceMinor: $buyPriceMinor, ')
           ..write('sipMinor: $sipMinor, ')
+          ..write('recurring: $recurring, ')
+          ..write('cycle: $cycle, ')
+          ..write('everyN: $everyN, ')
+          ..write('weekday: $weekday, ')
+          ..write('monthDay: $monthDay, ')
+          ..write('timeOfDay: $timeOfDay, ')
+          ..write('installments: $installments, ')
+          ..write('endDate: $endDate, ')
           ..write('chitValueMinor: $chitValueMinor, ')
           ..write('tenureMonths: $tenureMonths, ')
           ..write('members: $members, ')
@@ -7932,6 +8322,14 @@ typedef $$InvestmentsTableCreateCompanionBuilder =
       Value<double?> units,
       Value<int?> buyPriceMinor,
       Value<int?> sipMinor,
+      Value<bool> recurring,
+      Value<String?> cycle,
+      Value<int> everyN,
+      Value<int?> weekday,
+      Value<int?> monthDay,
+      Value<String?> timeOfDay,
+      Value<int?> installments,
+      Value<String?> endDate,
       Value<int?> chitValueMinor,
       Value<int?> tenureMonths,
       Value<int?> members,
@@ -7956,6 +8354,14 @@ typedef $$InvestmentsTableUpdateCompanionBuilder =
       Value<double?> units,
       Value<int?> buyPriceMinor,
       Value<int?> sipMinor,
+      Value<bool> recurring,
+      Value<String?> cycle,
+      Value<int> everyN,
+      Value<int?> weekday,
+      Value<int?> monthDay,
+      Value<String?> timeOfDay,
+      Value<int?> installments,
+      Value<String?> endDate,
       Value<int?> chitValueMinor,
       Value<int?> tenureMonths,
       Value<int?> members,
@@ -8029,6 +8435,46 @@ class $$InvestmentsTableFilterComposer
 
   ColumnFilters<int> get sipMinor => $composableBuilder(
     column: $table.sipMinor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get recurring => $composableBuilder(
+    column: $table.recurring,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get cycle => $composableBuilder(
+    column: $table.cycle,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get everyN => $composableBuilder(
+    column: $table.everyN,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get weekday => $composableBuilder(
+    column: $table.weekday,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get monthDay => $composableBuilder(
+    column: $table.monthDay,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get timeOfDay => $composableBuilder(
+    column: $table.timeOfDay,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get installments => $composableBuilder(
+    column: $table.installments,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get endDate => $composableBuilder(
+    column: $table.endDate,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -8142,6 +8588,46 @@ class $$InvestmentsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get recurring => $composableBuilder(
+    column: $table.recurring,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get cycle => $composableBuilder(
+    column: $table.cycle,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get everyN => $composableBuilder(
+    column: $table.everyN,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get weekday => $composableBuilder(
+    column: $table.weekday,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get monthDay => $composableBuilder(
+    column: $table.monthDay,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get timeOfDay => $composableBuilder(
+    column: $table.timeOfDay,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get installments => $composableBuilder(
+    column: $table.installments,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get endDate => $composableBuilder(
+    column: $table.endDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get chitValueMinor => $composableBuilder(
     column: $table.chitValueMinor,
     builder: (column) => ColumnOrderings(column),
@@ -8238,6 +8724,32 @@ class $$InvestmentsTableAnnotationComposer
   GeneratedColumn<int> get sipMinor =>
       $composableBuilder(column: $table.sipMinor, builder: (column) => column);
 
+  GeneratedColumn<bool> get recurring =>
+      $composableBuilder(column: $table.recurring, builder: (column) => column);
+
+  GeneratedColumn<String> get cycle =>
+      $composableBuilder(column: $table.cycle, builder: (column) => column);
+
+  GeneratedColumn<int> get everyN =>
+      $composableBuilder(column: $table.everyN, builder: (column) => column);
+
+  GeneratedColumn<int> get weekday =>
+      $composableBuilder(column: $table.weekday, builder: (column) => column);
+
+  GeneratedColumn<int> get monthDay =>
+      $composableBuilder(column: $table.monthDay, builder: (column) => column);
+
+  GeneratedColumn<String> get timeOfDay =>
+      $composableBuilder(column: $table.timeOfDay, builder: (column) => column);
+
+  GeneratedColumn<int> get installments => $composableBuilder(
+    column: $table.installments,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get endDate =>
+      $composableBuilder(column: $table.endDate, builder: (column) => column);
+
   GeneratedColumn<int> get chitValueMinor => $composableBuilder(
     column: $table.chitValueMinor,
     builder: (column) => column,
@@ -8316,6 +8828,14 @@ class $$InvestmentsTableTableManager
                 Value<double?> units = const Value.absent(),
                 Value<int?> buyPriceMinor = const Value.absent(),
                 Value<int?> sipMinor = const Value.absent(),
+                Value<bool> recurring = const Value.absent(),
+                Value<String?> cycle = const Value.absent(),
+                Value<int> everyN = const Value.absent(),
+                Value<int?> weekday = const Value.absent(),
+                Value<int?> monthDay = const Value.absent(),
+                Value<String?> timeOfDay = const Value.absent(),
+                Value<int?> installments = const Value.absent(),
+                Value<String?> endDate = const Value.absent(),
                 Value<int?> chitValueMinor = const Value.absent(),
                 Value<int?> tenureMonths = const Value.absent(),
                 Value<int?> members = const Value.absent(),
@@ -8338,6 +8858,14 @@ class $$InvestmentsTableTableManager
                 units: units,
                 buyPriceMinor: buyPriceMinor,
                 sipMinor: sipMinor,
+                recurring: recurring,
+                cycle: cycle,
+                everyN: everyN,
+                weekday: weekday,
+                monthDay: monthDay,
+                timeOfDay: timeOfDay,
+                installments: installments,
+                endDate: endDate,
                 chitValueMinor: chitValueMinor,
                 tenureMonths: tenureMonths,
                 members: members,
@@ -8362,6 +8890,14 @@ class $$InvestmentsTableTableManager
                 Value<double?> units = const Value.absent(),
                 Value<int?> buyPriceMinor = const Value.absent(),
                 Value<int?> sipMinor = const Value.absent(),
+                Value<bool> recurring = const Value.absent(),
+                Value<String?> cycle = const Value.absent(),
+                Value<int> everyN = const Value.absent(),
+                Value<int?> weekday = const Value.absent(),
+                Value<int?> monthDay = const Value.absent(),
+                Value<String?> timeOfDay = const Value.absent(),
+                Value<int?> installments = const Value.absent(),
+                Value<String?> endDate = const Value.absent(),
                 Value<int?> chitValueMinor = const Value.absent(),
                 Value<int?> tenureMonths = const Value.absent(),
                 Value<int?> members = const Value.absent(),
@@ -8384,6 +8920,14 @@ class $$InvestmentsTableTableManager
                 units: units,
                 buyPriceMinor: buyPriceMinor,
                 sipMinor: sipMinor,
+                recurring: recurring,
+                cycle: cycle,
+                everyN: everyN,
+                weekday: weekday,
+                monthDay: monthDay,
+                timeOfDay: timeOfDay,
+                installments: installments,
+                endDate: endDate,
                 chitValueMinor: chitValueMinor,
                 tenureMonths: tenureMonths,
                 members: members,

@@ -5,7 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 /// Flat, friendly illustrations drawn for Cash Buddy (inline SVG, so they
 /// work offline and recolour themselves to the current theme).
-enum Art { welcome, growth, inbox, handshake, piggy, receipt, chit }
+enum Art { welcome, growth, inbox, handshake, piggy, receipt }
 
 class _Pal {
   final String p, pl, a, g, v, ink, skin, hair, paper, y;
@@ -106,7 +106,6 @@ String _build(Art a, _Pal c) {
     Art.handshake => _handshake(c),
     Art.piggy => _piggy(c),
     Art.receipt => _receipt(c),
-    Art.chit => _chit(c),
   };
   return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">'
       '<ellipse cx="200" cy="278" rx="130" ry="10" fill="${c.ink}" opacity="0.08"/>'
@@ -206,13 +205,3 @@ String _receipt(_Pal c) =>
     '<circle cx="284" cy="182" r="32" fill="${c.pl}" stroke="${c.a}" stroke-width="8"/>'
     '<path d="M308 206l30 30" stroke="${c.a}" stroke-width="12" stroke-linecap="round"/>'
     '${_spark(100, 100, 10, c.a)}${_spark(330, 84, 9, c.v)}${_coin(108, 206, 14, c)}';
-
-String _chit(_Pal c) =>
-    '${_blob(c)}'
-    '<ellipse cx="200" cy="176" rx="58" ry="14" fill="${c.ink}" opacity="0.12"/>'
-    '<path d="M150 134h100l-10 46q-4 18-40 18t-40-18Z" fill="${c.a}"/>'
-    '<ellipse cx="200" cy="134" rx="50" ry="12" fill="#FFB070"/>'
-    '${_coin(184, 122, 17, c)}${_coin(214, 118, 17, c)}${_coin(200, 100, 17, c)}'
-    '${_person(96, 118, c.p, c, s: 0.72)}${_person(304, 118, c.g, c, s: 0.72)}'
-    '${_person(150, 190, c.v, c, s: 0.6)}${_person(250, 190, "#EC4899", c, s: 0.6)}'
-    '${_spark(200, 50, 10, c.y)}${_spark(60, 70, 8, c.v)}${_spark(344, 66, 8, c.a)}';
