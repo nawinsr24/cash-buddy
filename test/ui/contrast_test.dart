@@ -14,9 +14,13 @@ import 'app_flow_test.dart' show settle, tapText;
 /// Text must stay readable in BOTH themes on the screens people look at most.
 /// Uses Flutter's own WCAG contrast guideline on the rendered pixels.
 void main() {
+  // Pixel analysis depends on the machine's text rendering, so it is a local
+  // check; theme_contrast_test.dart (exact colour pairs) runs everywhere.
+  final onCi = Platform.environment['CI'] == 'true';
   for (final dark in [false, true]) {
     testWidgets(
       'contrast: key screens are readable in ${dark ? 'dark' : 'light'} mode',
+      skip: onCi,
       (tester) async {
         final handle = tester.ensureSemantics();
         await tester.runAsync(loadFonts);
