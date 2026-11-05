@@ -1378,6 +1378,10 @@ class Repo {
     String? accountId,
     int? amountMinor,
     String? note,
+    String? merchant,
+    String? paymentMethod,
+    DateTime? date,
+    String? type,
   }) async {
     return db.transaction(() async {
       final s = await (db.select(
@@ -1387,12 +1391,15 @@ class Repo {
         throw ValidationException('Already ${s.status}');
       }
       final id = await addTransaction(
-        type: s.direction,
+        type: type ?? s.direction,
         amountMinor: amountMinor ?? s.amountMinor,
         accountId: accountId,
         categoryId: categoryId,
-        date: Dates.parse(s.date),
-        merchant: s.merchant,
+        paymentMethod: paymentMethod,
+        date: date ?? Dates.parse(s.date),
+        merchant: (merchant ?? s.merchant)?.trim().isEmpty ?? true
+            ? null
+            : (merchant ?? s.merchant),
         note: note ?? '',
         source: 'sms',
         sourceRef: s.fingerprint,

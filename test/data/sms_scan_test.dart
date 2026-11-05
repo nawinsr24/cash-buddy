@@ -96,9 +96,9 @@ void main() {
     r = await scanSmsInbox(e.repo, reader: reader);
     expect(r.added, 0);
     expect(await e.repo.pendingSmsCount(), 2);
-    // first scan looked back ~30 days
+    // a fresh install only looks at today's messages (from local midnight)
     final fresh = FakeReader(true, []);
     await scanSmsInbox((await newEnv()).repo, reader: fresh);
-    expect(now.difference(fresh.lastSince!).inDays, inInclusiveRange(29, 30));
+    expect(fresh.lastSince, DateTime(now.year, now.month, now.day));
   });
 }

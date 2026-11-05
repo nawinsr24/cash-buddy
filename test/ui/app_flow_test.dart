@@ -229,7 +229,17 @@ void main() {
     );
     await tapText(tester, 'Inbox', last: true);
     expect(find.text('SWIGGY'), findsOneWidget);
-    await tester.tap(find.text('Confirm').first, warnIfMissed: false);
+    await tester.tap(find.text('Review & add').first, warnIfMissed: false);
+    await settle(tester);
+    // the form opens pre-filled; nothing is added until the user saves
+    expect(find.text('Review detected transaction'), findsOneWidget);
+    expect(
+      (await tester.runAsync(
+        () => env.repo.searchTransactions(const TxnFilter()),
+      ))!.length,
+      0,
+    );
+    await tapText(tester, 'Add transaction');
     await settle(tester);
     await tester.tap(find.text('Discard').first, warnIfMissed: false);
     await settle(tester);

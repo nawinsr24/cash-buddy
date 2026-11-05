@@ -109,11 +109,23 @@ class SmsScanResult {
 
 /// Reads recent inbox messages and queues transaction candidates for review.
 /// Nothing is written to the ledger here; the user confirms each one.
-Future<SmsScanResult> scanSmsInbox(
-  Repo repo, {
-  int firstScanDays = 30,
-  SmsReader? reader,
-}) async {
+///
+/// The first scan only looks at today's messages (from local midnight), so a
+/// fresh install does not dig up old history. Later scans pick up from the
+/// previous scan, so after a few days away you see everything you missed.
+bool _scanning = false;
+
+Future<SmsScanResult> scanSmsInbox(Repo repo, {SmsReader? reader}) async {
+  if (_scanning) return const SmsScanResult(0, 0, 0, 0);
+  _scanning = true;
+  try {
+    return await _scan(repo, reader);
+  } finally {
+    _scanning = false;
+  }
+}
+
+Future<SmsScanResult> _scan(Repo repo, SmsReader? reader) async {
   final r = reader ?? SmsReader.instance;
   if (!await r.hasPermission()) {
     return const SmsScanResult(0, 0, 0, 0, 'SMS permission not granted');
@@ -125,7 +137,7 @@ Future<SmsScanResult> scanSmsInbox(
     final since = last != null
         ? DateTime.fromMillisecondsSinceEpoch(last)
               .subtract(const Duration(minutes: 1))
-        : startedAt.subtract(Duration(days: firstScanDays));
+        : DateTime(startedAt.year, startedAt.month, startedAt.day);
     final msgs = await r.readInbox(since: since);
     final res = await repo.ingestSms(msgs, SmsParser());
     await repo.setSetting('smsLastScan', '${startedAt.millisecondsSinceEpoch}');

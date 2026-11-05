@@ -577,34 +577,50 @@ Future<void> showTransactionSheet(
   BuildContext context, {
   Transaction? edit,
   String? initialType,
-}) => showSheet(context, (_) => _TxnForm(edit: edit, initialType: initialType));
+  SmsInboxData? sms,
+}) => showSheet(
+  context,
+  (_) => _TxnForm(edit: edit, initialType: initialType, sms: sms),
+);
 
 class _TxnForm extends ConsumerStatefulWidget {
   final Transaction? edit;
   final String? initialType;
-  const _TxnForm({this.edit, this.initialType});
+
+  /// A detected bank message. The form opens pre-filled from it, and saving
+  /// marks the message as handled. Nothing is added until the user saves.
+  final SmsInboxData? sms;
+  const _TxnForm({this.edit, this.initialType, this.sms});
   @override
   ConsumerState<_TxnForm> createState() => _TxnFormState();
 }
 
 class _TxnFormState extends ConsumerState<_TxnForm> {
-  late String type = widget.edit?.type ?? widget.initialType ?? 'debit';
+  late String type =
+      widget.edit?.type ??
+      widget.sms?.direction ??
+      widget.initialType ??
+      'debit';
   late final _amount = TextEditingController(
-    text: widget.edit == null
-        ? ''
-        : (widget.edit!.amountMinor / 100).toStringAsFixed(2),
+    text: widget.edit != null
+        ? (widget.edit!.amountMinor / 100).toStringAsFixed(2)
+        : widget.sms != null
+        ? (widget.sms!.amountMinor / 100).toStringAsFixed(2)
+        : '',
   );
   late final _note = TextEditingController(text: widget.edit?.note ?? '');
   late final _merchant = TextEditingController(
-    text: widget.edit?.merchant ?? '',
+    text: widget.edit?.merchant ?? widget.sms?.merchant ?? '',
   );
   late String? categoryId = widget.edit?.categoryId;
   late String? accountId = widget.edit?.accountId;
   late String? toAccountId = widget.edit?.toAccountId;
   late String? method = widget.edit?.paymentMethod;
-  late DateTime date = widget.edit == null
-      ? Dates.today()
-      : Dates.parse(widget.edit!.date);
+  late DateTime date = widget.edit != null
+      ? Dates.parse(widget.edit!.date)
+      : widget.sms != null
+      ? Dates.parse(widget.sms!.date)
+      : Dates.today();
   String? error;
   bool saving = false;
 
@@ -620,7 +636,19 @@ class _TxnFormState extends ConsumerState<_TxnForm> {
     });
     final repo = ref.read(repoProvider);
     try {
-      if (widget.edit == null) {
+      if (widget.sms != null) {
+        await repo.confirmSms(
+          widget.sms!.id,
+          type: type,
+          amountMinor: amt,
+          accountId: accountId,
+          categoryId: categoryId,
+          paymentMethod: method,
+          date: date,
+          note: _note.text.trim(),
+          merchant: _merchant.text.trim().isEmpty ? '' : _merchant.text.trim(),
+        );
+      } else if (widget.edit == null) {
         await repo.addTransaction(
           type: type,
           amountMinor: amt,
@@ -676,7 +704,11 @@ class _TxnFormState extends ConsumerState<_TxnForm> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              widget.edit == null ? 'New transaction' : 'Edit transaction',
+              widget.sms != null
+                  ? 'Review detected transaction'
+                  : widget.edit == null
+                  ? 'New transaction'
+                  : 'Edit transaction',
               style: context.text.titleLarge?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
@@ -687,7 +719,7 @@ class _TxnFormState extends ConsumerState<_TxnForm> {
               segments: [
                 const ButtonSegment(value: 'debit', label: Text('Spent')),
                 const ButtonSegment(value: 'credit', label: Text('Received')),
-                if (split)
+                if (split && widget.sms == null)
                   const ButtonSegment(
                     value: 'transfer',
                     label: Text('Transfer'),
@@ -821,7 +853,13 @@ class _TxnFormState extends ConsumerState<_TxnForm> {
             const SizedBox(height: Sp.x5),
             FilledButton(
               onPressed: saving ? null : _save,
-              child: Text(widget.edit == null ? 'Add' : 'Save changes'),
+              child: Text(
+                widget.sms != null
+                    ? 'Add transaction'
+                    : widget.edit == null
+                    ? 'Add'
+                    : 'Save changes',
+              ),
             ),
           ],
         ),

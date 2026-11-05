@@ -9,6 +9,7 @@ import '../domain/sms_parser.dart';
 import '../platform/sms_reader.dart';
 import '../providers.dart';
 import 'settings.dart' show scanAndReport;
+import 'transactions.dart' show showTransactionSheet;
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
 
@@ -41,6 +42,7 @@ class InboxPage extends ConsumerWidget {
         ],
       ),
       body: pending.when(
+        skipLoadingOnReload: true,
         loading: () =>
             const Center(child: CircularProgressIndicator.adaptive()),
         error: (e, _) => ErrorState(e),
@@ -50,7 +52,7 @@ class InboxPage extends ConsumerWidget {
               icon: Icons.mark_email_read_outlined,
               title: 'All caught up',
               body: SmsReader.supported
-                  ? 'New bank transactions are detected automatically and appear here for you to confirm or discard.'
+                  ? 'New bank transactions are detected automatically and appear here. Review each one and add it yourself, or discard it.'
                   : 'This device cannot read your messages. Copy a bank SMS and import it to review it here.',
               action: SmsReader.supported
                   ? OutlinedButton.icon(
@@ -92,9 +94,9 @@ class InboxPage extends ConsumerWidget {
                             final ok = await showDialog<bool>(
                               context: context,
                               builder: (c) => AlertDialog(
-                                title: Text('Confirm all ${list.length}?'),
+                                title: Text('Discard all ${list.length}?'),
                                 content: const Text(
-                                  'They will be added as uncategorised. You can edit categories later.',
+                                  'Nothing is added to your records. Useful to clear old messages.',
                                 ),
                                 actions: [
                                   TextButton(
@@ -103,7 +105,7 @@ class InboxPage extends ConsumerWidget {
                                   ),
                                   TextButton(
                                     onPressed: () => Navigator.pop(c, true),
-                                    child: const Text('Confirm all'),
+                                    child: const Text('Discard all'),
                                   ),
                                 ],
                               ),
@@ -111,11 +113,11 @@ class InboxPage extends ConsumerWidget {
                             if (ok == true) {
                               final repo = ref.read(repoProvider);
                               for (final s in list) {
-                                await repo.confirmSms(s.id);
+                                await repo.discardSms(s.id);
                               }
                             }
                           },
-                          child: const Text('Confirm all'),
+                          child: const Text('Discard all'),
                         ),
                     ],
                   ),
@@ -140,14 +142,11 @@ class _SmsTile extends ConsumerStatefulWidget {
 }
 
 class _SmsTileState extends ConsumerState<_SmsTile> {
-  String? categoryId;
-
   @override
   Widget build(BuildContext context) {
     final s = widget.s;
     final credit = s.direction == 'credit';
     final color = credit ? context.cash.income : context.cash.spending;
-    final cats = widget.cats.where((c) => c.kind == s.direction).toList();
     return Padding(
       padding: const EdgeInsets.only(bottom: Sp.x3),
       child: Card(
@@ -196,27 +195,6 @@ class _SmsTileState extends ConsumerState<_SmsTile> {
                 ],
               ),
               const SizedBox(height: Sp.x3),
-              DropdownButtonFormField<String?>(
-                initialValue: categoryId,
-                isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'Category',
-                  isDense: true,
-                ),
-                items: [
-                  const DropdownMenuItem(
-                    value: null,
-                    child: Text('Uncategorised'),
-                  ),
-                  for (final c in cats)
-                    DropdownMenuItem(
-                      value: c.id,
-                      child: Text(c.parentId == null ? c.name : '   ${c.name}'),
-                    ),
-                ],
-                onChanged: (v) => setState(() => categoryId = v),
-              ),
-              const SizedBox(height: Sp.x3),
               Row(
                 children: [
                   Expanded(
@@ -238,13 +216,11 @@ class _SmsTileState extends ConsumerState<_SmsTile> {
                       style: FilledButton.styleFrom(
                         minimumSize: const Size.fromHeight(48),
                       ),
-                      icon: const Icon(Icons.check),
-                      label: const Text('Confirm'),
-                      onPressed: () async {
+                      icon: const Icon(Icons.edit_note),
+                      label: const Text('Review & add'),
+                      onPressed: () {
                         haptic();
-                        await ref
-                            .read(repoProvider)
-                            .confirmSms(s.id, categoryId: categoryId);
+                        showTransactionSheet(context, sms: s);
                       },
                     ),
                   ),
