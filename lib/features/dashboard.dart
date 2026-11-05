@@ -10,6 +10,7 @@ import '../domain/money.dart';
 import '../providers.dart';
 import '../ui/motion.dart';
 import '../ui/theme.dart';
+import 'cash_move.dart';
 import 'invest.dart';
 import '../ui/widgets.dart';
 import 'transactions.dart';
@@ -260,11 +261,61 @@ class _BalanceCard extends ConsumerWidget {
                   ),
               ],
             ),
+            const SizedBox(height: Sp.x3),
+            Row(
+              children: [
+                Expanded(
+                  child: _CashButton(
+                    label: '🏧  Withdraw cash',
+                    onTap: () => showCashMoveSheet(context, withdraw: true),
+                  ),
+                ),
+                const SizedBox(width: Sp.x2),
+                Expanded(
+                  child: _CashButton(
+                    label: '🏦  Deposit cash',
+                    onTap: () => showCashMoveSheet(context, withdraw: false),
+                  ),
+                ),
+              ],
+            ),
           ],
         ],
       ),
     );
   }
+}
+
+class _CashButton extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+  const _CashButton({required this.label, required this.onTap});
+  @override
+  Widget build(BuildContext context) => Pressable(
+    onTap: () {
+      haptic();
+      onTap();
+    },
+    child: Container(
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+            fontSize: 13,
+          ),
+        ),
+      ),
+    ),
+  );
 }
 
 class PillarCard extends StatelessWidget {

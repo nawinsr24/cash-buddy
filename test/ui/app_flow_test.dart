@@ -278,6 +278,38 @@ void main() {
     expect(find.text('Added money'), findsOneWidget);
   });
 
+  testWidgets('split: withdraw cash moves bank to cash, not spending', (
+    tester,
+  ) async {
+    final env = await pump(tester, accountMode: 'split', opening: 1000000);
+    // the helper puts the opening balance in the cash account
+    final before = await tester.runAsync(() => env.repo.totalBalance());
+    await tester.tap(find.textContaining('Withdraw cash').first);
+    await settle(tester);
+    await tester.enterText(find.byType(TextField).first, '2000');
+    await tester.tap(find.widgetWithText(FilledButton, 'Withdraw cash'));
+    await settle(tester);
+    final bal = (await tester.runAsync(() => env.repo.balances()))!;
+    expect(bal['acc_cash'], 1200000);
+    expect(bal['acc_bank'], -200000);
+    expect(await tester.runAsync(() => env.repo.totalBalance()), before);
+    final d = await tester.runAsync(
+      () => env.repo.dashboard(DateRange.thisMonth(env.repo.today)),
+    );
+    expect(d!.spending, 0);
+    expect(d.income, 0);
+    // and back again
+    await tester.tap(find.textContaining('Deposit cash').first);
+    await settle(tester);
+    await tester.enterText(find.byType(TextField).first, '500');
+    await tester.tap(find.widgetWithText(FilledButton, 'Deposit cash'));
+    await settle(tester);
+    expect(
+      (await tester.runAsync(() => env.repo.balances()))!['acc_cash'],
+      1150000,
+    );
+  });
+
   testWidgets('settings: switch to split accounts keeps total balance', (
     tester,
   ) async {
