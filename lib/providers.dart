@@ -1,9 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'data/db.dart';
+import 'data/insights_repo.dart';
 import 'data/invest_repo.dart';
 import 'data/repo.dart';
 import 'domain/dates.dart';
+import 'domain/grade.dart';
 
 /// Overridden in main() with the real repository (and in tests).
 final repoProvider = Provider<Repo>(
@@ -164,6 +166,36 @@ final pendingSmsProvider = FutureProvider.autoDispose<List<SmsInboxData>>((
   ref,
 ) {
   return _tick(ref, () => ref.watch(repoProvider).pendingSms());
+});
+
+final insightsProvider = FutureProvider.autoDispose<InsightsData>((ref) {
+  return _tick(ref, () => ref.watch(repoProvider).insights());
+});
+
+final monthStatsProvider = FutureProvider.autoDispose<MonthStats>((ref) {
+  final now = ref.watch(repoProvider).today;
+  return _tick(
+    ref,
+    () => ref.watch(repoProvider).monthStats(now.year, now.month),
+  );
+});
+
+final bannerTitleProvider = FutureProvider.autoDispose<MonthTitle?>((ref) {
+  return _tick(ref, () => ref.watch(repoProvider).bannerTitle());
+});
+
+final titleHistoryProvider = FutureProvider.autoDispose<List<MonthTitle>>((
+  ref,
+) {
+  return _tick(ref, () async {
+    final r = ref.watch(repoProvider);
+    await r.ensureMonthTitles();
+    return r.titleHistory();
+  });
+});
+
+final roastModeProvider = FutureProvider.autoDispose<bool>((ref) {
+  return _tick(ref, () => ref.watch(repoProvider).roastMode);
 });
 
 final investSummariesProvider = FutureProvider.autoDispose<List<InvestSummary>>(

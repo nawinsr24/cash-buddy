@@ -65,13 +65,13 @@ void main() {
         tester.view.reset();
         tester.platformDispatcher.clearAllTestValues();
       });
-      final now = DateTime.now();
+      final now = DateTime(2026, 11, 5, 10);
       late TestEnv env;
       await tester.runAsync(() async {
         env = await newEnv(accountMode: 'split', opening: 8500000, now: now);
         final r = env.repo;
         await r.setSetting('smsEnabled', '1');
-        final d = Dates.today();
+        final d = Dates.fromLocal(now);
         Future<void> t(
           String type,
           int amt,
@@ -230,6 +230,24 @@ void main() {
           amountMinor: 50000,
           periodKey: 0,
         );
+        // last month, so the monthly title and its banner have something to say
+        await t(
+          'credit',
+          6500000,
+          'cat_salary',
+          33,
+          'September salary',
+          m: 'DENOVO SYSTEMS',
+        );
+        for (var i = 0; i < 12; i++) {
+          await r.addTransaction(
+            type: 'debit',
+            amountMinor: i < 3 ? 180000 : 140000,
+            categoryId: i < 3 ? 'cat_health' : 'cat_food_dining',
+            date: Dates.day(2026, 10, 3 + i * 2),
+            merchant: i < 3 ? 'Apollo Pharmacy' : 'Swiggy',
+          );
+        }
         await r.ingestSms([
           (
             sender: 'VM-HDFCBK',
@@ -259,8 +277,19 @@ void main() {
       await shot(tester, '$p-1-dashboard');
       await tester.drag(find.byType(Scrollable).first, const Offset(0, -500));
       await shot(tester, '$p-2-dashboard-scrolled');
-      await tester.drag(find.byType(Scrollable).first, const Offset(0, 800));
-      await tester.pump(const Duration(seconds: 2)); // let the fling finish
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, -700));
+      await shot(tester, '$p-2b-insights');
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, 1200));
+      await tester.pump(const Duration(seconds: 2));
+      await settle(tester);
+      await tapText(tester, 'October title is ready');
+      await shot(tester, '$p-2c-title-reveal');
+      await tester.tap(find.byTooltip('Close'));
+      await settle(tester);
+      await tapText(tester, 'Money Grade');
+      await shot(tester, '$p-2d-grade');
+      await tester.tap(find.byTooltip('Back'));
+      await settle(tester);
       await tapText(tester, 'Total Spending');
       await shot(tester, '$p-3-spending-detail');
       await tester.tap(find.byTooltip('Back'));
@@ -290,6 +319,18 @@ void main() {
       await settle(tester);
       await tapText(tester, 'Settings', last: true);
       await shot(tester, '$p-10-settings');
+      await tester.scrollUntilVisible(
+        find.text('Trophy shelf'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.ensureVisible(find.text('Trophy shelf'));
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, -200));
+      await settle(tester);
+      await tapText(tester, 'Trophy shelf');
+      await shot(tester, '$p-13-trophies');
+      await tester.tap(find.byTooltip('Back'));
+      await settle(tester);
       // the new-investment form (recurring) and a schedule detail
       await tapText(tester, 'Invest', last: true);
       await tapText(tester, 'Add investment');

@@ -9,6 +9,7 @@ import '../domain/interest.dart';
 import '../domain/money.dart';
 import '../providers.dart';
 import '../ui/art.dart';
+import '../ui/motion.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
 
@@ -144,9 +145,9 @@ class _DebtTile extends StatelessWidget {
       child: Card(
         child: InkWell(
           borderRadius: BorderRadius.circular(Sp.rCard),
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => DebtDetailPage(debtId: d.id)),
-          ),
+          onTap: () =>
+              Navigator.of(context)
+                  .push(softRoute(DebtDetailPage(debtId: d.id))),
           child: Padding(
             padding: const EdgeInsets.all(Sp.x4),
             child: Column(

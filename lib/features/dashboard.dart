@@ -11,6 +11,7 @@ import '../providers.dart';
 import '../ui/motion.dart';
 import '../ui/theme.dart';
 import 'cash_move.dart';
+import 'grade_ui.dart';
 import 'invest.dart';
 import '../ui/widgets.dart';
 import 'transactions.dart';
@@ -47,6 +48,7 @@ class DashboardPage extends ConsumerWidget {
         data: (d) => ListView(
           padding: const EdgeInsets.fromLTRB(Sp.x4, 0, Sp.x4, 96),
           children: [
+            const TitleBanner(),
             const PeriodBar(),
             const SizedBox(height: Sp.x3),
             if ((settings?.smsEnabled ?? false) && pending > 0)
@@ -55,6 +57,8 @@ class DashboardPage extends ConsumerWidget {
               total: d.totalBalance,
               split: settings?.split ?? false,
             ),
+            const SizedBox(height: Sp.x3),
+            const GradeCard(),
             const SizedBox(height: Sp.x3),
             GridView(
               shrinkWrap: true,
@@ -72,10 +76,22 @@ class DashboardPage extends ConsumerWidget {
                             .clamp(1.0, 2.2),
               ),
               children: [
-                PillarCard(pillar: Pillar.spending, data: d),
-                PillarCard(pillar: Pillar.income, data: d),
-                PillarCard(pillar: Pillar.incoming, data: d),
-                PillarCard(pillar: Pillar.liabilities, data: d),
+                Reveal(
+                  index: 1,
+                  child: PillarCard(pillar: Pillar.spending, data: d),
+                ),
+                Reveal(
+                  index: 2,
+                  child: PillarCard(pillar: Pillar.income, data: d),
+                ),
+                Reveal(
+                  index: 3,
+                  child: PillarCard(pillar: Pillar.incoming, data: d),
+                ),
+                Reveal(
+                  index: 4,
+                  child: PillarCard(pillar: Pillar.liabilities, data: d),
+                ),
               ],
             ),
             if (invest.isNotEmpty) ...[
@@ -85,6 +101,8 @@ class DashboardPage extends ConsumerWidget {
                 onTap: onOpenInvest,
               ),
             ],
+            const SectionTitle('Insights'),
+            const InsightsStrip(),
             const SectionTitle('Where your money went'),
             CategoryDonut(
               slices: d.spendingByCategory,
@@ -825,8 +843,8 @@ class PillarDetailPage extends ConsumerWidget {
         'Transactions',
         trailing: TextButton(
           onPressed: () => Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => TransactionsPage(
+            softRoute(
+              TransactionsPage(
                 standalone: true,
                 initial: TxnFilter(
                   type: spending ? 'debit' : 'credit',

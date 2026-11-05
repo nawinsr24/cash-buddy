@@ -1,6 +1,6 @@
 # Cash++: status (2026-11-04)
 
-Verified by automated tests (`flutter test`: 130 pass, `flutter analyze`: clean)
+Verified by automated tests (`flutter test`: 152 pass, `flutter analyze`: clean)
 
 | Area | Evidence |
 |---|---|
@@ -13,6 +13,7 @@ Verified by automated tests (`flutter test`: 130 pass, `flutter analyze`: clean)
 | Offline Mode | spy remote receives 0 calls |
 | UI | onboarding, dashboard, add txn, search, debts, inbox, settings, dark mode, overflow checks (320px/2x text, tablet), semantics |
 | Investments | mutual fund / stock / chit entries post one ledger leg each (never spending or income); global + per-entry balance rules; lending rule; XIRR + projection; two-device sync convergence |
+| Monthly title / grade | 15 titles by fixed rules in priority order; Money Grade parts add to 100; title stored once per finished month; banner first 7 days; health note always kind and pauses roasts when health is 30%+ of spend; insights (forecast, net worth, recurring bills) |
 | Performance | dashboard over 100k rows: ~33 ms |
 
 NOT verified / NOT built (be honest before shipping)

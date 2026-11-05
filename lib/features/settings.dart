@@ -16,8 +16,10 @@ import '../platform/sms_reader.dart';
 import '../providers.dart';
 import '../sync/backup.dart';
 import '../sync/sync_service.dart';
+import '../ui/motion.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
+import 'grade_ui.dart';
 
 final syncServiceProvider = Provider<SyncService>((ref) {
   final s = SyncService(ref.watch(repoProvider));
@@ -193,18 +195,18 @@ class SettingsPage extends ConsumerWidget {
                     leading: const Icon(Icons.savings_outlined),
                     title: const Text('Manage accounts'),
                     trailing: const Icon(Icons.chevron_right),
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const AccountsPage()),
-                    ),
+                    onTap: () =>
+                        Navigator.of(context)
+                            .push(softRoute(const AccountsPage())),
                   ),
                   const Divider(height: 1),
                   ListTile(
                     leading: const Icon(Icons.category_outlined),
                     title: const Text('Categories'),
                     trailing: const Icon(Icons.chevron_right),
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const CategoriesPage()),
-                    ),
+                    onTap: () =>
+                        Navigator.of(context)
+                            .push(softRoute(const CategoriesPage())),
                   ),
                 ],
               ),
@@ -355,6 +357,41 @@ class SettingsPage extends ConsumerWidget {
                 ),
                 value: s.appLock,
                 onChanged: (v) => _toggleLock(context, ref, v),
+              ),
+            ),
+            const _Group('Monthly title'),
+            Card(
+              child: Column(
+                children: [
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final roast = ref.watch(roastModeProvider).value ?? true;
+                      return SwitchListTile.adaptive(
+                        secondary: const Text(
+                          '🔥',
+                          style: TextStyle(fontSize: 22),
+                        ),
+                        title: const Text('Roast mode'),
+                        subtitle: const Text(
+                          'Brutally honest monthly titles and tips. Turn off for a kinder tone. Health spending is never roasted.',
+                        ),
+                        value: roast,
+                        onChanged: (v) =>
+                            repo.setSetting('roastMode', v ? '1' : '0'),
+                      );
+                    },
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Text('🏆', style: TextStyle(fontSize: 22)),
+                    title: const Text('Trophy shelf'),
+                    subtitle: const Text('Your title for every month'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () =>
+                        Navigator.of(context)
+                            .push(softRoute(const TrophyShelfPage())),
+                  ),
+                ],
               ),
             ),
             const _Group('Appearance'),

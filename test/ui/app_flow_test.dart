@@ -309,6 +309,53 @@ void main() {
     );
   });
 
+  testWidgets('month-end banner opens the title with a health note', (
+    tester,
+  ) async {
+    final env = await pump(tester, opening: 1000000);
+    await tester.runAsync(() async {
+      final r = env.repo;
+      await r.addTransaction(
+        type: 'credit',
+        amountMinor: 5000000,
+        categoryId: 'cat_salary',
+        date: Dates.day(2026, 10, 1),
+      );
+      for (var i = 0; i < 12; i++) {
+        await r.addTransaction(
+          type: 'debit',
+          amountMinor: 100000,
+          categoryId: i < 4 ? 'cat_health' : 'cat_food_dining',
+          date: Dates.day(2026, 10, 2 + i),
+        );
+      }
+    });
+    await settle(tester);
+    expect(find.text('October title is ready'), findsOneWidget);
+    await tapText(tester, 'October title is ready');
+    expect(
+      find.text('Take care of yourself'),
+      findsNothing,
+    ); // heading has an emoji prefix
+    expect(find.textContaining('Take care of yourself'), findsOneWidget);
+    expect(find.text('Why you got it'), findsOneWidget);
+    await tester.tap(find.byTooltip('Close'));
+    await settle(tester);
+    // dismiss hides the banner
+    await tester.tap(find.byTooltip('Dismiss'));
+    await settle(tester);
+    expect(find.text('October title is ready'), findsNothing);
+  });
+
+  testWidgets('home shows the Money Grade and the insights strip', (
+    tester,
+  ) async {
+    await pump(tester, opening: 1000000);
+    expect(find.text('Money Grade'), findsOneWidget);
+    expect(find.text('Insights'), findsOneWidget);
+    expect(find.text('Building your grade…'), findsOneWidget);
+  });
+
   testWidgets('settings: switch to split accounts keeps total balance', (
     tester,
   ) async {
