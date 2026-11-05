@@ -184,7 +184,8 @@ void main() {
       expect(find.text('Ravi'), findsOneWidget);
       expect(find.text('₹2,000.00'), findsWidgets);
       await tapText(tester, 'Ravi');
-      await tapText(tester, 'Record payment received');
+      await tester.tap(find.widgetWithText(FilledButton, 'Principal received'));
+      await settle(tester);
       await tester.enterText(find.byType(TextField).first, '500');
       await tapText(tester, 'Save');
       await settle(tester);
@@ -192,10 +193,11 @@ void main() {
       expect(st!.outstanding, 150000);
       expect(find.text('₹1,500.00'), findsWidgets);
       // overpayment shows an error and changes nothing
-      await tapText(tester, 'Record payment received');
+      await tester.tap(find.widgetWithText(FilledButton, 'Principal received'));
+      await settle(tester);
       await tester.enterText(find.byType(TextField).first, '9999');
       await tapText(tester, 'Save');
-      expect(find.textContaining('more than is outstanding'), findsOneWidget);
+      expect(find.textContaining('more than the principal'), findsOneWidget);
       expect(
         (await tester.runAsync(() => env.repo.debtState(id)))!.outstanding,
         150000,
@@ -405,7 +407,7 @@ void main() {
     tester,
   ) async {
     await pump(tester, opening: 1000000);
-    expect(find.text('PLUS SCORE'), findsOneWidget);
+    expect(find.text('MONEY HEALTH'), findsOneWidget);
     expect(find.text('Building…'), findsOneWidget);
     await tester.scrollUntilVisible(
       find.text('INSIGHTS'),
@@ -480,6 +482,60 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 100));
   });
+
+  testWidgets('invest: adding a stock takes shares x price from the balance', (
+    tester,
+  ) async {
+    final env = await pump(tester, opening: 10000000);
+    await tapText(tester, 'Invest', last: true);
+    await tapText(tester, 'Add your first investment');
+    await tapText(tester, 'Stock');
+    await tester.enterText(
+      find.widgetWithText(TextField, 'For example TCS'),
+      'TCS',
+    );
+    await tester.enterText(find.widgetWithText(TextField, '10'), '10');
+    await tester.enterText(find.widgetWithText(TextField, '2500'), '2500');
+    await settle(tester);
+    expect(find.text('You pay ₹25,000.00 in total'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'Add stock'));
+    await settle(tester);
+    expect(
+      await tester.runAsync(() => env.repo.totalBalance()),
+      10000000 - 2500000,
+    );
+    final inv = (await tester.runAsync(() => env.repo.investments()))!.single;
+    expect(inv.units, 10);
+    expect(inv.buyPriceMinor, 250000);
+    expect(find.text('TCS'), findsOneWidget);
+  });
+
+  testWidgets(
+    'invest: a monthly SIP records the first instalment and reduces the balance',
+    (tester) async {
+      final env = await pump(tester, opening: 10000000);
+      await tapText(tester, 'Invest', last: true);
+      await tapText(tester, 'Add your first investment');
+      await tapText(tester, 'Mutual fund');
+      await tester.enterText(
+        find.widgetWithText(TextField, 'For example Nifty 50 Index Fund'),
+        'Nifty 50',
+      );
+      await tester.enterText(find.widgetWithText(TextField, '5000'), '5000');
+      await tester.ensureVisible(
+        find.widgetWithText(FilledButton, 'Start SIP'),
+      );
+      await tester.tap(find.widgetWithText(FilledButton, 'Start SIP'));
+      await settle(tester);
+      expect(
+        await tester.runAsync(() => env.repo.totalBalance()),
+        10000000 - 500000,
+      );
+      final inv = (await tester.runAsync(() => env.repo.investments()))!.single;
+      expect(inv.recurring, isTrue);
+      expect(inv.cycle, 'monthly');
+    },
+  );
 
   testWidgets('settings: switch to split accounts keeps total balance', (
     tester,

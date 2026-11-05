@@ -165,13 +165,13 @@ void main() {
   });
 
   test('level names follow the score', () {
-    expect(levelFor(95), 'Elite');
-    expect(levelFor(85), 'Excellent');
-    expect(levelFor(72), 'Strong');
-    expect(levelFor(61), 'Solid');
-    expect(levelFor(52), 'Fair');
-    expect(levelFor(42), 'Needs work');
-    expect(levelFor(10), 'Reset needed');
+    expect(levelFor(95), 'Excellent');
+    expect(levelFor(85), 'Very good');
+    expect(levelFor(72), 'Good');
+    expect(levelFor(61), 'Okay');
+    expect(levelFor(52), 'Average');
+    expect(levelFor(42), 'Weak');
+    expect(levelFor(10), 'Needs care');
   });
 
   test('biggest gap points at the weakest part', () {

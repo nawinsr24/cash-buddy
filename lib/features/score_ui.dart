@@ -61,7 +61,7 @@ class _RingPainter extends CustomPainter {
   bool shouldRepaint(_RingPainter o) => o.fraction != fraction || o.a != a;
 }
 
-/// The Plus Score ring: gradient arc with the number in the middle.
+/// The Money Health ring: gradient arc with the number in the middle.
 class GradeRing extends StatelessWidget {
   final MoneyGrade grade;
   final double size;
@@ -117,7 +117,7 @@ class GradeRing extends StatelessWidget {
   }
 }
 
-/// Compact Plus Score row for Home.
+/// Compact Money Health row for Home.
 class PlusScoreCard extends ConsumerWidget {
   const PlusScoreCard({super.key});
   @override
@@ -141,7 +141,7 @@ class PlusScoreCard extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Eyebrow('Plus Score'),
+                    const Eyebrow('Money Health'),
                     const SizedBox(height: 2),
                     Row(
                       children: [
@@ -180,7 +180,7 @@ class PlusScoreCard extends ConsumerWidget {
                     const SizedBox(height: 2),
                     Text(
                       g.building
-                          ? 'Log 10 entries and I will start judging you.'
+                          ? 'Add 10 entries to see your score.'
                           : nextStep(async.stats, roast: roast),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -207,7 +207,7 @@ class PlusScoreDetailPage extends ConsumerWidget {
     final async = ref.watch(plusScoreProvider).value;
     final roast = ref.watch(roastModeProvider).value ?? true;
     return Scaffold(
-      appBar: AppBar(title: const Text('Plus Score')),
+      appBar: AppBar(title: const Text('Money Health')),
       body: async == null
           ? const Center(child: CircularProgressIndicator.adaptive())
           : _body(
@@ -336,12 +336,14 @@ class PlusScoreDetailPage extends ConsumerWidget {
   }
 
   List<String> _howItWorks(MonthStats s) => [
-    'Saving power: full marks at 30% of income saved.',
-    if (s.budgetMinor != null) 'Budget discipline: full marks while at or under your budget, falling to zero at 25% over.',
-    'Spending discipline: full marks when you spend 90% or less of your 3-month average.',
-    'Debt freedom: loses points for overdue payments and a heavy debt load.',
-    'Wealth growth: full marks at 15% of income invested.',
-    'Money awareness: full marks when you log on 20 days.',
+    'Tap the ⓘ next to any item to see what it means.',
+    'Saving power: full marks when you keep 30% of your income.',
+    if (s.budgetMinor != null)
+      'Budget discipline: full marks while you stay inside your budget.',
+    'Spending discipline: full marks when you spend less than your usual.',
+    'Debt freedom: full marks when nothing is overdue.',
+    'Wealth growth: full marks when you invest 15% of your income.',
+    'Money awareness: full marks when you add entries on 20 days.',
     if (s.budgetMinor == null) 'No budget set, so the budget part is left out and the others count a little more.',
   ];
 }
@@ -360,11 +362,30 @@ class _PartRow extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: Text(
-                part.label,
-                style: context.text.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+              child: Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      part.label,
+                      style: context.text.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  InkWell(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: () => _showPartInfo(context, part.label),
+                    child: Padding(
+                      padding: const EdgeInsets.all(6),
+                      child: Icon(
+                        Icons.info_outline_rounded,
+                        size: 18,
+                        color: c.textMuted,
+                        semanticLabel: 'What is ${part.label}?',
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             if (isGap)
@@ -658,4 +679,60 @@ class LiveTitleChip extends ConsumerWidget {
       ),
     );
   }
+}
+
+const _partInfo = <String, (String, String)>{
+  'Saving power': (
+    'How much of your income you keep.',
+    'Example: you earn ₹30,000 and keep ₹9,000. That is 30% and gives full marks. Spending everything gives zero.',
+  ),
+  'Budget discipline': (
+    'Did you stay inside the budget you set?',
+    'Full marks while your spending is within your budget. Marks drop as you go over, and reach zero when you are 25% over.',
+  ),
+  'Spending discipline': (
+    'Are you spending less than your usual?',
+    'We compare this month with your average of the last 3 months. Spending the same or less gives full marks.',
+  ),
+  'Debt freedom': (
+    'Are your loans and dues under control?',
+    'You lose marks for overdue payments and for owing a lot. Paying on time keeps this full.',
+  ),
+  'Wealth growth': (
+    'Are you putting money into investments?',
+    'Investing 15% of your income gives full marks. Even a small SIP helps.',
+  ),
+  'Money awareness': (
+    'Do you note your spending regularly?',
+    'Adding entries on 20 days of the month gives full marks. What you track, you can control.',
+  ),
+};
+
+void _showPartInfo(BuildContext context, String label) {
+  final info = _partInfo[label];
+  if (info == null) return;
+  showSheet(
+    context,
+    (ctx) => Padding(
+      padding: const EdgeInsets.all(Sp.x5),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: ctx.text.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: Sp.x2),
+          Text(
+            info.$1,
+            style: ctx.text.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: Sp.x2),
+          Text(info.$2, style: ctx.text.bodyMedium?.copyWith(height: 1.45)),
+          const SizedBox(height: Sp.x4),
+        ],
+      ),
+    ),
+  );
 }

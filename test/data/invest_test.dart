@@ -292,4 +292,103 @@ void main() {
       expect(inv.sipMinor, 250000);
     });
   });
+
+  group('stocks: buying and selling really move the balance', () {
+    test('buying shares reduces the balance by shares x price, and tracks the average', () async {
+      final e = await newEnv(opening: 10000000);
+      final r = e.repo;
+      final id = await r.createInvestment(kind: 'stock', name: 'TCS');
+      await r.buyShares(id, units: 10, pricePerUnitMinor: 250000); // 10 x 2,500
+      expect(await r.totalBalance(), 10000000 - 2500000);
+      var inv = await r.getInvestment(id);
+      expect(inv.units, 10);
+      expect(inv.buyPriceMinor, 250000);
+      await r.buyShares(id, units: 10, pricePerUnitMinor: 350000); // 10 x 3,500
+      expect(await r.totalBalance(), 10000000 - 2500000 - 3500000);
+      inv = await r.getInvestment(id);
+      expect(inv.units, 20);
+      expect(inv.buyPriceMinor, 300000); // average 3,000
+      // not spending
+      final d = await r.dashboard(DateRange.thisMonth(e.repo.today));
+      expect(d.spending, 0);
+      expect(await r.checkInvariants(), isEmpty);
+    });
+
+    test('selling gives the money back; cannot sell more than held', () async {
+      final e = await newEnv(opening: 10000000);
+      final r = e.repo;
+      final id = await r.createInvestment(kind: 'stock', name: 'INFY');
+      await r.buyShares(id, units: 10, pricePerUnitMinor: 100000);
+      await r.sellShares(id, units: 4, pricePerUnitMinor: 120000);
+      expect(await r.totalBalance(), 10000000 - 1000000 + 480000);
+      expect((await r.getInvestment(id)).units, 6);
+      expect(
+        () => r.sellShares(id, units: 7, pricePerUnitMinor: 100000),
+        throwsA(isA<ValidationException>()),
+      );
+      // profit shows once a price is set: 6 shares x 1,300 = 7,800
+      await r.setSharePrice(id, 130000);
+      final s = await r.investSummary(await r.getInvestment(id));
+      expect(s.currentValue, 780000);
+      expect(s.gain, 780000 + 480000 - 1000000);
+    });
+
+    test('the balance can be left alone for shares bought earlier', () async {
+      final e = await newEnv(opening: 10000000);
+      final r = e.repo;
+      final id = await r.createInvestment(kind: 'stock', name: 'WIPRO');
+      await r.buyShares(
+        id,
+        units: 5,
+        pricePerUnitMinor: 100000,
+        postToBalance: false,
+      );
+      expect(await r.totalBalance(), 10000000);
+      expect((await r.getInvestment(id)).units, 5);
+    });
+
+    test('with the global rule off, nothing moves the balance', () async {
+      final e = await newEnv(opening: 10000000);
+      final r = e.repo;
+      await r.setBalanceRule('investReducesBalance', false);
+      final id = await r.createInvestment(kind: 'stock', name: 'HDFC');
+      await r.buyShares(id, units: 5, pricePerUnitMinor: 100000);
+      expect(await r.totalBalance(), 10000000);
+    });
+
+    test('mutual fund: a one-time purchase and a SIP instalment both reduce the balance', () async {
+      final e = await newEnv(opening: 10000000);
+      final r = e.repo;
+      final oneTime = await r.createInvestment(
+        kind: 'mutual_fund',
+        name: 'Nifty',
+      );
+      await r.addInvestmentEntry(
+        oneTime,
+        type: 'contribute',
+        amountMinor: 1000000,
+      );
+      expect(await r.totalBalance(), 9000000);
+      final sip = await r.createInvestment(
+        kind: 'mutual_fund',
+        name: 'Flexi SIP',
+        sipMinor: 500000,
+        startDate: DateTime.utc(2026, 11, 4),
+        recurring: true,
+        cycle: 'monthly',
+        monthDay: 4,
+      );
+      await r.addInvestmentEntry(
+        sip,
+        type: 'contribute',
+        amountMinor: 500000,
+        periodKey: 0,
+      );
+      expect(await r.totalBalance(), 8500000);
+      expect(
+        (await r.getInvestment(sip)).schedule!.describe(),
+        'Every month on the 4th',
+      );
+    });
+  });
 }

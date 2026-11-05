@@ -91,6 +91,8 @@ class DebtEvents extends Table {
   IntColumn get principalPart => integer().withDefault(const Constant(0))();
   IntColumn get interestPart => integer().withDefault(const Constant(0))();
   IntColumn get periodKey => integer().nullable()();
+  // repayments only: null = interest first, or 'interest' / 'principal'
+  TextColumn get target => text().nullable()();
   TextColumn get note => text().withDefault(const Constant(''))();
   TextColumn get hlc => text()();
   TextColumn get deletedAt => text().nullable()();
@@ -145,6 +147,8 @@ class InvestmentEntries extends Table {
   IntColumn get amountMinor => integer()();
   TextColumn get date => text()();
   IntColumn get periodKey => integer().nullable()(); // chit month index
+  // stocks: how many shares this entry bought or sold
+  RealColumn get units => real().nullable()();
   BoolColumn get postToBalance => boolean().withDefault(const Constant(true))();
   TextColumn get note => text().withDefault(const Constant(''))();
   TextColumn get hlc => text()();
@@ -228,7 +232,7 @@ class AppDatabase extends _$AppDatabase {
   static AppDatabase open() => AppDatabase(openAppDatabase());
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -250,6 +254,12 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 4) {
         await m.createTable(budgetItems);
+      }
+      if (from < 5) {
+        await m.addColumn(debtEvents, debtEvents.target);
+      }
+      if (from < 6) {
+        await m.addColumn(investmentEntries, investmentEntries.units);
       }
       if (from < 3) {
         // Chit funds became custom monthly plans: instalment = monthly amount,

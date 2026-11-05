@@ -253,7 +253,7 @@ final titleHistoryProvider = FutureProvider.autoDispose<List<MonthTitle>>((
   return r.titleHistory();
 });
 
-/// The Plus Score for this month so far, with last month's for the trend.
+/// The Money Health for this month so far, with last month's for the trend.
 final plusScoreProvider =
     FutureProvider.autoDispose<
       ({MonthStats stats, MoneyGrade grade, int? prevScore, String? prevMonth})

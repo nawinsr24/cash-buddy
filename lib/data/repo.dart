@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 import '../domain/dates.dart';
 import '../domain/hlc.dart';
 import '../domain/interest.dart';
+import '../domain/money.dart';
 import '../domain/sms_parser.dart';
 import 'db.dart';
 
@@ -900,7 +901,7 @@ class Repo {
     for (final e in ev)
       if (e.deletedAt == null &&
           (e.type == 'repayment' || e.type == 'writeoff'))
-        DebtPayment(e.id, Dates.parse(e.date), e.amountMinor),
+        DebtPayment(e.id, Dates.parse(e.date), e.amountMinor, e.target),
   ];
 
   Future<String> createDebt({
@@ -976,8 +977,12 @@ class Repo {
     DateTime? date,
     String note = '',
     bool writeOff = false,
+    String? target, // null | 'interest' | 'principal'
   }) async {
     if (amountMinor <= 0) throw ValidationException('Amount must be positive');
+    if (target != null && target != 'interest' && target != 'principal') {
+      throw ValidationException('Unknown payment type');
+    }
     final debt = await (db.select(
       db.debts,
     )..where((d) => d.id.equals(debtId))).getSingle();
@@ -988,9 +993,22 @@ class Repo {
     final id = newId('ev_');
     await db.transaction(() async {
       final existing = await _events(debtId);
-      final all = [..._payments(existing), DebtPayment(id, d, amountMinor)];
+      final all = [
+        ..._payments(existing),
+        DebtPayment(id, d, amountMinor, target),
+      ];
       final state = InterestEngine.replay(_terms(debt), all, _maxDate(d));
       final excess = state.allocations[id]?.excessMinor ?? 0;
+      if (excess > 0 && target == 'interest') {
+        throw ValidationException(
+          'That is more than the interest due (${Money.format(amountMinor - excess)}).',
+        );
+      }
+      if (excess > 0 && target == 'principal') {
+        throw ValidationException(
+          'That is more than the principal left (${Money.format(amountMinor - excess)}).',
+        );
+      }
       if (excess > 0) throw OverpaymentException(excess);
       // A later-dated payment may also push earlier ones over after allocation shifts.
       if (state.allocations.values.any((a) => a.excessMinor > 0)) {
@@ -1008,6 +1026,7 @@ class Repo {
               amountMinor: amountMinor,
               date: Dates.str(d),
               hlc: clock.next(),
+              target: Value(writeOff ? null : target),
               note: Value(note),
             ),
           );
@@ -1017,6 +1036,18 @@ class Repo {
   }
 
   DateTime _maxDate(DateTime d) => d.isAfter(today) ? d : today;
+
+  /// When the next interest is charged and about how much (null if none).
+  Future<NextInterest?> nextInterest(String debtId) async {
+    final d = await (db.select(
+      db.debts,
+    )..where((x) => x.id.equals(debtId))).getSingle();
+    return InterestEngine.nextInterest(
+      _terms(d),
+      _payments(await _events(debtId)),
+      today,
+    );
+  }
 
   Future<void> deleteDebtEvent(String eventId) async {
     final e = await (db.select(

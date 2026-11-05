@@ -185,6 +185,23 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: colors.surfaceRaised,
+        // The label always sits on the border, so it can never overlap a
+        // prefix (like ₹), a value or a hint.
+        floatingLabelBehavior: FloatingLabelBehavior.always,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 18,
+        ),
+        hintStyle: TextStyle(color: colors.textMuted.withValues(alpha: 0.75)),
+        labelStyle: TextStyle(
+          color: colors.textMuted,
+          fontWeight: FontWeight.w600,
+        ),
+        floatingLabelStyle: TextStyle(
+          color: accent,
+          fontWeight: FontWeight.w700,
+        ),
+        prefixStyle: TextStyle(color: ink, fontWeight: FontWeight.w700),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(Sp.rField),
           borderSide: BorderSide(color: hairline),
@@ -343,3 +360,43 @@ class AppTheme {
 
 /// Tabular figures so money columns align.
 const moneyFeatures = [FontFeature.tabularFigures()];
+
+/// Colours for chart slices. They are picked by position (not by category) so
+/// neighbouring slices always look different and the whole chart reads as one
+/// calm, matching set.
+class ChartColors {
+  ChartColors._();
+  static const _light = [
+    Color(0xFF6366F1), // indigo
+    Color(0xFF14B8A6), // teal
+    Color(0xFFF59E0B), // amber
+    Color(0xFFEC4899), // pink
+    Color(0xFF0EA5E9), // sky
+    Color(0xFF8B5CF6), // violet
+    Color(0xFF22C55E), // green
+  ];
+  static const _dark = [
+    Color(0xFF8B93FF),
+    Color(0xFF2DD4BF),
+    Color(0xFFFBBF24),
+    Color(0xFFF472B6),
+    Color(0xFF38BDF8),
+    Color(0xFFA78BFA),
+    Color(0xFF4ADE80),
+  ];
+
+  static int get count => _light.length;
+
+  /// Colour for slice [i]; the "Others" slice is a neutral grey.
+  static Color at(int i, Brightness b, {bool others = false}) {
+    if (others) {
+      return b == Brightness.dark
+          ? const Color(0xFF64748B)
+          : const Color(0xFF94A3B8);
+    }
+    return (b == Brightness.dark ? _dark : _light)[i % _light.length];
+  }
+
+  /// A lighter shade for the end of a slice's gradient.
+  static Color soft(Color c) => Color.lerp(c, Colors.white, 0.28)!;
+}

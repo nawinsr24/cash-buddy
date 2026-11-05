@@ -1,3 +1,5 @@
+import '../ui/brand.dart';
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -36,14 +38,7 @@ class DashboardPage extends ConsumerWidget {
     final pending = ref.watch(pendingSmsProvider).value?.length ?? 0;
     final invest = ref.watch(investSummariesProvider).value ?? const [];
     return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          children: [
-            const Text('Cash'),
-            Text('++', style: TextStyle(color: context.scheme.primary)),
-          ],
-        ),
-      ),
+      appBar: AppBar(title: const BrandLogo()),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => showTransactionSheet(context),
         icon: const Icon(Icons.add),
@@ -82,7 +77,7 @@ class DashboardPage extends ConsumerWidget {
                 crossAxisSpacing: Sp.x3,
                 // Height grows with the user's text size so nothing clips.
                 mainAxisExtent:
-                    78 +
+                    86 +
                     96 *
                         MediaQuery.textScalerOf(context)
                             .scale(1)
@@ -239,14 +234,25 @@ class _BalanceCard extends ConsumerWidget {
     final accounts = ref.watch(accountsProvider).value ?? const [];
     final bal = ref.watch(balancesProvider).value ?? const {};
     final dark = Theme.of(context).brightness == Brightness.dark;
+    final fg = dark ? Colors.white : const Color(0xFF14172B);
+    final fgMuted = dark ? Colors.white54 : const Color(0xFF4A5170);
     final banks = accounts.where((a) => a.kind == 'bank').toList();
     return TiltCard(
       child: Container(
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(Sp.rCard + 4),
-          color: dark ? const Color(0xFF191B22) : const Color(0xFF0F1115),
-          border: dark ? Border.all(color: const Color(0xFF2A2D36)) : null,
+          color: dark ? const Color(0xFF191B22) : null,
+          gradient: dark
+              ? null
+              : const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFFEEF0FF), Color(0xFFDDE3FF)],
+                ),
+          border: Border.all(
+            color: dark ? const Color(0xFF2A2D36) : const Color(0xFFC9D2FF),
+          ),
         ),
         child: Stack(
           children: [
@@ -276,7 +282,7 @@ class _BalanceCard extends ConsumerWidget {
                   Text(
                     'TOTAL BALANCE',
                     style: context.text.labelSmall?.copyWith(
-                      color: Colors.white54,
+                      color: fgMuted,
                       letterSpacing: 1.2,
                       fontWeight: FontWeight.w700,
                     ),
@@ -292,7 +298,7 @@ class _BalanceCard extends ConsumerWidget {
                         fontWeight: FontWeight.w800,
                         fontSize: 38,
                         letterSpacing: -1.4,
-                        color: Colors.white,
+                        color: fg,
                         fontFeatures: moneyFeatures,
                       ),
                     ),
@@ -307,9 +313,13 @@ class _BalanceCard extends ConsumerWidget {
                           _chip(
                             'Online  ${Money.format(banks.fold<int>(0, (t, a) => t + (bal[a.id] ?? 0)))}',
                             strong: true,
+                            dark: dark,
                           ),
                         for (final a in accounts)
-                          _chip('${a.name}  ${Money.format(bal[a.id] ?? 0)}'),
+                          _chip(
+                            '${a.name}  ${Money.format(bal[a.id] ?? 0)}',
+                            dark: dark,
+                          ),
                       ],
                     ),
                     const SizedBox(height: Sp.x4),
@@ -321,6 +331,7 @@ class _BalanceCard extends ConsumerWidget {
                             label: 'Withdraw cash',
                             onTap: () =>
                                 showCashMoveSheet(context, withdraw: true),
+                            dark: dark,
                           ),
                         ),
                         const SizedBox(width: Sp.x2),
@@ -330,6 +341,7 @@ class _BalanceCard extends ConsumerWidget {
                             label: 'Deposit cash',
                             onTap: () =>
                                 showCashMoveSheet(context, withdraw: false),
+                            dark: dark,
                           ),
                         ),
                       ],
@@ -345,16 +357,18 @@ class _BalanceCard extends ConsumerWidget {
   }
 }
 
-Widget _chip(String text, {bool strong = false}) => Container(
+Widget _chip(String text, {bool strong = false, bool dark = true}) => Container(
   padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
   decoration: BoxDecoration(
-    color: Colors.white.withValues(alpha: strong ? 0.2 : 0.1),
+    color: (dark ? Colors.white : const Color(0xFF3B4BD8)).withValues(
+      alpha: strong ? 0.2 : 0.1,
+    ),
     borderRadius: BorderRadius.circular(20),
   ),
   child: Text(
     text,
-    style: const TextStyle(
-      color: Colors.white,
+    style: TextStyle(
+      color: dark ? Colors.white : const Color(0xFF14172B),
       fontWeight: FontWeight.w600,
       fontSize: 12.5,
     ),
@@ -365,10 +379,12 @@ class _CashButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+  final bool dark;
   const _CashButton({
     required this.icon,
     required this.label,
     required this.onTap,
+    this.dark = true,
   });
   @override
   Widget build(BuildContext context) => Pressable(
@@ -380,21 +396,31 @@ class _CashButton extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 8),
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: (dark ? Colors.white : const Color(0xFF3B4BD8)).withValues(
+          alpha: 0.1,
+        ),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+        border: Border.all(
+          color: (dark ? Colors.white : const Color(0xFF3B4BD8)).withValues(
+            alpha: 0.18,
+          ),
+        ),
       ),
       child: FittedBox(
         fit: BoxFit.scaleDown,
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16, color: Colors.white),
+            Icon(
+              icon,
+              size: 16,
+              color: dark ? Colors.white : const Color(0xFF14172B),
+            ),
             const SizedBox(width: 6),
             Text(
               label,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: dark ? Colors.white : const Color(0xFF14172B),
                 fontWeight: FontWeight.w600,
                 fontSize: 13,
               ),
@@ -506,8 +532,8 @@ class PillarCard extends StatelessWidget {
                     amount,
                     style: context.text.titleLarge?.copyWith(
                       fontWeight: FontWeight.w800,
-                      fontSize: 22,
-                      letterSpacing: -0.6,
+                      fontSize: 28,
+                      letterSpacing: -0.9,
                     ),
                   ),
                 ),
@@ -637,9 +663,29 @@ class CategoryDonut extends StatelessWidget {
         ),
       );
     }
-    final summary = slices
+    // top slices get their own colour; the long tail is grouped as "Others"
+    final top = slices.take(ChartColors.count).toList();
+    final rest = slices
+        .skip(ChartColors.count)
+        .fold<int>(0, (a, s) => a + s.totalMinor);
+    final brightness = Theme.of(context).brightness;
+    final shown = <({String name, int minor, Color color})>[
+      for (var i = 0; i < top.length; i++)
+        (
+          name: top[i].name,
+          minor: top[i].totalMinor,
+          color: ChartColors.at(i, brightness),
+        ),
+      if (rest > 0)
+        (
+          name: 'Others',
+          minor: rest,
+          color: ChartColors.at(0, brightness, others: true),
+        ),
+    ];
+    final summary = shown
         .take(5)
-        .map((s) => '${s.name} ${Money.format(s.totalMinor)}')
+        .map((s) => '${s.name} ${Money.format(s.minor)}')
         .join(', ');
     return Card(
       child: Padding(
@@ -649,50 +695,89 @@ class CategoryDonut extends StatelessWidget {
             Semantics(
               label: 'Breakdown by category: $summary',
               child: SizedBox(
-                height: 180,
+                height: 200,
                 child: ExcludeSemantics(
-                  child: PieChart(
-                    PieChartData(
-                      sectionsSpace: 2,
-                      centerSpaceRadius: 56,
-                      sections: [
-                        for (final s in slices)
-                          PieChartSectionData(
-                            value: s.totalMinor.toDouble(),
-                            color: colorOf(s.colorValue),
-                            radius: 26,
-                            showTitle: false,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      PieChart(
+                        duration: const Duration(milliseconds: 700),
+                        curve: Curves.easeOutCubic,
+                        PieChartData(
+                          sectionsSpace: 3,
+                          centerSpaceRadius: 64,
+                          startDegreeOffset: -90,
+                          sections: [
+                            for (final s in shown)
+                              PieChartSectionData(
+                                value: s.minor.toDouble(),
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [ChartColors.soft(s.color), s.color],
+                                ),
+                                radius: 30,
+                                showTitle: false,
+                              ),
+                          ],
+                        ),
+                      ),
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Total',
+                            style: context.text.labelMedium?.copyWith(
+                              color: context.cash.textMuted,
+                            ),
                           ),
-                      ],
-                    ),
+                          MoneyText(
+                            total,
+                            compact: true,
+                            style: context.text.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
             const SizedBox(height: Sp.x3),
-            for (final s in slices)
+            for (final s in shown)
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: Sp.x1 + 1),
+                padding: const EdgeInsets.symmetric(vertical: Sp.x1 + 2),
                 child: Row(
                   children: [
                     Container(
-                      width: 10,
-                      height: 10,
+                      width: 12,
+                      height: 12,
                       decoration: BoxDecoration(
-                        color: colorOf(s.colorValue),
-                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [ChartColors.soft(s.color), s.color],
+                        ),
+                        borderRadius: BorderRadius.circular(4),
                       ),
                     ),
                     const SizedBox(width: Sp.x3),
                     Expanded(
-                      child: Text(s.name, overflow: TextOverflow.ellipsis),
+                      child: Text(
+                        s.name,
+                        overflow: TextOverflow.ellipsis,
+                        style: context.text.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                     Text(
-                      '${(s.totalMinor * 100 / total).round()}%',
+                      '${(s.minor * 100 / total).round()}%',
                       style: TextStyle(color: context.cash.textMuted),
                     ),
                     const SizedBox(width: Sp.x3),
-                    MoneyText(s.totalMinor, style: context.text.bodyMedium),
+                    MoneyText(s.minor, style: context.text.bodyMedium),
                   ],
                 ),
               ),

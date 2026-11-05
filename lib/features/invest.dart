@@ -10,6 +10,7 @@ import '../domain/dates.dart';
 import '../domain/money.dart';
 import '../providers.dart';
 import '../ui/art.dart';
+import 'invest_forms.dart';
 import '../ui/emoji.dart';
 import '../ui/motion.dart';
 import '../ui/theme.dart';
@@ -22,9 +23,6 @@ Color kindColor(String kind) => switch (kind) {
   _ => const Color(0xFF2F6BFF),
 };
 
-String _pct(double v) =>
-    '${v >= 0 ? '+' : '−'}${(v.abs() * 100).toStringAsFixed(1)}%';
-
 /// Gradient summary used on the Invest tab and the dashboard.
 class InvestHero extends StatelessWidget {
   final InvestTotals totals;
@@ -32,19 +30,25 @@ class InvestHero extends StatelessWidget {
   const InvestHero({super.key, required this.totals, this.onTap});
   @override
   Widget build(BuildContext context) {
-    final up = totals.gain >= 0;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final fg = dark ? Colors.white : const Color(0xFF14172B);
     return Pressable(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(Sp.x5),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(Sp.rCard + 4),
-          color: Theme.of(context).brightness == Brightness.dark
-              ? const Color(0xFF191B22)
-              : const Color(0xFF0F1115),
-          border: Theme.of(context).brightness == Brightness.dark
-              ? Border.all(color: const Color(0xFF2A2D36))
-              : null,
+          color: dark ? const Color(0xFF191B22) : null,
+          gradient: dark
+              ? null
+              : const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFFEEF0FF), Color(0xFFDDE3FF)],
+                ),
+          border: Border.all(
+            color: dark ? const Color(0xFF2A2D36) : const Color(0xFFC9D2FF),
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -54,9 +58,9 @@ class InvestHero extends StatelessWidget {
                 const Text('📈', style: TextStyle(fontSize: 18)),
                 const SizedBox(width: Sp.x2),
                 Text(
-                  'Investments',
+                  'Invested so far',
                   style: context.text.labelLarge?.copyWith(
-                    color: Colors.white70,
+                    color: dark ? Colors.white70 : const Color(0xFF4A5170),
                   ),
                 ),
               ],
@@ -66,50 +70,21 @@ class InvestHero extends StatelessWidget {
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,
               child: CountUp(
-                value: totals.currentValue,
+                value: totals.contributed,
                 builder: (v) => MoneyText(
                   v,
-                  color: Colors.white,
+                  color: fg,
                   style: context.text.headlineMedium?.copyWith(
                     fontWeight: FontWeight.w800,
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: Sp.x3),
-            Wrap(
-              spacing: Sp.x2,
-              runSpacing: Sp.x2,
-              children: [
-                _pill('Put in ${Money.format(totals.contributed)}'),
-                _pill(
-                  '${up ? '▲' : '▼'} ${Money.format(totals.gain.abs())}'
-                  '${totals.pct != null ? ' (${_pct(totals.pct!)})' : ''}',
-                  strong: true,
-                ),
-              ],
-            ),
           ],
         ),
       ),
     );
   }
-
-  Widget _pill(String t, {bool strong = false}) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-    decoration: BoxDecoration(
-      color: Colors.white.withValues(alpha: strong ? 0.26 : 0.16),
-      borderRadius: BorderRadius.circular(20),
-    ),
-    child: Text(
-      t,
-      style: TextStyle(
-        color: Colors.white,
-        fontSize: 12.5,
-        fontWeight: strong ? FontWeight.w800 : FontWeight.w600,
-      ),
-    ),
-  );
 }
 
 class InvestPage extends ConsumerWidget {
@@ -173,8 +148,6 @@ class _InvestTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.cash;
     final color = kindColor(s.inv.kind);
-    final up = s.gain >= 0;
-    final pct = s.gainPct;
     return Pressable(
       onTap: () => pushReveal(context, InvestDetailPage(id: s.inv.id)),
       child: Card(
@@ -209,7 +182,7 @@ class _InvestTile extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '${investKindLabel(s.inv.kind)} · put in ${Money.format(s.contributed)}',
+                      investKindLabel(s.inv.kind),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: context.text.bodySmall?.copyWith(
@@ -224,19 +197,11 @@ class _InvestTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   TrailingMoney(
-                    s.currentValue,
+                    s.contributed,
                     style: context.text.titleSmall?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
                   ),
-                  if (pct != null && !s.valueIsEstimate)
-                    Text(
-                      '${up ? '▲' : '▼'} ${_pct(pct)}',
-                      style: context.text.labelSmall?.copyWith(
-                        color: up ? c.income : c.spending,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
                 ],
               ),
             ],
@@ -325,7 +290,12 @@ Future<void> showInvestmentForm(
   BuildContext context, {
   required String kind,
   Investment? edit,
-}) => showSheet(context, (_) => _InvestForm(kind: kind, edit: edit));
+}) {
+  // New stocks and funds use the simple, practical forms.
+  if (edit == null && kind == 'stock') return showStockBuyForm(context);
+  if (edit == null && kind == 'mutual_fund') return showFundForm(context);
+  return showSheet(context, (_) => _InvestForm(kind: kind, edit: edit));
+}
 
 class _InvestForm extends ConsumerStatefulWidget {
   final String kind;
@@ -808,7 +778,8 @@ class _InvestFormState extends ConsumerState<_InvestForm> {
                 _dateButton('Date', oneTimeDate, (d) => oneTimeDate = d),
             ],
             if (kind == 'mutual_fund') _money_(amount, 'SIP amount per month'),
-            if (kind == 'stock') ...[
+            // shares are changed with Buy more / Sell, not by editing numbers
+            if (kind == 'stock' && e == null) ...[
               _plain(units, 'Units held (optional)', number: true),
               _money_(buy, 'Average buy price per unit'),
             ],
@@ -889,7 +860,6 @@ class InvestDetailPage extends ConsumerWidget {
     final inv = s.inv;
     final color = kindColor(inv.kind);
     final c = context.cash;
-    final up = s.gain >= 0;
     final repo = ref.read(repoProvider);
     return Scaffold(
       appBar: AppBar(
@@ -957,7 +927,7 @@ class InvestDetailPage extends ConsumerWidget {
                       ),
                       const SizedBox(width: Sp.x2),
                       Text(
-                        s.valueIsEstimate ? 'Still invested' : 'Worth now',
+                        'Invested so far',
                         style: context.text.labelLarge?.copyWith(
                           color: Colors.white70,
                         ),
@@ -969,7 +939,7 @@ class InvestDetailPage extends ConsumerWidget {
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
                     child: CountUp(
-                      value: s.currentValue,
+                      value: s.contributed,
                       builder: (v) => MoneyText(
                         v,
                         color: Colors.white,
@@ -979,27 +949,6 @@ class InvestDetailPage extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  if (!s.valueIsEstimate && s.gainPct != null) ...[
-                    const SizedBox(height: Sp.x2),
-                    Text(
-                      '${up ? '▲' : '▼'} ${Money.format(s.gain.abs())} (${_pct(s.gainPct!)})',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ],
-                  if (inv.valueUpdatedOn != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: Sp.x1),
-                      child: Text(
-                        'Value updated ${DateFormat('d MMM').format(Dates.parse(inv.valueUpdatedOn!))}',
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
                 ],
               ),
             ),
@@ -1011,9 +960,17 @@ class InvestDetailPage extends ConsumerWidget {
               spacing: Sp.x3,
               runSpacing: Sp.x3,
               children: [
+                if (inv.kind == 'stock' && (inv.units ?? 0) > 0)
+                  _stat(
+                    context,
+                    'Shares held',
+                    '${inv.units! == inv.units!.roundToDouble() ? inv.units!.round() : inv.units}'
+                        '${inv.buyPriceMinor != null ? ' at avg ${Money.format(inv.buyPriceMinor!)}' : ''}',
+                    color,
+                  ),
                 _stat(
                   context,
-                  'Put in',
+                  'Invested',
                   Money.format(s.contributed),
                   c.spending,
                 ),
@@ -1023,20 +980,6 @@ class InvestDetailPage extends ConsumerWidget {
                   Money.format(s.withdrawn + s.dividends),
                   c.income,
                 ),
-                if (s.xirrRate != null)
-                  _stat(
-                    context,
-                    'Yearly return',
-                    _pct(s.xirrRate!),
-                    s.xirrRate! >= 0 ? c.income : c.spending,
-                  ),
-                if (s.projected != null)
-                  _stat(
-                    context,
-                    'Estimate at ${(inv.expectedGrowthBps! / 100).toStringAsFixed(1)}%/yr',
-                    Money.format(s.projected!),
-                    color,
-                  ),
               ],
             ),
           ),
@@ -1052,13 +995,15 @@ class InvestDetailPage extends ConsumerWidget {
                       backgroundColor: color,
                     ),
                     icon: const Icon(Icons.add),
-                    label: const Text('Add money'),
-                    onPressed: () => showEntrySheet(
-                      context,
-                      inv,
-                      type: 'contribute',
-                      suggest: inv.sipMinor,
-                    ),
+                    label: Text(inv.kind == 'stock' ? 'Buy more' : 'Add money'),
+                    onPressed: () => inv.kind == 'stock'
+                        ? showShareTradeSheet(context, inv, buy: true)
+                        : showEntrySheet(
+                            context,
+                            inv,
+                            type: 'contribute',
+                            suggest: inv.sipMinor,
+                          ),
                   ),
                 ),
                 const SizedBox(width: Sp.x3),
@@ -1068,9 +1013,10 @@ class InvestDetailPage extends ConsumerWidget {
                       minimumSize: const Size.fromHeight(48),
                     ),
                     icon: const Icon(Icons.call_received),
-                    label: const Text('Withdraw'),
-                    onPressed: () =>
-                        showEntrySheet(context, inv, type: 'withdraw'),
+                    label: Text(inv.kind == 'stock' ? 'Sell' : 'Withdraw'),
+                    onPressed: () => inv.kind == 'stock'
+                        ? showShareTradeSheet(context, inv, buy: false)
+                        : showEntrySheet(context, inv, type: 'withdraw'),
                   ),
                 ),
               ],
@@ -1083,8 +1029,14 @@ class InvestDetailPage extends ConsumerWidget {
                 Expanded(
                   child: TextButton.icon(
                     icon: const Icon(Icons.edit_note),
-                    label: const Text('Update current value'),
-                    onPressed: () => _updateValue(context, repo, inv),
+                    label: Text(
+                      inv.kind == 'stock'
+                          ? 'Update price'
+                          : 'Update current value',
+                    ),
+                    onPressed: () => inv.kind == 'stock'
+                        ? showSharePriceSheet(context, inv)
+                        : _updateValue(context, repo, inv),
                   ),
                 ),
                 Expanded(
@@ -1197,8 +1149,8 @@ class _EntryRow extends ConsumerWidget {
       'contribute' =>
         en.periodKey != null
             ? 'Instalment ${en.periodKey! + 1}'
-            : 'Added money',
-      'withdraw' => 'Withdrawn',
+            : (en.units != null ? 'Bought shares' : 'Added money'),
+      'withdraw' => en.units != null ? 'Sold shares' : 'Withdrawn',
       'dividend' =>
         en.periodKey != null
             ? 'Dividend, month ${en.periodKey! + 1}'

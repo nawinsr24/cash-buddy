@@ -37,7 +37,12 @@ class DebtPayment {
   final String id;
   final DateTime date;
   final int amountMinor;
-  const DebtPayment(this.id, this.date, this.amountMinor);
+
+  /// null: interest first, then principal (the default).
+  /// 'interest': only against accrued interest, principal untouched.
+  /// 'principal': only against principal, interest untouched.
+  final String? target;
+  const DebtPayment(this.id, this.date, this.amountMinor, [this.target]);
 }
 
 class Accrual {
@@ -76,8 +81,35 @@ class DebtState {
   int get outstanding => principalOutstanding + interestOutstanding;
 }
 
+/// The next interest charge for a debt that is still earning interest.
+class NextInterest {
+  final DateTime date;
+  final int amountMinor;
+  const NextInterest(this.date, this.amountMinor);
+}
+
 class InterestEngine {
   InterestEngine._();
+
+  /// When the next interest is charged and roughly how much, if nothing else
+  /// is paid before then. Null for interest-free or fully repaid debts.
+  static NextInterest? nextInterest(
+    DebtTerms t,
+    List<DebtPayment> payments,
+    DateTime asOf,
+  ) {
+    if (!t.interestEnabled || t.rateBps <= 0) return null;
+    final st = replay(t, payments, asOf);
+    final base = t.interestType == InterestType.simple
+        ? st.principalOutstanding
+        : st.principalOutstanding + st.interestOutstanding;
+    if (base <= 0) return null;
+    var k = 1;
+    while (k <= _maxPeriods && !periodEnd(t, k).isAfter(asOf)) {
+      k++;
+    }
+    return NextInterest(periodEnd(t, k), Money.percentBps(base, t.rateBps));
+  }
 
   static const _maxPeriods = 20000;
 
@@ -118,10 +150,21 @@ class InterestEngine {
     var pi = 0;
 
     void apply(DebtPayment p) {
-      final i = p.amountMinor < interest ? p.amountMinor : interest;
-      final rest = p.amountMinor - i;
-      final pr = rest < principal ? rest : principal;
-      final excess = rest - pr;
+      int i, pr, excess;
+      if (p.target == 'interest') {
+        i = p.amountMinor < interest ? p.amountMinor : interest;
+        pr = 0;
+        excess = p.amountMinor - i;
+      } else if (p.target == 'principal') {
+        i = 0;
+        pr = p.amountMinor < principal ? p.amountMinor : principal;
+        excess = p.amountMinor - pr;
+      } else {
+        i = p.amountMinor < interest ? p.amountMinor : interest;
+        final rest = p.amountMinor - i;
+        pr = rest < principal ? rest : principal;
+        excess = rest - pr;
+      }
       interest -= i;
       principal -= pr;
       totalPaid += i + pr;

@@ -325,7 +325,7 @@ void main() {
       await tester.drag(find.byType(Scrollable).first, const Offset(0, 1200));
       await tester.pump(const Duration(seconds: 2));
       await settle(tester);
-      await tapText(tester, 'PLUS SCORE');
+      await tapText(tester, 'MONEY HEALTH');
       await shot(tester, '$p-2d-grade');
       await tester.tap(find.byTooltip('Back'));
       await settle(tester);
@@ -409,7 +409,7 @@ void main() {
       // the new-investment form (recurring) and a schedule detail
       await tapText(tester, 'Invest', last: true);
       await tapText(tester, 'Add investment');
-      await tapText(tester, 'Custom investment');
+      await tapText(tester, 'Custom investment', last: true);
       await tapText(tester, 'Recurring');
       await tapText(tester, 'Weekly');
       await shot(tester, '$p-11-custom-form');

@@ -166,61 +166,65 @@ extension TitleInfo on TitleId {
     TitleId.comebackKid => '🧗',
     TitleId.consistencyHero => '🔥',
     TitleId.salaryEvaporator => '💸',
-    TitleId.foodieBankrupt => '🍔',
-    TitleId.treatChampion => '🛍️',
     TitleId.smokeSignal => '💨',
-    TitleId.socialButterfly => '🏧',
+    TitleId.foodieBankrupt => '🍔',
+    TitleId.socialButterfly => '👯',
     TitleId.wanderlust => '🧳',
     TitleId.gearAddict => '🚴',
+    TitleId.treatChampion => '🛍️',
     TitleId.homeHero => '🏡',
     TitleId.balancedSpender => '🧭',
   };
 
+  /// Short, plain names anyone can understand.
   String get title => switch (this) {
-    TitleId.freshVictim => 'Fresh Victim',
-    TitleId.incomeGhost => 'Income Ghost',
-    TitleId.overdraftArtist => 'Overdraft Artist',
-    TitleId.lateLegend => 'Late Payment Legend',
+    TitleId.freshVictim => 'New Here',
+    TitleId.incomeGhost => 'No Income Added',
+    TitleId.overdraftArtist => 'Overspender',
+    TitleId.lateLegend => 'Late Payer',
     TitleId.moneyMaster => 'Money Master',
-    TitleId.wealthBuilder => 'Wealth Builder',
-    TitleId.debtCrusher => 'Debt Crusher',
+    TitleId.wealthBuilder => 'Investor',
+    TitleId.debtCrusher => 'Debt Clearer',
     TitleId.steadySaver => 'Steady Saver',
-    TitleId.budgetNinja => 'Budget Ninja',
-    TitleId.comebackKid => 'Comeback Kid',
-    TitleId.consistencyHero => 'Consistency Hero',
-    TitleId.salaryEvaporator => 'Salary Evaporator',
-    TitleId.foodieBankrupt => 'Foodie Bankrupt',
-    TitleId.treatChampion => 'Treat Yourself Champion',
-    TitleId.smokeSignal => 'Smoke Signal',
-    TitleId.socialButterfly => 'Friend ATM',
-    TitleId.wanderlust => 'Wanderlust Wallet',
-    TitleId.gearAddict => 'Gear Addict',
-    TitleId.homeHero => 'Home Hero',
-    TitleId.balancedSpender => 'Balanced Spender',
+    TitleId.budgetNinja => 'Budget Boss',
+    TitleId.comebackKid => 'Back on Track',
+    TitleId.consistencyHero => 'Daily Tracker',
+    TitleId.salaryEvaporator => 'Salary Gone Fast',
+    TitleId.smokeSignal => 'Smoke & Drink',
+    TitleId.foodieBankrupt => 'Food Lover',
+    TitleId.socialButterfly => 'Friends First',
+    TitleId.wanderlust => 'Trip Lover',
+    TitleId.gearAddict => 'Hobby Lover',
+    TitleId.treatChampion => 'Shopping Lover',
+    TitleId.homeHero => 'Family First',
+    TitleId.balancedSpender => 'Balanced',
   };
 
   /// Why you got it, in plain words (shown on the reveal card).
   String get rule => switch (this) {
-    TitleId.freshVictim => 'Fewer than 10 entries this month.',
-    TitleId.incomeGhost => 'Spending recorded but no income.',
+    TitleId.freshVictim => 'You have fewer than 10 entries this month.',
+    TitleId.incomeGhost => 'You added spending but no income.',
     TitleId.overdraftArtist => 'You spent more than you earned.',
-    TitleId.lateLegend => 'You had overdue instalments or debts.',
-    TitleId.moneyMaster => 'Saved 40%+ of income and invested.',
-    TitleId.wealthBuilder => 'Invested 15%+ of income.',
-    TitleId.debtCrusher => 'Repaid 15%+ of what you owed.',
-    TitleId.steadySaver => 'Saved 20%+ of income.',
-    TitleId.budgetNinja => 'Spent 10%+ below your 3-month average.',
-    TitleId.comebackKid => 'Last month overspent, this month did not.',
-    TitleId.consistencyHero => 'Logged on 25+ days.',
-    TitleId.salaryEvaporator => 'Spent 95%+ of your income.',
-    TitleId.foodieBankrupt => 'Food was your top spend at 30%+.',
-    TitleId.treatChampion => 'Shopping or fun was your top spend.',
-    TitleId.smokeSignal => 'Cigarettes and liquor took 12%+ of your spending.',
-    TitleId.socialButterfly => 'Friends took 20%+ of your spending.',
-    TitleId.wanderlust => 'Tours and trips took 30%+ of your spending.',
-    TitleId.gearAddict => 'Hobbies took 15%+ of your spending.',
-    TitleId.homeHero => 'You sent 10%+ of your income home.',
-    TitleId.balancedSpender => 'Nothing stood out, good or bad.',
+    TitleId.lateLegend => 'You have overdue payments or debts.',
+    TitleId.moneyMaster =>
+      'You saved 40% or more of your income and also invested.',
+    TitleId.wealthBuilder => 'You invested 15% or more of your income.',
+    TitleId.debtCrusher => 'You paid back 15% or more of what you owed.',
+    TitleId.steadySaver => 'You saved 20% or more of your income.',
+    TitleId.budgetNinja => 'You spent 10% or more less than your usual.',
+    TitleId.comebackKid => 'You overspent last month, but not this month.',
+    TitleId.consistencyHero => 'You noted your spending on 25 or more days.',
+    TitleId.salaryEvaporator => 'You spent 95% or more of your income.',
+    TitleId.smokeSignal =>
+      'Cigarettes and liquor took 12% or more of your spending.',
+    TitleId.foodieBankrupt => 'Food was your biggest spend, 30% or more.',
+    TitleId.socialButterfly => 'Friends took 20% or more of your spending.',
+    TitleId.wanderlust => 'Tours and trips took 30% or more of your spending.',
+    TitleId.gearAddict => 'Hobbies took 15% or more of your spending.',
+    TitleId.treatChampion =>
+      'Shopping or entertainment was your biggest spend.',
+    TitleId.homeHero => 'You sent 10% or more of your income home.',
+    TitleId.balancedSpender => 'Nothing was too high or too low.',
   };
 
   bool get positive => switch (this) {
@@ -288,8 +292,8 @@ TitleId liveTitleFor(MonthStats s) {
   return pickTitle(s.projectedForTitle());
 }
 
-// ───────────────────────── Plus Score ─────────────────────────
-/// One of the parts the Plus Score is made of.
+// ───────────────────────── Money Health ─────────────────────────
+/// One of the parts the Money Health is made of.
 class GradePart {
   final String label, hint;
   final double score, max;
@@ -297,8 +301,8 @@ class GradePart {
   double get fraction => max == 0 ? 0 : score / max;
 }
 
-/// The Plus Score: 0..100 for a month, with a named level.
-/// (The class keeps its old name; the app calls it "Plus Score".)
+/// The Money Health: 0..100 for a month, with a named level.
+/// (The class keeps its old name; the app calls it "Money Health".)
 class MoneyGrade {
   final int score; // 0..100
   final List<GradePart> parts;
@@ -340,13 +344,13 @@ class MoneyGrade {
 }
 
 String levelFor(int score) {
-  if (score >= 90) return 'Elite';
-  if (score >= 80) return 'Excellent';
-  if (score >= 70) return 'Strong';
-  if (score >= 60) return 'Solid';
-  if (score >= 50) return 'Fair';
-  if (score >= 40) return 'Needs work';
-  return 'Reset needed';
+  if (score >= 90) return 'Excellent';
+  if (score >= 80) return 'Very good';
+  if (score >= 70) return 'Good';
+  if (score >= 60) return 'Okay';
+  if (score >= 50) return 'Average';
+  if (score >= 40) return 'Weak';
+  return 'Needs care';
 }
 
 double _clamp01(double v) => v.isNaN ? 0 : math.max(0.0, math.min(1.0, v));
@@ -428,31 +432,32 @@ String nextStep(MonthStats s, {bool roast = true}) {
   if (s.healthDriven || s.homeDriven) roast = false;
   if (s.income <= 0) {
     return roast
-        ? 'Log your income. Right now the app thinks you live on air.'
-        : 'Log your income so the app can score your month properly.';
+        ? 'Add your income. Without it we cannot check your month.'
+        : 'Add your income so we can check your month properly.';
   }
   final need20 = (s.income * 0.2).round() - s.saved;
   if (need20 > 0) {
     final top = s.topCategory;
     return roast
-        ? 'Cut ${_m(need20)}${top != null ? ' from $top' : ''} and you become a Steady Saver. Try it, coward.'
+        ? 'Spend ${_m(need20)} less${top != null ? ', maybe on $top' : ''}, and you will be a Steady Saver.'
         : 'Save ${_m(need20)} more to become a Steady Saver.';
   }
   final need15 = (s.income * 0.15).round() - s.invested;
   if (need15 > 0) {
     return roast
-        ? 'Invest ${_m(need15)} more to be a Wealth Builder. Your money is bored.'
-        : 'Invest ${_m(need15)} more to become a Wealth Builder.';
+        ? 'Invest ${_m(need15)} more to become an Investor. Money sitting idle earns nothing.'
+        : 'Invest ${_m(need15)} more to become an Investor.';
   }
   return roast
-      ? 'Keep this up and I will have nothing to roast. Disappointing.'
-      : 'Keep it up. You are on a strong run.';
+      ? 'You are doing really well. Keep it up!'
+      : 'You are doing very well. Keep it up.';
 }
 
 /// Lines for [t]; the caller picks one by a stable seed so the same month
 /// always shows the same line. Numbers are filled in from [s].
+/// Everything is in short, plain English.
 List<String> titleLines(TitleId t, MonthStats s, {required bool roast}) {
-  // A medical month is never a joke, whatever the setting.
+  // A medical month, or money sent to family, is never a joke.
   if (s.healthDriven || s.homeDriven) roast = false;
   final vice = _m(s.viceSpending);
   final friends = _m(s.friendsSpending);
@@ -461,155 +466,157 @@ List<String> titleLines(TitleId t, MonthStats s, {required bool roast}) {
   final home = _m(s.homeSent);
   final over = _m(s.spending - s.income);
   final spent = _m(s.spending);
+  final income = _m(s.income);
   final saved = _m(s.saved);
-  final cat = s.topCategory ?? 'stuff';
+  final cat = s.topCategory ?? 'shopping';
   final catAmt = _m((s.spending * s.topShareBps / 10000).round());
+  final spentPct = s.income > 0 ? (s.spending / s.income * 100).round() : 0;
+  final savedPct = (s.saveRate * 100).round();
+  final investPct = (s.investRate * 100).round();
   if (!roast) {
     return switch (t) {
       TitleId.freshVictim => [
-        'Not enough entries yet. Keep logging and your first title will arrive.',
+        'Not enough entries yet. Add more and you will get your first title.',
       ],
       TitleId.incomeGhost => [
-        'Spending is recorded but no income. Add your income for a fuller picture.',
+        'You added spending but no income. Please add your income too.',
       ],
       TitleId.overdraftArtist => [
-        'You spent $over more than you earned this month. A small cut next month will fix it.',
+        'You spent $over more than you earned this month. Try to spend a little less next month.',
       ],
       TitleId.lateLegend => [
-        'Some instalments or debts are overdue. Clearing them is the quickest win.',
+        'Some of your payments are overdue. Paying them first is the quickest win.',
       ],
       TitleId.moneyMaster => [
-        'You saved $saved and invested. Outstanding month.',
+        'You saved $saved and also invested. Excellent month!',
       ],
       TitleId.wealthBuilder => [
-        'You invested ${_m(s.invested)} this month. Great habit.',
+        'You invested ${_m(s.invested)} this month. A very good habit.',
       ],
       TitleId.debtCrusher => [
-        'You repaid ${_m(s.paidToLiabilities)} of what you owed. Well done.',
+        'You paid back ${_m(s.paidToLiabilities)} of what you owed. Well done.',
       ],
-      TitleId.steadySaver => ['You saved $saved. Steady and strong.'],
+      TitleId.steadySaver => [
+        'You saved $saved this month. Steady and strong.',
+      ],
       TitleId.budgetNinja => [
-        'You spent well below your usual. Nicely controlled.',
+        'You spent less than your usual. Nicely controlled.',
       ],
       TitleId.comebackKid => [
-        'You bounced back after an overspent month. Good recovery.',
+        'You overspent last month, but this month you did better. Good recovery.',
       ],
       TitleId.consistencyHero => [
-        'You logged on ${s.activeDays} days. Fantastic consistency.',
+        'You noted your spending on ${s.activeDays} days. Great habit.',
       ],
       TitleId.salaryEvaporator => [
-        'Almost all your income went out this month. Try setting a little aside first.',
-      ],
-      TitleId.foodieBankrupt => [
-        '$cat was your biggest spend at $catAmt. Worth a look.',
-      ],
-      TitleId.treatChampion => [
-        '$cat was your biggest spend at $catAmt. Treats are fine in balance.',
+        'Almost all of your income was spent this month. Try keeping a little aside first.',
       ],
       TitleId.smokeSignal => [
-        'Cigarettes and liquor came to $vice this month. Cutting back would help your health and your wallet.',
+        'Cigarettes and liquor cost $vice this month. Cutting down helps your health and your wallet.',
+      ],
+      TitleId.foodieBankrupt => [
+        'Food was your biggest spend: $catAmt. Worth a look.',
       ],
       TitleId.socialButterfly => [
-        'You spent $friends on friends this month. Good people are worth it, just keep an eye on the total.',
+        'You spent $friends on friends this month. Nice, just keep an eye on the total.',
       ],
-      TitleId.wanderlust => [
-        'Tours and trips came to $trip. Memories well spent.',
-      ],
+      TitleId.wanderlust => ['Trips cost $trip this month. Good memories!'],
       TitleId.gearAddict => [
-        'You spent $hobby on your hobbies. Staying active is worth it.',
+        'You spent $hobby on hobbies this month. Staying active is worth it.',
+      ],
+      TitleId.treatChampion => [
+        '$cat was your biggest spend: $catAmt. A little treat now and then is fine.',
       ],
       TitleId.homeHero => [
-        'You sent $home home. Looking after family is the best spend there is.',
+        'You sent $home home. Looking after family is the best spending.',
       ],
       TitleId.balancedSpender => [
-        'A steady month with nothing out of the ordinary.',
+        'A normal month. Nothing too high or too low.',
       ],
     };
   }
   return switch (t) {
     TitleId.freshVictim => [
-      'Not enough data to roast you yet. Log more. We are sharpening the knives.',
-      'Under 10 entries. Your finances are either perfect or you are hiding something.',
+      'Not enough entries yet. Add more and we will give you a title.',
+      'Fewer than 10 entries so far. Keep adding your spending.',
     ],
     TitleId.incomeGhost => [
-      'You logged $spent of spending and zero income. Are you being funded by ghosts?',
-      'Spending with no income recorded. Either you are a monk or you are lazy about the app.',
+      'You added $spent of spending but no income. Where is the salary?',
+      'Spending is there, income is missing. Please add your income.',
     ],
     TitleId.overdraftArtist => [
-      'You spent $over MORE than you earned. That is not budgeting, that is a hostage situation with your bank.',
-      'Spent $spent against an income of ${_m(s.income)}. Maths was never your subject, was it?',
-      'You are spending money you have not even earned yet. Bold. Stupid, but bold.',
+      'You spent $over more than you earned. That is a dangerous habit.',
+      'You earned $income but spent $spent. Where will the extra money come from?',
+      'Spending more than you earn is how debts start. Slow down!',
     ],
     TitleId.lateLegend => [
-      'You have ${s.overdueCount} overdue payment${s.overdueCount == 1 ? '' : 's'}. The reminders are begging at this point.',
-      'Late again. Deadlines are suggestions to you, aren\'t they?',
+      'You have ${s.overdueCount} overdue payment${s.overdueCount == 1 ? '' : 's'}. Please pay them soon.',
+      'Late again? Clear your dues first, then enjoy.',
     ],
     TitleId.moneyMaster => [
-      'You saved $saved AND invested. Who are you and what did you do with the real you?',
-      'Saving ${(s.saveRate * 100).round()}% of income. Show-off. We hate it here.',
+      'You saved $saved and also invested. Very good!',
+      'You saved $savedPct% of your income. Excellent work!',
     ],
     TitleId.wealthBuilder => [
-      'You invested ${_m(s.invested)}. Your money works harder than you do.',
-      'Investing ${(s.investRate * 100).round()}% of income. Future you says thanks. Present you is eating plain rice.',
+      'You invested ${_m(s.invested)} this month. Your money is working for you.',
+      '$investPct% of your income went into investments. Good for your future.',
     ],
     TitleId.debtCrusher => [
-      'You repaid ${_m(s.paidToLiabilities)}. Finally. Your creditors almost fainted.',
-      'Paying debts on time? Who raised you?',
+      'You paid back ${_m(s.paidToLiabilities)}. Good, keep going!',
+      'Paying loans on time is a great habit.',
     ],
     TitleId.steadySaver => [
-      'You saved $saved. Boring. Responsible. Disgustingly adult.',
-      'Saved ${(s.saveRate * 100).round()}% of income. Not bad for someone who clearly can\'t say no to biryani.',
+      'You saved $saved. Small savings every month become big savings.',
+      'You saved $savedPct% of your income. Nice and simple.',
     ],
     TitleId.budgetNinja => [
-      'Your wallet stayed shut this month. Is it broken or are you just scared?',
-      'You spent far less than usual. Suspicious. Did the delivery app go down?',
+      'You spent less than your usual this month. Very controlled!',
+      'Your spending came down well this month. Great job.',
     ],
     TitleId.comebackKid => [
-      'Last month was a disaster. This month is a slightly smaller disaster.',
-      'You clawed back from overspending. Slow clap. Do not do it again.',
+      'Last month you overspent. This month you did better. Keep going!',
+      'Good recovery after an expensive month. Do not slip back.',
     ],
     TitleId.consistencyHero => [
-      'You tracked money on ${s.activeDays} days. You open this app more than you text your family.',
-      'Logging nearly every day. Obsessive. We love it.',
+      'You noted your spending on ${s.activeDays} days. That is a great habit.',
+      'You track almost every day. That is how money control starts.',
     ],
     TitleId.salaryEvaporator => [
-      'Your salary lasted about as long as your phone battery at 2%.',
-      'You spent ${(s.income > 0 ? s.spending / s.income * 100 : 0).round()}% of your income. Payday is basically a donation to shops.',
-      'Salary came in. Salary left. Nobody even got to say goodbye.',
-    ],
-    TitleId.foodieBankrupt => [
-      '$cat ate $catAmt of your money. Your biggest relationship is with the delivery app.',
-      'The delivery guy knows your name, your address and your weaknesses. $catAmt on $cat. Seek help.',
-    ],
-    TitleId.treatChampion => [
-      '$cat cost you $catAmt. Retail therapy is billing you monthly.',
-      '"I deserve it" has cost you $catAmt this month. You deserve a budget.',
+      'Your salary was almost finished this month. You spent $spentPct% of it.',
+      'Salary came and went very fast. Keep some money aside first.',
     ],
     TitleId.smokeSignal => [
-      'You put $vice into cigarettes and liquor. Your lungs and liver filed a joint complaint.',
-      '$vice went up in smoke and down the hatch. Dedicated to expensive bad habits, aren\'t you?',
-      'Cigarettes and liquor cost $vice. Your wallet needs a break more than you do.',
+      'You spent $vice on cigarettes and liquor. That money could do much better things.',
+      '$vice on smoking and drinking this month. Think about your health and your wallet.',
+      'Cigarettes and liquor cost $vice. Even a small cut will help your health and savings.',
+    ],
+    TitleId.foodieBankrupt => [
+      'Food took $catAmt of your money. Cooking at home can save a lot.',
+      'You spent $catAmt on food. Order less, cook more!',
     ],
     TitleId.socialButterfly => [
-      'You spent $friends on friends. Do they know your birthday, or just your UPI?',
-      'Friends cost you $friends. Real friends split the bill. Check yours.',
-      '$friends on friends this month. You are not a friend, you are an ATM with legs.',
+      'You spent $friends on friends. Being generous is nice, but do not forget yourself.',
+      '$friends on friends this month. Who is saving for your future?',
     ],
     TitleId.wanderlust => [
-      'Trips took $trip. Your passport has more stamps than your savings have zeros.',
-      '$trip on tours and trips. See the world, ignore the balance. Classic.',
+      'Trips took $trip this month. Enjoy, but plan your savings too.',
+      '$trip on tours and trips. Good memories, but check your balance.',
     ],
     TitleId.gearAddict => [
-      '$hobby on hobbies. Cycling shorts are not an investment.',
-      'Hobbies took $hobby. The gear is fabulous; the actual cycling happens twice a year.',
+      'You spent $hobby on hobbies. Being active is good. Do you really need new gear?',
+      'Hobbies took $hobby. Use what you already have first.',
+    ],
+    TitleId.treatChampion => [
+      '$cat took $catAmt. Ask yourself: do I really need it?',
+      'You spent $catAmt on $cat. A treat is fine, but not every week.',
     ],
     TitleId.homeHero => [
-      'You sent $home home. Nothing to roast here. Home is proud of you.',
-      'Family first: $home sent home. Respect. The roast takes the day off.',
+      'You sent $home home. That is a great heart!',
+      'Family first: $home sent home. Well done.',
     ],
     TitleId.balancedSpender => [
-      'Not rich, not broke, just vibing on the edge of mediocrity.',
-      'Nothing stood out. Not good, not terrible. The beige of finance.',
+      'A normal month. Nothing too good or too bad.',
+      'Nothing special this month. Try to save a little more next time.',
     ],
   };
 }
@@ -714,7 +721,7 @@ List<CompareRow> compareMonths(
   }
   rows.add(
     row(
-      'Plus Score',
+      'Money Health',
       '$curScore',
       '$prevScore',
       _signCompare(curScore, prevScore, tolerance: 1),

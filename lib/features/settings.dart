@@ -24,6 +24,7 @@ import '../ui/motion.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
 import 'grade_ui.dart';
+import 'settings_tour.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -42,6 +43,16 @@ class SettingsPage extends ConsumerWidget {
         data: (s) => ListView(
           padding: const EdgeInsets.fromLTRB(Sp.x4, 0, Sp.x4, Sp.x8),
           children: [
+            const SizedBox(height: Sp.x2),
+            Card(
+              child: ListTile(
+                leading: const Text('🧭', style: TextStyle(fontSize: 26)),
+                title: const Text('Take a tour of Settings'),
+                subtitle: const Text('A 1-minute guide in simple words'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => showSettingsTour(context),
+              ),
+            ),
             const _Group('Data'),
             Card(
               child: Column(

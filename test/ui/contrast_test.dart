@@ -91,13 +91,13 @@ void main() {
         );
         await tester.tap(find.byTooltip('Back'));
         await settle(tester);
-        // Plus Score page
-        await tapText(tester, 'PLUS SCORE');
+        // Money Health page
+        await tapText(tester, 'MONEY HEALTH');
         await tester.pump(const Duration(seconds: 2));
         await expectLater(
           tester,
           meetsGuideline(textContrastGuideline),
-          reason: 'Plus Score',
+          reason: 'Money Health',
         );
         await tester.tap(find.byTooltip('Back'));
         await settle(tester);

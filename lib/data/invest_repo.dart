@@ -6,6 +6,7 @@ import '../domain/dates.dart';
 import '../domain/invest.dart';
 import '../domain/schedule.dart';
 import 'db.dart';
+import '../domain/money.dart';
 import 'repo.dart';
 
 class InvestSummary {
@@ -314,6 +315,7 @@ extension InvestRepo on Repo {
     int? periodKey,
     bool postToBalance = true,
     String note = '',
+    double? units,
   }) async {
     if (!{'contribute', 'withdraw', 'dividend', 'payout'}.contains(type)) {
       throw ValidationException('Unknown entry type');
@@ -350,6 +352,7 @@ extension InvestRepo on Repo {
               date: Dates.str(date ?? today),
               hlc: clock.next(),
               periodKey: Value(periodKey),
+              units: Value(units),
               postToBalance: Value(postToBalance),
               note: Value(note),
             ),
@@ -505,4 +508,120 @@ extension InvestRepo on Repo {
     final g = list.fold<int>(0, (a, s) => a + s.gain);
     return InvestTotals(c, v, g);
   }
+
+  // ───────────────────────── shares ─────────────────────────
+  /// Buys [units] shares at [pricePerUnitMinor] each. Records the money going
+  /// out (reducing the balance unless [postToBalance] is false), adds to the
+  /// shares held and keeps the average buy price.
+  Future<String> buyShares(
+    String investmentId, {
+    required double units,
+    required int pricePerUnitMinor,
+    DateTime? date,
+    bool postToBalance = true,
+  }) async {
+    if (units <= 0) throw ValidationException('Enter how many shares');
+    if (pricePerUnitMinor <= 0) {
+      throw ValidationException('Enter the price per share');
+    }
+    final amount = (units * pricePerUnitMinor).round();
+    if (amount <= 0) throw ValidationException('That comes to nothing');
+    return db.transaction(() async {
+      final inv = await getInvestment(investmentId);
+      final held = inv.units ?? 0;
+      final avg = inv.buyPriceMinor ?? pricePerUnitMinor;
+      final newHeld = held + units;
+      final newAvg = held <= 0
+          ? pricePerUnitMinor
+          : ((held * avg + units * pricePerUnitMinor) / newHeld).round();
+      final id = await addInvestmentEntry(
+        investmentId,
+        type: 'contribute',
+        amountMinor: amount,
+        date: date,
+        postToBalance: postToBalance,
+        units: units,
+        note: 'Bought ${_fmtUnits(units)} × ${Money.format(pricePerUnitMinor)}',
+      );
+      final cur = await getInvestment(investmentId);
+      await db
+          .update(db.investments)
+          .replace(
+            cur.copyWith(
+              units: Value(newHeld),
+              buyPriceMinor: Value(newAvg),
+              // keep the value in step with the new holding if a price is known
+              currentValueMinor: cur.currentValueMinor == null
+                  ? const Value.absent()
+                  : Value(
+                      ((cur.currentValueMinor! / (held <= 0 ? 1 : held)) *
+                              newHeld)
+                          .round(),
+                    ),
+              hlc: clock.next(),
+            ),
+          );
+      return id;
+    });
+  }
+
+  /// Sells [units] shares at [pricePerUnitMinor]; the money comes back to the
+  /// balance (unless [postToBalance] is false).
+  Future<String> sellShares(
+    String investmentId, {
+    required double units,
+    required int pricePerUnitMinor,
+    DateTime? date,
+    bool postToBalance = true,
+  }) async {
+    if (units <= 0) throw ValidationException('Enter how many shares');
+    if (pricePerUnitMinor <= 0) {
+      throw ValidationException('Enter the price per share');
+    }
+    return db.transaction(() async {
+      final inv = await getInvestment(investmentId);
+      final held = inv.units ?? 0;
+      if (units > held + 1e-9) {
+        throw ValidationException('You only hold ${_fmtUnits(held)} shares');
+      }
+      final id = await addInvestmentEntry(
+        investmentId,
+        type: 'withdraw',
+        amountMinor: (units * pricePerUnitMinor).round(),
+        date: date,
+        postToBalance: postToBalance,
+        units: units,
+        note: 'Sold ${_fmtUnits(units)} × ${Money.format(pricePerUnitMinor)}',
+      );
+      final cur = await getInvestment(investmentId);
+      final left = (held - units) < 1e-9 ? 0.0 : held - units;
+      await db
+          .update(db.investments)
+          .replace(
+            cur.copyWith(
+              units: Value(left),
+              currentValueMinor: cur.currentValueMinor == null
+                  ? const Value.absent()
+                  : Value(
+                      held <= 0
+                          ? 0
+                          : ((cur.currentValueMinor! / held) * left).round(),
+                    ),
+              hlc: clock.next(),
+            ),
+          );
+      return id;
+    });
+  }
+
+  /// Today's price per share; the value of the holding follows.
+  Future<void> setSharePrice(String investmentId, int pricePerUnitMinor) async {
+    final inv = await getInvestment(investmentId);
+    final held = inv.units ?? 0;
+    await setCurrentValue(investmentId, (held * pricePerUnitMinor).round());
+  }
+
+  static String _fmtUnits(double u) => u == u.roundToDouble()
+      ? '${u.round()}'
+      : u.toStringAsFixed(3).replaceFirst(RegExp(r'0+$'), '');
 }

@@ -2920,6 +2920,15 @@ class $DebtEventsTable extends DebtEvents
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _targetMeta = const VerificationMeta('target');
+  @override
+  late final GeneratedColumn<String> target = GeneratedColumn<String>(
+    'target',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _noteMeta = const VerificationMeta('note');
   @override
   late final GeneratedColumn<String> note = GeneratedColumn<String>(
@@ -2960,6 +2969,7 @@ class $DebtEventsTable extends DebtEvents
     principalPart,
     interestPart,
     periodKey,
+    target,
     note,
     hlc,
     deletedAt,
@@ -3040,6 +3050,12 @@ class $DebtEventsTable extends DebtEvents
         periodKey.isAcceptableOrUnknown(data['period_key']!, _periodKeyMeta),
       );
     }
+    if (data.containsKey('target')) {
+      context.handle(
+        _targetMeta,
+        target.isAcceptableOrUnknown(data['target']!, _targetMeta),
+      );
+    }
     if (data.containsKey('note')) {
       context.handle(
         _noteMeta,
@@ -3101,6 +3117,10 @@ class $DebtEventsTable extends DebtEvents
         DriftSqlType.int,
         data['${effectivePrefix}period_key'],
       ),
+      target: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}target'],
+      ),
       note: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}note'],
@@ -3131,6 +3151,7 @@ class DebtEvent extends DataClass implements Insertable<DebtEvent> {
   final int principalPart;
   final int interestPart;
   final int? periodKey;
+  final String? target;
   final String note;
   final String hlc;
   final String? deletedAt;
@@ -3143,6 +3164,7 @@ class DebtEvent extends DataClass implements Insertable<DebtEvent> {
     required this.principalPart,
     required this.interestPart,
     this.periodKey,
+    this.target,
     required this.note,
     required this.hlc,
     this.deletedAt,
@@ -3159,6 +3181,9 @@ class DebtEvent extends DataClass implements Insertable<DebtEvent> {
     map['interest_part'] = Variable<int>(interestPart);
     if (!nullToAbsent || periodKey != null) {
       map['period_key'] = Variable<int>(periodKey);
+    }
+    if (!nullToAbsent || target != null) {
+      map['target'] = Variable<String>(target);
     }
     map['note'] = Variable<String>(note);
     map['hlc'] = Variable<String>(hlc);
@@ -3180,6 +3205,9 @@ class DebtEvent extends DataClass implements Insertable<DebtEvent> {
       periodKey: periodKey == null && nullToAbsent
           ? const Value.absent()
           : Value(periodKey),
+      target: target == null && nullToAbsent
+          ? const Value.absent()
+          : Value(target),
       note: Value(note),
       hlc: Value(hlc),
       deletedAt: deletedAt == null && nullToAbsent
@@ -3202,6 +3230,7 @@ class DebtEvent extends DataClass implements Insertable<DebtEvent> {
       principalPart: serializer.fromJson<int>(json['principalPart']),
       interestPart: serializer.fromJson<int>(json['interestPart']),
       periodKey: serializer.fromJson<int?>(json['periodKey']),
+      target: serializer.fromJson<String?>(json['target']),
       note: serializer.fromJson<String>(json['note']),
       hlc: serializer.fromJson<String>(json['hlc']),
       deletedAt: serializer.fromJson<String?>(json['deletedAt']),
@@ -3219,6 +3248,7 @@ class DebtEvent extends DataClass implements Insertable<DebtEvent> {
       'principalPart': serializer.toJson<int>(principalPart),
       'interestPart': serializer.toJson<int>(interestPart),
       'periodKey': serializer.toJson<int?>(periodKey),
+      'target': serializer.toJson<String?>(target),
       'note': serializer.toJson<String>(note),
       'hlc': serializer.toJson<String>(hlc),
       'deletedAt': serializer.toJson<String?>(deletedAt),
@@ -3234,6 +3264,7 @@ class DebtEvent extends DataClass implements Insertable<DebtEvent> {
     int? principalPart,
     int? interestPart,
     Value<int?> periodKey = const Value.absent(),
+    Value<String?> target = const Value.absent(),
     String? note,
     String? hlc,
     Value<String?> deletedAt = const Value.absent(),
@@ -3246,6 +3277,7 @@ class DebtEvent extends DataClass implements Insertable<DebtEvent> {
     principalPart: principalPart ?? this.principalPart,
     interestPart: interestPart ?? this.interestPart,
     periodKey: periodKey.present ? periodKey.value : this.periodKey,
+    target: target.present ? target.value : this.target,
     note: note ?? this.note,
     hlc: hlc ?? this.hlc,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
@@ -3266,6 +3298,7 @@ class DebtEvent extends DataClass implements Insertable<DebtEvent> {
           ? data.interestPart.value
           : this.interestPart,
       periodKey: data.periodKey.present ? data.periodKey.value : this.periodKey,
+      target: data.target.present ? data.target.value : this.target,
       note: data.note.present ? data.note.value : this.note,
       hlc: data.hlc.present ? data.hlc.value : this.hlc,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
@@ -3283,6 +3316,7 @@ class DebtEvent extends DataClass implements Insertable<DebtEvent> {
           ..write('principalPart: $principalPart, ')
           ..write('interestPart: $interestPart, ')
           ..write('periodKey: $periodKey, ')
+          ..write('target: $target, ')
           ..write('note: $note, ')
           ..write('hlc: $hlc, ')
           ..write('deletedAt: $deletedAt')
@@ -3300,6 +3334,7 @@ class DebtEvent extends DataClass implements Insertable<DebtEvent> {
     principalPart,
     interestPart,
     periodKey,
+    target,
     note,
     hlc,
     deletedAt,
@@ -3316,6 +3351,7 @@ class DebtEvent extends DataClass implements Insertable<DebtEvent> {
           other.principalPart == this.principalPart &&
           other.interestPart == this.interestPart &&
           other.periodKey == this.periodKey &&
+          other.target == this.target &&
           other.note == this.note &&
           other.hlc == this.hlc &&
           other.deletedAt == this.deletedAt);
@@ -3330,6 +3366,7 @@ class DebtEventsCompanion extends UpdateCompanion<DebtEvent> {
   final Value<int> principalPart;
   final Value<int> interestPart;
   final Value<int?> periodKey;
+  final Value<String?> target;
   final Value<String> note;
   final Value<String> hlc;
   final Value<String?> deletedAt;
@@ -3343,6 +3380,7 @@ class DebtEventsCompanion extends UpdateCompanion<DebtEvent> {
     this.principalPart = const Value.absent(),
     this.interestPart = const Value.absent(),
     this.periodKey = const Value.absent(),
+    this.target = const Value.absent(),
     this.note = const Value.absent(),
     this.hlc = const Value.absent(),
     this.deletedAt = const Value.absent(),
@@ -3357,6 +3395,7 @@ class DebtEventsCompanion extends UpdateCompanion<DebtEvent> {
     this.principalPart = const Value.absent(),
     this.interestPart = const Value.absent(),
     this.periodKey = const Value.absent(),
+    this.target = const Value.absent(),
     this.note = const Value.absent(),
     required String hlc,
     this.deletedAt = const Value.absent(),
@@ -3376,6 +3415,7 @@ class DebtEventsCompanion extends UpdateCompanion<DebtEvent> {
     Expression<int>? principalPart,
     Expression<int>? interestPart,
     Expression<int>? periodKey,
+    Expression<String>? target,
     Expression<String>? note,
     Expression<String>? hlc,
     Expression<String>? deletedAt,
@@ -3390,6 +3430,7 @@ class DebtEventsCompanion extends UpdateCompanion<DebtEvent> {
       if (principalPart != null) 'principal_part': principalPart,
       if (interestPart != null) 'interest_part': interestPart,
       if (periodKey != null) 'period_key': periodKey,
+      if (target != null) 'target': target,
       if (note != null) 'note': note,
       if (hlc != null) 'hlc': hlc,
       if (deletedAt != null) 'deleted_at': deletedAt,
@@ -3406,6 +3447,7 @@ class DebtEventsCompanion extends UpdateCompanion<DebtEvent> {
     Value<int>? principalPart,
     Value<int>? interestPart,
     Value<int?>? periodKey,
+    Value<String?>? target,
     Value<String>? note,
     Value<String>? hlc,
     Value<String?>? deletedAt,
@@ -3420,6 +3462,7 @@ class DebtEventsCompanion extends UpdateCompanion<DebtEvent> {
       principalPart: principalPart ?? this.principalPart,
       interestPart: interestPart ?? this.interestPart,
       periodKey: periodKey ?? this.periodKey,
+      target: target ?? this.target,
       note: note ?? this.note,
       hlc: hlc ?? this.hlc,
       deletedAt: deletedAt ?? this.deletedAt,
@@ -3454,6 +3497,9 @@ class DebtEventsCompanion extends UpdateCompanion<DebtEvent> {
     if (periodKey.present) {
       map['period_key'] = Variable<int>(periodKey.value);
     }
+    if (target.present) {
+      map['target'] = Variable<String>(target.value);
+    }
     if (note.present) {
       map['note'] = Variable<String>(note.value);
     }
@@ -3480,6 +3526,7 @@ class DebtEventsCompanion extends UpdateCompanion<DebtEvent> {
           ..write('principalPart: $principalPart, ')
           ..write('interestPart: $interestPart, ')
           ..write('periodKey: $periodKey, ')
+          ..write('target: $target, ')
           ..write('note: $note, ')
           ..write('hlc: $hlc, ')
           ..write('deletedAt: $deletedAt, ')
@@ -5088,6 +5135,15 @@ class $InvestmentEntriesTable extends InvestmentEntries
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _unitsMeta = const VerificationMeta('units');
+  @override
+  late final GeneratedColumn<double> units = GeneratedColumn<double>(
+    'units',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _postToBalanceMeta = const VerificationMeta(
     'postToBalance',
   );
@@ -5141,6 +5197,7 @@ class $InvestmentEntriesTable extends InvestmentEntries
     amountMinor,
     date,
     periodKey,
+    units,
     postToBalance,
     note,
     hlc,
@@ -5207,6 +5264,12 @@ class $InvestmentEntriesTable extends InvestmentEntries
         periodKey.isAcceptableOrUnknown(data['period_key']!, _periodKeyMeta),
       );
     }
+    if (data.containsKey('units')) {
+      context.handle(
+        _unitsMeta,
+        units.isAcceptableOrUnknown(data['units']!, _unitsMeta),
+      );
+    }
     if (data.containsKey('post_to_balance')) {
       context.handle(
         _postToBalanceMeta,
@@ -5269,6 +5332,10 @@ class $InvestmentEntriesTable extends InvestmentEntries
         DriftSqlType.int,
         data['${effectivePrefix}period_key'],
       ),
+      units: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}units'],
+      ),
       postToBalance: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}post_to_balance'],
@@ -5301,6 +5368,7 @@ class InvestmentEntry extends DataClass implements Insertable<InvestmentEntry> {
   final int amountMinor;
   final String date;
   final int? periodKey;
+  final double? units;
   final bool postToBalance;
   final String note;
   final String hlc;
@@ -5312,6 +5380,7 @@ class InvestmentEntry extends DataClass implements Insertable<InvestmentEntry> {
     required this.amountMinor,
     required this.date,
     this.periodKey,
+    this.units,
     required this.postToBalance,
     required this.note,
     required this.hlc,
@@ -5327,6 +5396,9 @@ class InvestmentEntry extends DataClass implements Insertable<InvestmentEntry> {
     map['date'] = Variable<String>(date);
     if (!nullToAbsent || periodKey != null) {
       map['period_key'] = Variable<int>(periodKey);
+    }
+    if (!nullToAbsent || units != null) {
+      map['units'] = Variable<double>(units);
     }
     map['post_to_balance'] = Variable<bool>(postToBalance);
     map['note'] = Variable<String>(note);
@@ -5347,6 +5419,9 @@ class InvestmentEntry extends DataClass implements Insertable<InvestmentEntry> {
       periodKey: periodKey == null && nullToAbsent
           ? const Value.absent()
           : Value(periodKey),
+      units: units == null && nullToAbsent
+          ? const Value.absent()
+          : Value(units),
       postToBalance: Value(postToBalance),
       note: Value(note),
       hlc: Value(hlc),
@@ -5368,6 +5443,7 @@ class InvestmentEntry extends DataClass implements Insertable<InvestmentEntry> {
       amountMinor: serializer.fromJson<int>(json['amountMinor']),
       date: serializer.fromJson<String>(json['date']),
       periodKey: serializer.fromJson<int?>(json['periodKey']),
+      units: serializer.fromJson<double?>(json['units']),
       postToBalance: serializer.fromJson<bool>(json['postToBalance']),
       note: serializer.fromJson<String>(json['note']),
       hlc: serializer.fromJson<String>(json['hlc']),
@@ -5384,6 +5460,7 @@ class InvestmentEntry extends DataClass implements Insertable<InvestmentEntry> {
       'amountMinor': serializer.toJson<int>(amountMinor),
       'date': serializer.toJson<String>(date),
       'periodKey': serializer.toJson<int?>(periodKey),
+      'units': serializer.toJson<double?>(units),
       'postToBalance': serializer.toJson<bool>(postToBalance),
       'note': serializer.toJson<String>(note),
       'hlc': serializer.toJson<String>(hlc),
@@ -5398,6 +5475,7 @@ class InvestmentEntry extends DataClass implements Insertable<InvestmentEntry> {
     int? amountMinor,
     String? date,
     Value<int?> periodKey = const Value.absent(),
+    Value<double?> units = const Value.absent(),
     bool? postToBalance,
     String? note,
     String? hlc,
@@ -5409,6 +5487,7 @@ class InvestmentEntry extends DataClass implements Insertable<InvestmentEntry> {
     amountMinor: amountMinor ?? this.amountMinor,
     date: date ?? this.date,
     periodKey: periodKey.present ? periodKey.value : this.periodKey,
+    units: units.present ? units.value : this.units,
     postToBalance: postToBalance ?? this.postToBalance,
     note: note ?? this.note,
     hlc: hlc ?? this.hlc,
@@ -5426,6 +5505,7 @@ class InvestmentEntry extends DataClass implements Insertable<InvestmentEntry> {
           : this.amountMinor,
       date: data.date.present ? data.date.value : this.date,
       periodKey: data.periodKey.present ? data.periodKey.value : this.periodKey,
+      units: data.units.present ? data.units.value : this.units,
       postToBalance: data.postToBalance.present
           ? data.postToBalance.value
           : this.postToBalance,
@@ -5444,6 +5524,7 @@ class InvestmentEntry extends DataClass implements Insertable<InvestmentEntry> {
           ..write('amountMinor: $amountMinor, ')
           ..write('date: $date, ')
           ..write('periodKey: $periodKey, ')
+          ..write('units: $units, ')
           ..write('postToBalance: $postToBalance, ')
           ..write('note: $note, ')
           ..write('hlc: $hlc, ')
@@ -5460,6 +5541,7 @@ class InvestmentEntry extends DataClass implements Insertable<InvestmentEntry> {
     amountMinor,
     date,
     periodKey,
+    units,
     postToBalance,
     note,
     hlc,
@@ -5475,6 +5557,7 @@ class InvestmentEntry extends DataClass implements Insertable<InvestmentEntry> {
           other.amountMinor == this.amountMinor &&
           other.date == this.date &&
           other.periodKey == this.periodKey &&
+          other.units == this.units &&
           other.postToBalance == this.postToBalance &&
           other.note == this.note &&
           other.hlc == this.hlc &&
@@ -5488,6 +5571,7 @@ class InvestmentEntriesCompanion extends UpdateCompanion<InvestmentEntry> {
   final Value<int> amountMinor;
   final Value<String> date;
   final Value<int?> periodKey;
+  final Value<double?> units;
   final Value<bool> postToBalance;
   final Value<String> note;
   final Value<String> hlc;
@@ -5500,6 +5584,7 @@ class InvestmentEntriesCompanion extends UpdateCompanion<InvestmentEntry> {
     this.amountMinor = const Value.absent(),
     this.date = const Value.absent(),
     this.periodKey = const Value.absent(),
+    this.units = const Value.absent(),
     this.postToBalance = const Value.absent(),
     this.note = const Value.absent(),
     this.hlc = const Value.absent(),
@@ -5513,6 +5598,7 @@ class InvestmentEntriesCompanion extends UpdateCompanion<InvestmentEntry> {
     required int amountMinor,
     required String date,
     this.periodKey = const Value.absent(),
+    this.units = const Value.absent(),
     this.postToBalance = const Value.absent(),
     this.note = const Value.absent(),
     required String hlc,
@@ -5531,6 +5617,7 @@ class InvestmentEntriesCompanion extends UpdateCompanion<InvestmentEntry> {
     Expression<int>? amountMinor,
     Expression<String>? date,
     Expression<int>? periodKey,
+    Expression<double>? units,
     Expression<bool>? postToBalance,
     Expression<String>? note,
     Expression<String>? hlc,
@@ -5544,6 +5631,7 @@ class InvestmentEntriesCompanion extends UpdateCompanion<InvestmentEntry> {
       if (amountMinor != null) 'amount_minor': amountMinor,
       if (date != null) 'date': date,
       if (periodKey != null) 'period_key': periodKey,
+      if (units != null) 'units': units,
       if (postToBalance != null) 'post_to_balance': postToBalance,
       if (note != null) 'note': note,
       if (hlc != null) 'hlc': hlc,
@@ -5559,6 +5647,7 @@ class InvestmentEntriesCompanion extends UpdateCompanion<InvestmentEntry> {
     Value<int>? amountMinor,
     Value<String>? date,
     Value<int?>? periodKey,
+    Value<double?>? units,
     Value<bool>? postToBalance,
     Value<String>? note,
     Value<String>? hlc,
@@ -5572,6 +5661,7 @@ class InvestmentEntriesCompanion extends UpdateCompanion<InvestmentEntry> {
       amountMinor: amountMinor ?? this.amountMinor,
       date: date ?? this.date,
       periodKey: periodKey ?? this.periodKey,
+      units: units ?? this.units,
       postToBalance: postToBalance ?? this.postToBalance,
       note: note ?? this.note,
       hlc: hlc ?? this.hlc,
@@ -5601,6 +5691,9 @@ class InvestmentEntriesCompanion extends UpdateCompanion<InvestmentEntry> {
     if (periodKey.present) {
       map['period_key'] = Variable<int>(periodKey.value);
     }
+    if (units.present) {
+      map['units'] = Variable<double>(units.value);
+    }
     if (postToBalance.present) {
       map['post_to_balance'] = Variable<bool>(postToBalance.value);
     }
@@ -5628,6 +5721,7 @@ class InvestmentEntriesCompanion extends UpdateCompanion<InvestmentEntry> {
           ..write('amountMinor: $amountMinor, ')
           ..write('date: $date, ')
           ..write('periodKey: $periodKey, ')
+          ..write('units: $units, ')
           ..write('postToBalance: $postToBalance, ')
           ..write('note: $note, ')
           ..write('hlc: $hlc, ')
@@ -8449,6 +8543,7 @@ typedef $$DebtEventsTableCreateCompanionBuilder = DebtEventsCompanion Function({
   Value<int> principalPart,
   Value<int> interestPart,
   Value<int?> periodKey,
+  Value<String?> target,
   Value<String> note,
   required String hlc,
   Value<String?> deletedAt,
@@ -8463,6 +8558,7 @@ typedef $$DebtEventsTableUpdateCompanionBuilder = DebtEventsCompanion Function({
   Value<int> principalPart,
   Value<int> interestPart,
   Value<int?> periodKey,
+  Value<String?> target,
   Value<String> note,
   Value<String> hlc,
   Value<String?> deletedAt,
@@ -8515,6 +8611,11 @@ class $$DebtEventsTableFilterComposer
 
   ColumnFilters<int> get periodKey => $composableBuilder(
     column: $table.periodKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get target => $composableBuilder(
+    column: $table.target,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -8583,6 +8684,11 @@ class $$DebtEventsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get target => $composableBuilder(
+    column: $table.target,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get note => $composableBuilder(
     column: $table.note,
     builder: (column) => ColumnOrderings(column),
@@ -8638,6 +8744,9 @@ class $$DebtEventsTableAnnotationComposer
   GeneratedColumn<int> get periodKey =>
       $composableBuilder(column: $table.periodKey, builder: (column) => column);
 
+  GeneratedColumn<String> get target =>
+      $composableBuilder(column: $table.target, builder: (column) => column);
+
   GeneratedColumn<String> get note =>
       $composableBuilder(column: $table.note, builder: (column) => column);
 
@@ -8687,6 +8796,7 @@ class $$DebtEventsTableTableManager
                 Value<int> principalPart = const Value.absent(),
                 Value<int> interestPart = const Value.absent(),
                 Value<int?> periodKey = const Value.absent(),
+                Value<String?> target = const Value.absent(),
                 Value<String> note = const Value.absent(),
                 Value<String> hlc = const Value.absent(),
                 Value<String?> deletedAt = const Value.absent(),
@@ -8700,6 +8810,7 @@ class $$DebtEventsTableTableManager
                 principalPart: principalPart,
                 interestPart: interestPart,
                 periodKey: periodKey,
+                target: target,
                 note: note,
                 hlc: hlc,
                 deletedAt: deletedAt,
@@ -8715,6 +8826,7 @@ class $$DebtEventsTableTableManager
                 Value<int> principalPart = const Value.absent(),
                 Value<int> interestPart = const Value.absent(),
                 Value<int?> periodKey = const Value.absent(),
+                Value<String?> target = const Value.absent(),
                 Value<String> note = const Value.absent(),
                 required String hlc,
                 Value<String?> deletedAt = const Value.absent(),
@@ -8728,6 +8840,7 @@ class $$DebtEventsTableTableManager
                 principalPart: principalPart,
                 interestPart: interestPart,
                 periodKey: periodKey,
+                target: target,
                 note: note,
                 hlc: hlc,
                 deletedAt: deletedAt,
@@ -9436,6 +9549,7 @@ typedef $$InvestmentEntriesTableCreateCompanionBuilder =
       required int amountMinor,
       required String date,
       Value<int?> periodKey,
+      Value<double?> units,
       Value<bool> postToBalance,
       Value<String> note,
       required String hlc,
@@ -9450,6 +9564,7 @@ typedef $$InvestmentEntriesTableUpdateCompanionBuilder =
       Value<int> amountMinor,
       Value<String> date,
       Value<int?> periodKey,
+      Value<double?> units,
       Value<bool> postToBalance,
       Value<String> note,
       Value<String> hlc,
@@ -9493,6 +9608,11 @@ class $$InvestmentEntriesTableFilterComposer
 
   ColumnFilters<int> get periodKey => $composableBuilder(
     column: $table.periodKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get units => $composableBuilder(
+    column: $table.units,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -9556,6 +9676,11 @@ class $$InvestmentEntriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get units => $composableBuilder(
+    column: $table.units,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get postToBalance => $composableBuilder(
     column: $table.postToBalance,
     builder: (column) => ColumnOrderings(column),
@@ -9607,6 +9732,9 @@ class $$InvestmentEntriesTableAnnotationComposer
 
   GeneratedColumn<int> get periodKey =>
       $composableBuilder(column: $table.periodKey, builder: (column) => column);
+
+  GeneratedColumn<double> get units =>
+      $composableBuilder(column: $table.units, builder: (column) => column);
 
   GeneratedColumn<bool> get postToBalance => $composableBuilder(
     column: $table.postToBalance,
@@ -9669,6 +9797,7 @@ class $$InvestmentEntriesTableTableManager
                 Value<int> amountMinor = const Value.absent(),
                 Value<String> date = const Value.absent(),
                 Value<int?> periodKey = const Value.absent(),
+                Value<double?> units = const Value.absent(),
                 Value<bool> postToBalance = const Value.absent(),
                 Value<String> note = const Value.absent(),
                 Value<String> hlc = const Value.absent(),
@@ -9681,6 +9810,7 @@ class $$InvestmentEntriesTableTableManager
                 amountMinor: amountMinor,
                 date: date,
                 periodKey: periodKey,
+                units: units,
                 postToBalance: postToBalance,
                 note: note,
                 hlc: hlc,
@@ -9695,6 +9825,7 @@ class $$InvestmentEntriesTableTableManager
                 required int amountMinor,
                 required String date,
                 Value<int?> periodKey = const Value.absent(),
+                Value<double?> units = const Value.absent(),
                 Value<bool> postToBalance = const Value.absent(),
                 Value<String> note = const Value.absent(),
                 required String hlc,
@@ -9707,6 +9838,7 @@ class $$InvestmentEntriesTableTableManager
                 amountMinor: amountMinor,
                 date: date,
                 periodKey: periodKey,
+                units: units,
                 postToBalance: postToBalance,
                 note: note,
                 hlc: hlc,

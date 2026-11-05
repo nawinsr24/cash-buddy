@@ -510,6 +510,17 @@ class DebtDetailPage extends ConsumerWidget {
                       await repo.deleteDebt(debtId);
                       if (context.mounted) Navigator.pop(context);
                     }
+                  } else if (v == 'combined') {
+                    if (context.mounted) {
+                      await showSheet(
+                        context,
+                        (_) => _RepaymentSheet(
+                          debtId: debtId,
+                          max: st.outstanding,
+                          rec: rec,
+                        ),
+                      );
+                    }
                   } else if (v == 'writeoff') {
                     if (context.mounted) {
                       await showSheet(
@@ -525,6 +536,10 @@ class DebtDetailPage extends ConsumerWidget {
                 },
                 itemBuilder: (_) => const [
                   PopupMenuItem(
+                    value: 'combined',
+                    child: Text('One payment: interest first, then principal'),
+                  ),
+                  PopupMenuItem(
                     value: 'writeoff',
                     child: Text('Write off an amount'),
                   ),
@@ -537,18 +552,49 @@ class DebtDetailPage extends ConsumerWidget {
               ? SafeArea(
                   child: Padding(
                     padding: const EdgeInsets.all(Sp.x4),
-                    child: FilledButton.icon(
-                      icon: const Icon(Icons.add),
-                      label: Text(
-                        rec ? 'Record payment received' : 'Record repayment',
-                      ),
-                      onPressed: () => showSheet(
-                        context,
-                        (_) => _RepaymentSheet(
-                          debtId: debtId,
-                          max: st.outstanding,
+                    child: Row(
+                      children: [
+                        if (debt.interestEnabled) ...[
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                minimumSize: const Size.fromHeight(54),
+                              ),
+                              icon: const Icon(Icons.percent),
+                              label: Text(
+                                rec ? 'Interest received' : 'Interest paid',
+                              ),
+                              onPressed: () => showSheet(
+                                context,
+                                (_) => _RepaymentSheet(
+                                  debtId: debtId,
+                                  max: st.interestOutstanding,
+                                  target: 'interest',
+                                  rec: rec,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: Sp.x3),
+                        ],
+                        Expanded(
+                          child: FilledButton.icon(
+                            icon: const Icon(Icons.account_balance_wallet),
+                            label: Text(
+                              rec ? 'Principal received' : 'Principal paid',
+                            ),
+                            onPressed: () => showSheet(
+                              context,
+                              (_) => _RepaymentSheet(
+                                debtId: debtId,
+                                max: st.principalOutstanding,
+                                target: 'principal',
+                                rec: rec,
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
                   ),
                 )
@@ -582,16 +628,40 @@ class DebtDetailPage extends ConsumerWidget {
                       const Divider(height: Sp.x6),
                       _Row('Principal outstanding', st.principalOutstanding),
                       _Row('Interest outstanding', st.interestOutstanding),
-                      if (debt.interestEnabled)
+                      if (debt.interestEnabled) ...[
                         Padding(
                           padding: const EdgeInsets.only(top: Sp.x2),
                           child: Text(
-                            '${(debt.rateBps / 100).toStringAsFixed(2)}% per ${debt.ratePeriod}, ${debt.interestType} interest',
+                            _rateWords(debt),
                             style: context.text.bodySmall?.copyWith(
                               color: context.cash.textMuted,
+                              height: 1.35,
                             ),
                           ),
                         ),
+                        FutureBuilder<NextInterest?>(
+                          future: repo.nextInterest(debtId),
+                          builder: (context, snap) {
+                            final n = snap.data;
+                            if (n == null) return const SizedBox.shrink();
+                            return Container(
+                              width: double.infinity,
+                              margin: const EdgeInsets.only(top: Sp.x3),
+                              padding: const EdgeInsets.all(Sp.x3),
+                              decoration: BoxDecoration(
+                                color: color.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(Sp.rChip),
+                              ),
+                              child: Text(
+                                'Next interest: ${Money.format(n.amountMinor)} on ${DateFormat('d MMM y').format(n.date)}',
+                                style: context.text.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -608,6 +678,21 @@ class DebtDetailPage extends ConsumerWidget {
       },
     );
   }
+}
+
+/// "2% every month on the money still owed" in plain words.
+String _rateWords(Debt d) {
+  final pct = (d.rateBps / 100).toStringAsFixed(d.rateBps % 100 == 0 ? 0 : 2);
+  final every = switch (d.ratePeriod) {
+    'daily' => 'every day',
+    'weekly' => 'every week',
+    'yearly' => 'every year',
+    _ => 'every month',
+  };
+  final on = d.interestType == 'compound'
+      ? 'on the principal plus the interest not yet paid'
+      : 'on the principal still owed';
+  return '$pct% $every $on. Interest is added once each period is complete.';
 }
 
 class _Row extends StatelessWidget {
@@ -641,8 +726,12 @@ class _EventTile extends ConsumerWidget {
       ),
       'accrual' => (Icons.percent, 'Interest accrued'),
       'repayment' => (
-        Icons.payments_outlined,
-        rec ? 'Payment received' : 'Repayment made',
+        e.target == 'interest' ? Icons.percent : Icons.payments_outlined,
+        e.target == 'interest'
+            ? (rec ? 'Interest received' : 'Interest paid')
+            : e.target == 'principal'
+            ? (rec ? 'Principal received' : 'Principal paid')
+            : (rec ? 'Payment received' : 'Repayment made'),
       ),
       'writeoff' => (Icons.remove_circle_outline, 'Written off'),
       _ => (Icons.circle, e.type),
@@ -678,10 +767,16 @@ class _RepaymentSheet extends ConsumerStatefulWidget {
   final String debtId;
   final bool writeOff;
   final int max;
+
+  /// null = interest first then principal, or 'interest' / 'principal'.
+  final String? target;
+  final bool rec;
   const _RepaymentSheet({
     required this.debtId,
     this.writeOff = false,
     required this.max,
+    this.target,
+    this.rec = true,
   });
   @override
   ConsumerState<_RepaymentSheet> createState() => _RepaymentSheetState();
@@ -705,6 +800,7 @@ class _RepaymentSheetState extends ConsumerState<_RepaymentSheet> {
             amt,
             date: date,
             writeOff: widget.writeOff,
+            target: widget.target,
           );
       if (mounted) Navigator.pop(context);
     } on OverpaymentException catch (e) {
@@ -726,15 +822,28 @@ class _RepaymentSheetState extends ConsumerState<_RepaymentSheet> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            widget.writeOff ? 'Write off' : 'Record payment',
+            widget.writeOff
+                ? 'Write off'
+                : widget.target == 'interest'
+                ? (widget.rec ? 'Interest received' : 'Interest paid')
+                : widget.target == 'principal'
+                ? (widget.rec ? 'Principal received' : 'Principal paid')
+                : 'Record payment',
             style: context.text.titleLarge?.copyWith(
               fontWeight: FontWeight.w700,
             ),
           ),
           Text(
-            'Applied to accrued interest first, then principal. Outstanding: ${Money.format(widget.max)}',
+            widget.target == 'interest'
+                ? (widget.max > 0
+                      ? 'Interest due now: ${Money.format(widget.max)}. This does not reduce the principal.'
+                      : 'No interest is due yet. It is added at the end of each period; see "Next interest" on the debt screen.')
+                : widget.target == 'principal'
+                ? 'Principal left: ${Money.format(widget.max)}. This does not touch the interest owed, and it lowers the interest from the next period.'
+                : 'Applied to interest first, then principal. Outstanding: ${Money.format(widget.max)}',
             style: context.text.bodySmall?.copyWith(
               color: context.cash.textMuted,
+              height: 1.35,
             ),
           ),
           const SizedBox(height: Sp.x4),
@@ -776,7 +885,12 @@ class _RepaymentSheetState extends ConsumerState<_RepaymentSheet> {
               ),
             ),
           const SizedBox(height: Sp.x4),
-          FilledButton(onPressed: _save, child: const Text('Save')),
+          FilledButton(
+            onPressed: widget.target == 'interest' && widget.max <= 0
+                ? null
+                : _save,
+            child: const Text('Save'),
+          ),
         ],
       ),
     ),

@@ -467,7 +467,7 @@ extension InsightsRepo on Repo {
     );
   }
 
-  /// Plus Score of each recent month that has entries, oldest first
+  /// Money Health of each recent month that has entries, oldest first
   /// (the current month last, as it stands so far).
   Future<List<({String month, int score})>> scoreHistory({
     int months = 12,
