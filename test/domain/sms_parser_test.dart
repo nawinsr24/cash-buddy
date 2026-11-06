@@ -104,31 +104,21 @@ void main() {
     });
   });
 
-  test(
-    'bank-like but unlisted sender headers are accepted; non-bank ones are not',
-    () {
-      expect(
-        run(
-          'JM-KVBANK',
-          'Rs.250.00 debited from a/c XX1234 on 03-11-26. Ref 1234567890',
-        ).isAccepted,
-        isTrue,
-      );
-      expect(
-        run(
-          'AD-SHOPXY',
-          'Rs.250.00 debited from a/c XX1234 on 03-11-26. Ref 1234567890',
-        ).isAccepted,
-        isFalse,
-      );
-      expect(
-        SmsParser(bankLikeHeaders: false)
-            .parse('JM-KVBANK', 'Rs.250.00 debited from a/c XX1234', now)
-            .isAccepted,
-        isFalse,
-      );
-    },
-  );
+  test('any named sender is read when the text names an account', () {
+    const alert =
+        'Rs.250.00 debited from a/c XX1234 on 03-11-26. Ref 1234567890';
+    expect(run('JM-KVBANK', alert).isAccepted, isTrue);
+    expect(run('AD-SHOPXY', alert).isAccepted, isTrue);
+    // no account or card named: not trusted from an unknown sender
+    expect(
+      run('AD-SHOPXY', 'Rs.250.00 paid to Ravi on 03-11-26').isAccepted,
+      isFalse,
+    );
+    // a person's phone number is never a bank
+    expect(run('+919876543210', alert).isAccepted, isFalse);
+    // promotional category headers stay out
+    expect(run('AD-SHOPXY-P', alert).isAccepted, isFalse);
+  });
 
   test('channel names (UPI/NEFT/ATM) are not mistaken for merchants', () {
     final r = run(
@@ -165,4 +155,17 @@ void main() {
     expect(a.fingerprint, isNot(c.fingerprint));
     expect(a.semanticKey, isNot(c.semanticKey));
   });
+
+  test(
+    'HDFC "Sent Rs.… From … To …" UPI alert from JD-HDFCBN-S is captured',
+    () {
+      final r = run(
+        'JD-HDFCBN-S',
+        'Sent Rs.650.00\nFrom HDFC Bank A/C *7130\nTo SANTHOSH MANI ACADEMY\nOn 06/11/26\nRef 123731371685\nNot You?\nCall 18002586161/SMS BLOCK UPI to 7308080808',
+      );
+      expect(r.isAccepted, isTrue);
+      expect(r.parsed!.amountMinor, 65000);
+      expect(r.parsed!.merchant, 'SANTHOSH MANI ACADEMY');
+    },
+  );
 }

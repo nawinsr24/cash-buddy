@@ -43,6 +43,7 @@ class SmsParser {
   /// Sender header keywords of recognised institutions (after the `XX-` prefix).
   static const defaultSenders = <String>{
     'HDFCBK',
+    'HDFCBN',
     'SBIINB',
     'SBIPSG',
     'SBICRD',
@@ -78,6 +79,10 @@ class SmsParser {
   }) : senders = senders ?? defaultSenders,
        deniedSenders = deniedSenders ?? const {};
 
+  /// Headers that start with a well-known bank name (HDFCBN, SBIUPI, ICICIT...).
+  static final _brand = RegExp(
+    r'^(HDFC|SBI|ICICI|AXIS|KOTAK|PNB|BOI|CANARA|UNION|IDFC|YES|INDUS|PAYTM|HSBC|FED|BOB|IDBI|RBL|AU)',
+  );
   static final _bankLike = RegExp(r'(BANK|BNK|BK|PAY|CARD|CRD|UPI|FIN|CU)$');
 
   static final _otp = RegExp(
@@ -158,6 +163,16 @@ class SmsParser {
     'dec': 12,
   };
 
+  /// A header with letters (JD-HDFCBN-S), not a person's phone number, and not
+  /// blocked or in the promotional category.
+  bool _namedHeader(String sender) {
+    final s = sender.trim().toUpperCase();
+    if (deniedSenders.contains(s)) return false;
+    if (!RegExp(r'[A-Z]').hasMatch(s)) return false;
+    if (RegExp(r'^\+?\d').hasMatch(s)) return false;
+    return !RegExp(r'-P$').hasMatch(s);
+  }
+
   bool _recognisedSender(String sender) {
     final s = sender.trim().toUpperCase();
     if (deniedSenders.contains(s)) return false;
@@ -167,6 +182,7 @@ class SmsParser {
     final suffix = m?.group(2);
     if (suffix == 'P') return false; // TRAI promotional category
     if (senders.contains(body)) return true;
+    if (m != null && _brand.hasMatch(body)) return true;
     return bankLikeHeaders && m != null && _bankLike.hasMatch(body);
   }
 
@@ -183,7 +199,8 @@ class SmsParser {
   }
 
   SmsParseResult _parse(String sender, String body, DateTime receivedAt) {
-    if (!_recognisedSender(sender)) {
+    final known = _recognisedSender(sender);
+    if (!known && !_namedHeader(sender)) {
       return const SmsParseResult.rejected('unknown_sender');
     }
     final text = body.replaceAll(RegExp(r'\s+'), ' ').trim();
@@ -216,6 +233,11 @@ class SmsParser {
     }
 
     final acct = _acct.firstMatch(text)?.group(1);
+    // A sender we do not know is accepted only when the text itself reads like
+    // a bank alert: it names an account or card.
+    if (!known && acct == null) {
+      return const SmsParseResult.rejected('unknown_sender');
+    }
     final ref = _ref.firstMatch(text)?.group(1);
     String? merchant;
     for (final m in _merchant.allMatches(text)) {
