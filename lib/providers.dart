@@ -50,7 +50,6 @@ class AppSettings {
   final String reminderTime; // HH:mm
   final String themeMode; // system | light | dark
   final bool appLock;
-  final bool investReducesBalance, lendReducesBalance;
   final bool smsLearnDigits;
   final String? lastScanInfo;
 
@@ -67,8 +66,6 @@ class AppSettings {
     this.reminderTime = '08:00',
     this.themeMode = 'system',
     this.appLock = false,
-    this.investReducesBalance = true,
-    this.lendReducesBalance = true,
     this.smsLearnDigits = false,
     this.lastScanInfo,
     this.lockAfterSeconds = 300,
@@ -92,8 +89,6 @@ final settingsProvider = FutureProvider.autoDispose<AppSettings>((ref) async {
     smsLearnDigits: await g('smsLearnDigits') == '1',
     lastScanInfo: await g('lastScanInfo'),
     lockAfterSeconds: int.tryParse(await g('lockAfterSeconds') ?? '') ?? 300,
-    investReducesBalance: (await g('investReducesBalance') ?? '1') == '1',
-    lendReducesBalance: (await g('lendReducesBalance') ?? '1') == '1',
     reminderEnabled: await g('reminderEnabled') == '1',
     reminderTime: await g('reminderTime') ?? '08:00',
     themeMode: await g('themeMode') ?? 'system',

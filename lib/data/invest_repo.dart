@@ -67,18 +67,14 @@ extension InvestmentSchedule on Investment {
 extension InvestRepo on Repo {
   String get _iso => now().toUtc().toIso8601String();
 
-  Future<bool> get investReducesBalance async =>
-      (await getSetting('investReducesBalance') ?? '1') == '1';
-  Future<bool> get lendReducesBalance async =>
-      (await getSetting('lendReducesBalance') ?? '1') == '1';
-
-  /// Balance rules live in settings; changing one re-derives the ledger legs.
-  Future<void> setBalanceRule(String key, bool on) async {
-    assert(key == 'investReducesBalance' || key == 'lendReducesBalance');
-    await setSetting(key, on ? '1' : '0');
+  /// Chosen per loan (asked when it is created): does its principal move the
+  /// balance? Re-derives that loan's ledger legs.
+  Future<void> setDebtAffectsBalance(String debtId, bool on) async {
     await db.transaction(() async {
-      await reconcileAllDebts();
-      await reconcileAllInvestments();
+      await (db.update(db.debts)..where((d) => d.id.equals(debtId))).write(
+        DebtsCompanion(affectsBalance: Value(on), hlc: Value(clock.next())),
+      );
+      await reconcileDebt(debtId);
     });
   }
 
@@ -379,16 +375,12 @@ extension InvestRepo on Repo {
   /// and the entry's own flag say it should move the balance.
   Future<void> reconcileInvestment(String investmentId) async {
     final inv = await getInvestment(investmentId);
-    final globalOn = await investReducesBalance;
     final entries = await _entries(investmentId, includeDeleted: true);
     final account = inv.accountId ?? await defaultAccountId();
     for (final e in entries) {
       final ref = 'inv:${e.id}';
       final wanted =
-          globalOn &&
-          e.deletedAt == null &&
-          inv.deletedAt == null &&
-          e.postToBalance;
+          e.deletedAt == null && inv.deletedAt == null && e.postToBalance;
       final type = e.type == 'contribute' ? 'debit' : 'credit';
       final cur =
           await (db.select(db.transactions)..where(

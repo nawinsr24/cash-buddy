@@ -191,27 +191,19 @@ class _PayFrom extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider).value;
     final accounts = ref.watch(accountsProvider).value ?? const <Account>[];
-    final globalOn = settings?.investReducesBalance ?? true;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SwitchListTile.adaptive(
           contentPadding: EdgeInsets.zero,
-          value: globalOn && take,
-          onChanged: globalOn ? onTake : null,
+          value: take,
+          onChanged: onTake,
           title: const Text('Take this money from my balance'),
           subtitle: Text(
-            globalOn
-                ? (take
-                      ? 'Your balance goes down by this amount.'
-                      : 'Your balance stays the same (use for things you bought earlier).')
-                : 'Switched off in Settings → Balance rules, so your balance will not change.',
+            take ? 'Your balance goes down by this amount.' : 'Your balance stays the same (use for things you bought earlier).',
           ),
         ),
-        if ((settings?.split ?? false) &&
-            accounts.length > 1 &&
-            globalOn &&
-            take) ...[
+        if ((settings?.split ?? false) && accounts.length > 1 && take) ...[
           _gap(Sp.x2),
           Padding(
             padding: const EdgeInsets.only(left: 2, bottom: 6),
@@ -534,10 +526,7 @@ class _ShareTradeState extends ConsumerState<_ShareTrade> {
         SwitchListTile.adaptive(
           contentPadding: EdgeInsets.zero,
           value: take,
-          onChanged:
-              (ref.watch(settingsProvider).value?.investReducesBalance ?? true)
-              ? (v) => setState(() => take = v)
-              : null,
+          onChanged: (v) => setState(() => take = v),
           title: Text(
             widget.buy
                 ? 'Take this money from my balance'

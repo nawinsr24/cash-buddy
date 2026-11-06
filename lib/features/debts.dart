@@ -238,6 +238,7 @@ class _AddDebtSheetState extends ConsumerState<AddDebtSheet> {
   DateTime issued = Dates.today();
   DateTime? due;
   String? accountId;
+  bool affects = true;
   String? error;
   bool saving = false;
 
@@ -270,6 +271,7 @@ class _AddDebtSheetState extends ConsumerState<AddDebtSheet> {
             ratePeriod: period,
             accountId: accountId,
             note: _note.text.trim(),
+            affectsBalance: affects,
           );
       if (mounted) Navigator.pop(context);
     } on ValidationException catch (e) {
@@ -421,6 +423,22 @@ class _AddDebtSheetState extends ConsumerState<AddDebtSheet> {
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: Sp.x2),
+            SwitchListTile.adaptive(
+              contentPadding: EdgeInsets.zero,
+              value: affects,
+              onChanged: (v) => setState(() => affects = v),
+              title: Text(
+                rec ? 'Take this from my balance' : 'Add this to my balance',
+              ),
+              subtitle: Text(
+                affects
+                    ? (rec
+                          ? 'Your balance goes down by the amount you lent.'
+                          : 'Your balance goes up by the amount you borrowed.')
+                    : 'Your balance will not change (money that did not pass through your accounts).',
+              ),
             ),
             if (error != null)
               Padding(

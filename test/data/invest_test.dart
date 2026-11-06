@@ -71,25 +71,29 @@ void main() {
       expect(s.contributed, 300000);
     });
 
-    test(
-      'global rule toggles the ledger both ways and is idempotent',
-      () async {
-        final e = await newEnv(opening: 1000000);
-        final id = await e.repo.createInvestment(kind: 'stock', name: 'INFY');
-        await e.repo.addInvestmentEntry(
-          id,
-          type: 'contribute',
-          amountMinor: 100000,
-        );
-        expect(await e.repo.totalBalance(), 900000);
-        await e.repo.setBalanceRule('investReducesBalance', false);
-        expect(await e.repo.totalBalance(), 1000000);
-        await e.repo.setBalanceRule('investReducesBalance', true);
-        await e.repo.setBalanceRule('investReducesBalance', true);
-        expect(await e.repo.totalBalance(), 900000);
-        expect(await e.repo.checkInvariants(), isEmpty);
-      },
-    );
+    test('each investment entry asks: take from balance or not', () async {
+      final e = await newEnv(opening: 1000000);
+      final id = await e.repo.createInvestment(kind: 'stock', name: 'INFY');
+      await e.repo.addInvestmentEntry(
+        id,
+        type: 'contribute',
+        amountMinor: 100000,
+      );
+      expect(await e.repo.totalBalance(), 900000);
+      await e.repo.addInvestmentEntry(
+        id,
+        type: 'contribute',
+        amountMinor: 50000,
+        postToBalance: false,
+      );
+      expect(await e.repo.totalBalance(), 900000);
+      expect(
+        (await e.repo.investSummary(await e.repo.getInvestment(id)))
+            .contributed,
+        150000,
+      );
+      expect(await e.repo.checkInvariants(), isEmpty);
+    });
 
     test('deleting an entry or the investment restores the balance', () async {
       final e = await newEnv(opening: 1000000);
@@ -111,23 +115,35 @@ void main() {
       expect(await e.repo.investments(), isEmpty);
     });
 
-    test('lending rule: off keeps lent principal out of the balance', () async {
-      final e = await newEnv(opening: 1000000);
-      final id = await e.repo.createDebt(
-        direction: 'receivable',
-        counterparty: 'Ravi',
-        principalMinor: 200000,
-        issuedOn: e.repo.today,
-      );
-      expect(await e.repo.totalBalance(), 800000);
-      await e.repo.setBalanceRule('lendReducesBalance', false);
-      expect(await e.repo.totalBalance(), 1000000);
-      await e.repo.addRepayment(id, 50000);
-      expect(await e.repo.totalBalance(), 1000000);
-      await e.repo.setBalanceRule('lendReducesBalance', true);
-      expect(await e.repo.totalBalance(), 850000);
-      expect(await e.repo.checkInvariants(), isEmpty);
-    });
+    test(
+      'lending asks each time: off keeps that loan out of the balance',
+      () async {
+        final e = await newEnv(opening: 1000000);
+        final on = await e.repo.createDebt(
+          direction: 'receivable',
+          counterparty: 'Ravi',
+          principalMinor: 200000,
+          issuedOn: e.repo.today,
+        );
+        expect(await e.repo.totalBalance(), 800000);
+        final off = await e.repo.createDebt(
+          direction: 'receivable',
+          counterparty: 'Kumar',
+          principalMinor: 100000,
+          issuedOn: e.repo.today,
+          affectsBalance: false,
+        );
+        expect(await e.repo.totalBalance(), 800000);
+        await e.repo.addRepayment(off, 40000);
+        expect(await e.repo.totalBalance(), 800000);
+        await e.repo.addRepayment(on, 50000);
+        expect(await e.repo.totalBalance(), 850000);
+        // changing the answer later re-derives only that loan
+        await e.repo.setDebtAffectsBalance(off, true);
+        expect(await e.repo.totalBalance(), 850000 - 100000 + 40000);
+        expect(await e.repo.checkInvariants(), isEmpty);
+      },
+    );
 
     test('validation and duplicate instalment', () async {
       final e = await newEnv();
@@ -345,15 +361,6 @@ void main() {
       );
       expect(await r.totalBalance(), 10000000);
       expect((await r.getInvestment(id)).units, 5);
-    });
-
-    test('with the global rule off, nothing moves the balance', () async {
-      final e = await newEnv(opening: 10000000);
-      final r = e.repo;
-      await r.setBalanceRule('investReducesBalance', false);
-      final id = await r.createInvestment(kind: 'stock', name: 'HDFC');
-      await r.buyShares(id, units: 5, pricePerUnitMinor: 100000);
-      expect(await r.totalBalance(), 10000000);
     });
 
     test('mutual fund: a one-time purchase and a SIP instalment both reduce the balance', () async {

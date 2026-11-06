@@ -74,6 +74,9 @@ class Debts extends Table {
   IntColumn get rateBps => integer().withDefault(const Constant(0))();
   TextColumn get ratePeriod => text().withDefault(const Constant('monthly'))();
   TextColumn get accountId => text()(); // account that cash legs post to
+  // Asked each time: does the principal move the balance?
+  BoolColumn get affectsBalance =>
+      boolean().withDefault(const Constant(true))();
   TextColumn get note => text().withDefault(const Constant(''))();
   TextColumn get hlc => text()();
   TextColumn get deletedAt => text().nullable()();
@@ -232,7 +235,7 @@ class AppDatabase extends _$AppDatabase {
   static AppDatabase open() => AppDatabase(openAppDatabase());
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -260,6 +263,18 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 6) {
         await m.addColumn(investmentEntries, investmentEntries.units);
+      }
+      if (from < 7) {
+        await m.addColumn(debts, debts.affectsBalance);
+        // The old global switches become per-item choices: keep what they did.
+        await customStatement(
+          "UPDATE debts SET affects_balance = 0 WHERE direction = 'receivable' "
+          "AND (SELECT value FROM settings WHERE key = 'lendReducesBalance') = '0'",
+        );
+        await customStatement(
+          "UPDATE investment_entries SET post_to_balance = 0 WHERE "
+          "(SELECT value FROM settings WHERE key = 'investReducesBalance') = '0'",
+        );
       }
       if (from < 3) {
         // Chit funds became custom monthly plans: instalment = monthly amount,

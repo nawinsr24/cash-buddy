@@ -2151,6 +2151,21 @@ class $DebtsTable extends Debts with TableInfo<$DebtsTable, Debt> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _affectsBalanceMeta = const VerificationMeta(
+    'affectsBalance',
+  );
+  @override
+  late final GeneratedColumn<bool> affectsBalance = GeneratedColumn<bool>(
+    'affects_balance',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("affects_balance" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
   static const VerificationMeta _noteMeta = const VerificationMeta('note');
   @override
   late final GeneratedColumn<String> note = GeneratedColumn<String>(
@@ -2194,6 +2209,7 @@ class $DebtsTable extends Debts with TableInfo<$DebtsTable, Debt> {
     rateBps,
     ratePeriod,
     accountId,
+    affectsBalance,
     note,
     hlc,
     deletedAt,
@@ -2297,6 +2313,15 @@ class $DebtsTable extends Debts with TableInfo<$DebtsTable, Debt> {
     } else if (isInserting) {
       context.missing(_accountIdMeta);
     }
+    if (data.containsKey('affects_balance')) {
+      context.handle(
+        _affectsBalanceMeta,
+        affectsBalance.isAcceptableOrUnknown(
+          data['affects_balance']!,
+          _affectsBalanceMeta,
+        ),
+      );
+    }
     if (data.containsKey('note')) {
       context.handle(
         _noteMeta,
@@ -2370,6 +2395,10 @@ class $DebtsTable extends Debts with TableInfo<$DebtsTable, Debt> {
         DriftSqlType.string,
         data['${effectivePrefix}account_id'],
       )!,
+      affectsBalance: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}affects_balance'],
+      )!,
       note: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}note'],
@@ -2403,6 +2432,7 @@ class Debt extends DataClass implements Insertable<Debt> {
   final int rateBps;
   final String ratePeriod;
   final String accountId;
+  final bool affectsBalance;
   final String note;
   final String hlc;
   final String? deletedAt;
@@ -2418,6 +2448,7 @@ class Debt extends DataClass implements Insertable<Debt> {
     required this.rateBps,
     required this.ratePeriod,
     required this.accountId,
+    required this.affectsBalance,
     required this.note,
     required this.hlc,
     this.deletedAt,
@@ -2438,6 +2469,7 @@ class Debt extends DataClass implements Insertable<Debt> {
     map['rate_bps'] = Variable<int>(rateBps);
     map['rate_period'] = Variable<String>(ratePeriod);
     map['account_id'] = Variable<String>(accountId);
+    map['affects_balance'] = Variable<bool>(affectsBalance);
     map['note'] = Variable<String>(note);
     map['hlc'] = Variable<String>(hlc);
     if (!nullToAbsent || deletedAt != null) {
@@ -2461,6 +2493,7 @@ class Debt extends DataClass implements Insertable<Debt> {
       rateBps: Value(rateBps),
       ratePeriod: Value(ratePeriod),
       accountId: Value(accountId),
+      affectsBalance: Value(affectsBalance),
       note: Value(note),
       hlc: Value(hlc),
       deletedAt: deletedAt == null && nullToAbsent
@@ -2486,6 +2519,7 @@ class Debt extends DataClass implements Insertable<Debt> {
       rateBps: serializer.fromJson<int>(json['rateBps']),
       ratePeriod: serializer.fromJson<String>(json['ratePeriod']),
       accountId: serializer.fromJson<String>(json['accountId']),
+      affectsBalance: serializer.fromJson<bool>(json['affectsBalance']),
       note: serializer.fromJson<String>(json['note']),
       hlc: serializer.fromJson<String>(json['hlc']),
       deletedAt: serializer.fromJson<String?>(json['deletedAt']),
@@ -2506,6 +2540,7 @@ class Debt extends DataClass implements Insertable<Debt> {
       'rateBps': serializer.toJson<int>(rateBps),
       'ratePeriod': serializer.toJson<String>(ratePeriod),
       'accountId': serializer.toJson<String>(accountId),
+      'affectsBalance': serializer.toJson<bool>(affectsBalance),
       'note': serializer.toJson<String>(note),
       'hlc': serializer.toJson<String>(hlc),
       'deletedAt': serializer.toJson<String?>(deletedAt),
@@ -2524,6 +2559,7 @@ class Debt extends DataClass implements Insertable<Debt> {
     int? rateBps,
     String? ratePeriod,
     String? accountId,
+    bool? affectsBalance,
     String? note,
     String? hlc,
     Value<String?> deletedAt = const Value.absent(),
@@ -2539,6 +2575,7 @@ class Debt extends DataClass implements Insertable<Debt> {
     rateBps: rateBps ?? this.rateBps,
     ratePeriod: ratePeriod ?? this.ratePeriod,
     accountId: accountId ?? this.accountId,
+    affectsBalance: affectsBalance ?? this.affectsBalance,
     note: note ?? this.note,
     hlc: hlc ?? this.hlc,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
@@ -2566,6 +2603,9 @@ class Debt extends DataClass implements Insertable<Debt> {
           ? data.ratePeriod.value
           : this.ratePeriod,
       accountId: data.accountId.present ? data.accountId.value : this.accountId,
+      affectsBalance: data.affectsBalance.present
+          ? data.affectsBalance.value
+          : this.affectsBalance,
       note: data.note.present ? data.note.value : this.note,
       hlc: data.hlc.present ? data.hlc.value : this.hlc,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
@@ -2586,6 +2626,7 @@ class Debt extends DataClass implements Insertable<Debt> {
           ..write('rateBps: $rateBps, ')
           ..write('ratePeriod: $ratePeriod, ')
           ..write('accountId: $accountId, ')
+          ..write('affectsBalance: $affectsBalance, ')
           ..write('note: $note, ')
           ..write('hlc: $hlc, ')
           ..write('deletedAt: $deletedAt')
@@ -2606,6 +2647,7 @@ class Debt extends DataClass implements Insertable<Debt> {
     rateBps,
     ratePeriod,
     accountId,
+    affectsBalance,
     note,
     hlc,
     deletedAt,
@@ -2625,6 +2667,7 @@ class Debt extends DataClass implements Insertable<Debt> {
           other.rateBps == this.rateBps &&
           other.ratePeriod == this.ratePeriod &&
           other.accountId == this.accountId &&
+          other.affectsBalance == this.affectsBalance &&
           other.note == this.note &&
           other.hlc == this.hlc &&
           other.deletedAt == this.deletedAt);
@@ -2642,6 +2685,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
   final Value<int> rateBps;
   final Value<String> ratePeriod;
   final Value<String> accountId;
+  final Value<bool> affectsBalance;
   final Value<String> note;
   final Value<String> hlc;
   final Value<String?> deletedAt;
@@ -2658,6 +2702,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
     this.rateBps = const Value.absent(),
     this.ratePeriod = const Value.absent(),
     this.accountId = const Value.absent(),
+    this.affectsBalance = const Value.absent(),
     this.note = const Value.absent(),
     this.hlc = const Value.absent(),
     this.deletedAt = const Value.absent(),
@@ -2675,6 +2720,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
     this.rateBps = const Value.absent(),
     this.ratePeriod = const Value.absent(),
     required String accountId,
+    this.affectsBalance = const Value.absent(),
     this.note = const Value.absent(),
     required String hlc,
     this.deletedAt = const Value.absent(),
@@ -2698,6 +2744,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
     Expression<int>? rateBps,
     Expression<String>? ratePeriod,
     Expression<String>? accountId,
+    Expression<bool>? affectsBalance,
     Expression<String>? note,
     Expression<String>? hlc,
     Expression<String>? deletedAt,
@@ -2715,6 +2762,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
       if (rateBps != null) 'rate_bps': rateBps,
       if (ratePeriod != null) 'rate_period': ratePeriod,
       if (accountId != null) 'account_id': accountId,
+      if (affectsBalance != null) 'affects_balance': affectsBalance,
       if (note != null) 'note': note,
       if (hlc != null) 'hlc': hlc,
       if (deletedAt != null) 'deleted_at': deletedAt,
@@ -2734,6 +2782,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
     Value<int>? rateBps,
     Value<String>? ratePeriod,
     Value<String>? accountId,
+    Value<bool>? affectsBalance,
     Value<String>? note,
     Value<String>? hlc,
     Value<String?>? deletedAt,
@@ -2751,6 +2800,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
       rateBps: rateBps ?? this.rateBps,
       ratePeriod: ratePeriod ?? this.ratePeriod,
       accountId: accountId ?? this.accountId,
+      affectsBalance: affectsBalance ?? this.affectsBalance,
       note: note ?? this.note,
       hlc: hlc ?? this.hlc,
       deletedAt: deletedAt ?? this.deletedAt,
@@ -2794,6 +2844,9 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
     if (accountId.present) {
       map['account_id'] = Variable<String>(accountId.value);
     }
+    if (affectsBalance.present) {
+      map['affects_balance'] = Variable<bool>(affectsBalance.value);
+    }
     if (note.present) {
       map['note'] = Variable<String>(note.value);
     }
@@ -2823,6 +2876,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
           ..write('rateBps: $rateBps, ')
           ..write('ratePeriod: $ratePeriod, ')
           ..write('accountId: $accountId, ')
+          ..write('affectsBalance: $affectsBalance, ')
           ..write('note: $note, ')
           ..write('hlc: $hlc, ')
           ..write('deletedAt: $deletedAt, ')
@@ -8165,6 +8219,7 @@ typedef $$DebtsTableCreateCompanionBuilder = DebtsCompanion Function({
   Value<int> rateBps,
   Value<String> ratePeriod,
   required String accountId,
+  Value<bool> affectsBalance,
   Value<String> note,
   required String hlc,
   Value<String?> deletedAt,
@@ -8182,6 +8237,7 @@ typedef $$DebtsTableUpdateCompanionBuilder = DebtsCompanion Function({
   Value<int> rateBps,
   Value<String> ratePeriod,
   Value<String> accountId,
+  Value<bool> affectsBalance,
   Value<String> note,
   Value<String> hlc,
   Value<String?> deletedAt,
@@ -8248,6 +8304,11 @@ class $$DebtsTableFilterComposer extends Composer<_$AppDatabase, $DebtsTable> {
 
   ColumnFilters<String> get accountId => $composableBuilder(
     column: $table.accountId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get affectsBalance => $composableBuilder(
+    column: $table.affectsBalance,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -8331,6 +8392,11 @@ class $$DebtsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get affectsBalance => $composableBuilder(
+    column: $table.affectsBalance,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get note => $composableBuilder(
     column: $table.note,
     builder: (column) => ColumnOrderings(column),
@@ -8399,6 +8465,11 @@ class $$DebtsTableAnnotationComposer
   GeneratedColumn<String> get accountId =>
       $composableBuilder(column: $table.accountId, builder: (column) => column);
 
+  GeneratedColumn<bool> get affectsBalance => $composableBuilder(
+    column: $table.affectsBalance,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get note =>
       $composableBuilder(column: $table.note, builder: (column) => column);
 
@@ -8448,6 +8519,7 @@ class $$DebtsTableTableManager
                 Value<int> rateBps = const Value.absent(),
                 Value<String> ratePeriod = const Value.absent(),
                 Value<String> accountId = const Value.absent(),
+                Value<bool> affectsBalance = const Value.absent(),
                 Value<String> note = const Value.absent(),
                 Value<String> hlc = const Value.absent(),
                 Value<String?> deletedAt = const Value.absent(),
@@ -8464,6 +8536,7 @@ class $$DebtsTableTableManager
                 rateBps: rateBps,
                 ratePeriod: ratePeriod,
                 accountId: accountId,
+                affectsBalance: affectsBalance,
                 note: note,
                 hlc: hlc,
                 deletedAt: deletedAt,
@@ -8482,6 +8555,7 @@ class $$DebtsTableTableManager
                 Value<int> rateBps = const Value.absent(),
                 Value<String> ratePeriod = const Value.absent(),
                 required String accountId,
+                Value<bool> affectsBalance = const Value.absent(),
                 Value<String> note = const Value.absent(),
                 required String hlc,
                 Value<String?> deletedAt = const Value.absent(),
@@ -8498,6 +8572,7 @@ class $$DebtsTableTableManager
                 rateBps: rateBps,
                 ratePeriod: ratePeriod,
                 accountId: accountId,
+                affectsBalance: affectsBalance,
                 note: note,
                 hlc: hlc,
                 deletedAt: deletedAt,

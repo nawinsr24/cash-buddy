@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../data/db.dart';
-import '../data/invest_repo.dart';
 import '../data/repo.dart';
 import '../domain/money.dart';
 import '../platform/app_lock.dart';
@@ -148,41 +147,6 @@ class SettingsPage extends ConsumerWidget {
                         );
                       }
                     },
-                  ),
-                ],
-              ),
-            ),
-            const _Group('Balance rules'),
-            Card(
-              child: Column(
-                children: [
-                  SwitchListTile.adaptive(
-                    secondary: const Text('📈', style: TextStyle(fontSize: 22)),
-                    title: const Text('Investments reduce my balance'),
-                    subtitle: const Text(
-                      'Money put into funds, stocks and custom investments leaves your account. Withdrawals come back.',
-                    ),
-                    value: s.investReducesBalance,
-                    onChanged: (v) async {
-                      await repo.setBalanceRule('investReducesBalance', v);
-                    },
-                  ),
-                  const Divider(height: 1),
-                  SwitchListTile.adaptive(
-                    secondary: const Text('🤝', style: TextStyle(fontSize: 22)),
-                    title: const Text('Money I lend reduces my balance'),
-                    subtitle: const Text(
-                      'Turn off if lending is tracked separately. Interest you receive still counts as income.',
-                    ),
-                    value: s.lendReducesBalance,
-                    onChanged: (v) async {
-                      await repo.setBalanceRule('lendReducesBalance', v);
-                    },
-                  ),
-                  const ListTile(
-                    dense: true,
-                    leading: Icon(Icons.info_outline, size: 18),
-                    title: Text('Spending always reduces your balance.'),
                   ),
                 ],
               ),

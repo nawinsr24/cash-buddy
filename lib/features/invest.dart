@@ -1280,9 +1280,6 @@ class _EntrySheetState extends ConsumerState<_EntrySheet> {
 
   @override
   Widget build(BuildContext context) {
-    final globalOn = ref.watch(
-      settingsProvider.select((s) => s.value?.investReducesBalance ?? true),
-    );
     final out = widget.type == 'contribute';
     return SafeArea(
       child: SingleChildScrollView(
@@ -1322,13 +1319,15 @@ class _EntrySheetState extends ConsumerState<_EntrySheet> {
             ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              value: globalOn && post,
-              onChanged: globalOn ? (v) => setState(() => post = v) : null,
-              title: Text(out ? 'Reduce my balance' : 'Add to my balance'),
+              value: post,
+              onChanged: (v) => setState(() => post = v),
+              title: Text(out ? 'Take from my balance' : 'Add to my balance'),
               subtitle: Text(
-                globalOn
-                    ? 'Turn off for money that never passed through your accounts here.'
-                    : 'Off in Settings → Balance rules, so your balance will not change.',
+                post
+                    ? (out
+                          ? 'Your balance goes down by this amount.'
+                          : 'Your balance goes up by this amount.')
+                    : 'Your balance will not change (money that never passed through your accounts).',
               ),
             ),
             if (error != null)

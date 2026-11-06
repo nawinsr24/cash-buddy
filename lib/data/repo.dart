@@ -283,6 +283,7 @@ class Repo {
         await cat('${pid}_${_slug(s)}', s, 'debit', e.value.$1, parent: pid);
       }
     }
+    await ensureDefaultCategories();
   }
 
   /// Everyday-life categories added after the first release. New installs get
@@ -311,6 +312,178 @@ class Repo {
     'Sent Home': (0xFFF43F5E, ['Parents', 'Family']),
   };
 
+  /// More categories and sub-categories (added in a later release). Existing
+  /// main categories (Food, Health ...) just gain the new subs.
+  static const _extraTree = <String, (int, List<String>)>{
+    'Food': (
+      0xFFF97316,
+      [
+        'Veggies & Fruits',
+        'Meat & Fish',
+        'Snacks',
+        'Sweets & Bakery',
+        'Milk & Dairy',
+        'Food Delivery',
+        'Canteen Meals',
+      ],
+    ),
+    'Home & Kitchen': (
+      0xFF8B5CF6,
+      [
+        'Kitchen Utensils',
+        'Home Appliances',
+        'Furniture',
+        'Cleaning & Household',
+        'Gas Cylinder',
+        'Repairs & Maintenance',
+        'Decor & Curtains',
+        'Garden & Plants',
+      ],
+    ),
+    'Bills': (
+      0xFFEF4444,
+      [
+        'Water',
+        'Mobile Recharge',
+        'DTH & Cable',
+        'Gas Bill',
+        'Society Maintenance',
+        'House Tax',
+        'Insurance Premium',
+      ],
+    ),
+    'Transport': (
+      0xFF2F6BFF,
+      [
+        'Bus, Train & Metro',
+        'Parking & Toll',
+        'Vehicle Service',
+        'Vehicle Insurance',
+        'Vehicle EMI',
+      ],
+    ),
+    'Health': (
+      0xFF14B8A6,
+      [
+        'Medicines',
+        'Doctor Visit',
+        'Scans & Lab Tests',
+        'Health Check-up',
+        'Kids Health',
+        'Dental',
+        'Eye Care & Glasses',
+        'Hospital & Surgery',
+        'Health Insurance',
+        'Vitamins & Supplements',
+      ],
+    ),
+    'Personal Care': (
+      0xFFEC4899,
+      [
+        'Hair Care',
+        'Skin Care',
+        'Salon & Parlour',
+        'Cosmetics & Makeup',
+        'Perfume & Deodorant',
+        'Spa & Massage',
+      ],
+    ),
+    'Kids': (
+      0xFFF59E0B,
+      [
+        'Kids Dress',
+        'Toys',
+        'School Fees',
+        'Kids Books & Stationery',
+        'Tuition & Classes',
+        'Baby Care',
+        'Kids Games & Activities',
+        'Pocket Money',
+      ],
+    ),
+    'Shopping': (
+      0xFFEC4899,
+      [
+        'Clothes',
+        'Footwear',
+        'Bags & Accessories',
+        'Jewellery',
+        'Watches',
+        'Electronics & Gadgets',
+        'Mobile & Accessories',
+        'Online Shopping',
+      ],
+    ),
+    'Education': (
+      0xFF6366F1,
+      [
+        'College & Course Fees',
+        'Books',
+        'Online Courses',
+        'Exam Fees',
+        'Coaching',
+      ],
+    ),
+    'Entertainment': (
+      0xFF8B5CF6,
+      ['Music & Concerts', 'Events & Shows', 'Books & Magazines'],
+    ),
+    'Gifts & Celebrations': (
+      0xFFF43F5E,
+      [
+        'Gift to Lover',
+        'Gift to Family',
+        'Gift to Friends',
+        'Birthday & Anniversary',
+        'Wedding & Function',
+        'Festival Expenses',
+        'Donations & Temple',
+      ],
+    ),
+    'Partner': (
+      0xFFE11D48,
+      ['Dates & Outings', 'Partner Gifts', 'Shopping Together', 'Surprises'],
+    ),
+    'Work & Business': (
+      0xFF0EA5E9,
+      [
+        'Office Supplies',
+        'Software & Subscriptions',
+        'Work Travel',
+        'Client Meals',
+        'Tools & Equipment',
+      ],
+    ),
+    'Finance & Fees': (
+      0xFF64748B,
+      [
+        'Loan EMI',
+        'Credit Card Bill',
+        'Bank Charges',
+        'Taxes',
+        'Late Fees',
+        'Fines',
+      ],
+    ),
+    'Pets': (
+      0xFF84CC16,
+      ['Pet Food', 'Vet', 'Pet Grooming', 'Pet Accessories'],
+    ),
+  };
+
+  static const _extraCredit = <String, int>{
+    'Business Income': 0xFF0EA5E9,
+    'Freelance': 0xFF8B5CF6,
+    'Bonus': 0xFFF59E0B,
+    'Dividend': 0xFF14B8A6,
+    'Rent Received': 0xFF84CC16,
+  };
+
+  /// Friendlier names for two default sub-categories (only if never renamed).
+  static const _renames = <String, (String, String)>{
+    'cat_food_dining': ('Dining', 'Hotel & Restaurant'),
+  };
+
   /// Adds any default category an existing install is missing. Safe to run
   /// on every launch: a category that already exists (even one the user
   /// renamed or deleted) is left alone.
@@ -324,7 +497,7 @@ class Repo {
             .getSingle()
             .then((r) => r.read<int>('m')) +
         1;
-    for (final e in _lifeTree.entries) {
+    for (final e in [..._lifeTree.entries, ..._extraTree.entries]) {
       final pid = 'cat_${_slug(e.key)}';
       if (!have.contains(pid)) {
         await _putCategory(
@@ -351,6 +524,32 @@ class Repo {
             parentId: Value(pid),
             sortOrder: Value(order++),
           ),
+        );
+      }
+    }
+    for (final e in _extraCredit.entries) {
+      final id = 'cat_${_slug(e.key)}';
+      if (have.contains(id)) continue;
+      await _putCategory(
+        CategoriesCompanion.insert(
+          id: id,
+          name: e.key,
+          kind: 'credit',
+          colorValue: e.value,
+          hlc: clock.next(),
+          sortOrder: Value(order++),
+        ),
+      );
+    }
+    for (final r in _renames.entries) {
+      final row = await (db.select(
+        db.categories,
+      )..where((c) => c.id.equals(r.key))).getSingleOrNull();
+      if (row != null && row.name == r.value.$1) {
+        await _putCategory(
+          row
+              .toCompanion(true)
+              .copyWith(name: Value(r.value.$2), hlc: Value(clock.next())),
         );
       }
     }
@@ -916,6 +1115,7 @@ class Repo {
     String ratePeriod = 'monthly',
     String? accountId,
     String note = '',
+    bool affectsBalance = true,
   }) async {
     if (!{'receivable', 'liability'}.contains(direction)) {
       throw ValidationException('Bad direction');
@@ -950,6 +1150,7 @@ class Repo {
               rateBps: Value(interestEnabled ? rateBps : 0),
               ratePeriod: Value(ratePeriod),
               note: Value(note),
+              affectsBalance: Value(affectsBalance),
             ),
           );
       await db
@@ -1185,9 +1386,8 @@ class Repo {
 
     // 3) ledger legs: at most one row per (event, leg), keyed by source_ref
     final isRec = debt.direction == 'receivable';
-    // Setting: money lent out may be left out of the balance entirely.
-    final principalLegs =
-        !isRec || (await getSetting('lendReducesBalance') ?? '1') == '1';
+    // Chosen per loan: the principal may be left out of the balance entirely.
+    final principalLegs = debt.affectsBalance;
     final legs = <String, _Leg>{};
     if (debtLive) {
       for (final e in live) {

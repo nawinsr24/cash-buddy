@@ -20,11 +20,6 @@ const _steps = <_Step>[
     'Offline: your data stays only on this phone. Online: it is also saved safely in your own Google Drive, so you can restore it on a new phone. Only you can see it.',
   ),
   _Step(
-    '⚖️',
-    'Balance rules',
-    'Decide if money you lend or invest should reduce your balance. Example: if you lend ₹1,000 and this is on, your balance goes down by ₹1,000.',
-  ),
-  _Step(
     '🏦',
     'Accounts',
     'Keep Cash and your Bank separate, or together as one. Use this to set your opening balance and add more accounts.',
