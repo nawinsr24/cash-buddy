@@ -62,7 +62,16 @@ class CatSlice {
   final String name;
   final int colorValue;
   final int totalMinor;
-  const CatSlice(this.categoryId, this.name, this.colorValue, this.totalMinor);
+
+  /// Name of the main category when this slice is a sub-category.
+  final String? parentName;
+  const CatSlice(
+    this.categoryId,
+    this.name,
+    this.colorValue,
+    this.totalMinor, {
+    this.parentName,
+  });
 }
 
 class DebtSummary {
@@ -84,6 +93,9 @@ class DashboardData {
       liabilityPrincipal,
       liabilityInterest;
   final List<CatSlice> spendingByCategory, incomeByCategory;
+
+  /// Spending by sub-category (each sub on its own, mains with no subs as-is).
+  final List<CatSlice> spendingBySub;
   final Map<String, int> dailySpending, dailyIncome;
 
   /// Spending by where it was paid from: the Cash account vs any bank/online
@@ -105,6 +117,7 @@ class DashboardData {
     required this.liabilityPrincipal,
     required this.liabilityInterest,
     required this.spendingByCategory,
+    this.spendingBySub = const [],
     required this.incomeByCategory,
     required this.dailySpending,
     required this.dailyIncome,
@@ -1541,17 +1554,21 @@ class Repo {
     return row.read<int>('s');
   }
 
-  Future<List<CatSlice>> _byCategory(String type, DateRange r) async {
+  Future<List<CatSlice>> _byCategory(
+    String type,
+    DateRange r, {
+    bool sub = false,
+  }) async {
     final rows = await db
         .customSelect(
           '''
-      SELECT COALESCE(p.id, c.id) AS cid, COALESCE(p.name, c.name) AS cname,
+      SELECT ${sub ? 'c.id' : 'COALESCE(p.id, c.id)'} AS cid, ${sub ? 'c.name' : 'COALESCE(p.name, c.name)'} AS cname, p.name AS pname,
              COALESCE(p.color_value, c.color_value) AS color, SUM(t.amount_minor) AS s
       FROM transactions t
       LEFT JOIN categories c ON c.id = t.category_id
       LEFT JOIN categories p ON p.id = c.parent_id
       WHERE t.type = ? AND t.source NOT IN ('debt','invest') AND t.deleted_at IS NULL AND t.date BETWEEN ? AND ?
-      GROUP BY COALESCE(p.id, c.id, '_none') ORDER BY s DESC''',
+      GROUP BY ${sub ? "COALESCE(c.id, '_none')" : "COALESCE(p.id, c.id, '_none')"} ORDER BY s DESC''',
           variables: [Variable(type), Variable(r.startStr), Variable(r.endStr)],
           readsFrom: {db.transactions, db.categories},
         )
@@ -1563,6 +1580,7 @@ class Repo {
           x.read<String?>('cname') ?? 'Uncategorised',
           x.read<int?>('color') ?? 0xFF64748B,
           x.read<int>('s'),
+          parentName: sub ? x.read<String?>('pname') : null,
         ),
     ];
   }
@@ -1622,6 +1640,7 @@ class Repo {
       liabilityPrincipal: sum(lia, (s) => s.principalOutstanding),
       liabilityInterest: sum(lia, (s) => s.interestOutstanding),
       spendingByCategory: await _byCategory('debit', r),
+      spendingBySub: await _byCategory('debit', r, sub: true),
       incomeByCategory: await _byCategory('credit', r),
       dailySpending: await _daily('debit', r),
       dailyIncome: await _daily('credit', r),

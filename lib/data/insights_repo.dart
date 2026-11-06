@@ -183,8 +183,25 @@ extension InsightsRepo on Repo {
     }
     final liab = await debtSummaries(direction: 'liability', asOf: asOf);
     var liabilities = 0;
+    var monthlyInterest = 0;
+    var maxApr = 0.0;
     for (final s in liab) {
       liabilities += s.state.outstanding;
+      final d = s.debt;
+      if (d.interestEnabled && d.rateBps > 0 && s.state.outstanding > 0) {
+        final base = d.interestType == 'compound'
+            ? s.state.outstanding
+            : s.state.principalOutstanding;
+        final (perYear, perMonth) = switch (d.ratePeriod) {
+          'daily' => (365.0, 365.0 / 12),
+          'weekly' => (52.0, 52.0 / 12),
+          'yearly' => (1.0, 1.0 / 12),
+          _ => (12.0, 1.0),
+        };
+        monthlyInterest += (base * d.rateBps / 10000 * perMonth).round();
+        final apr = d.rateBps / 100 * perYear;
+        if (apr > maxApr) maxApr = apr;
+      }
       final due = s.debt.dueOn;
       if (due != null &&
           Dates.parse(due).isBefore(asOf) &&
@@ -233,6 +250,8 @@ extension InsightsRepo on Repo {
       topShareBps: spending <= 0 ? 0 : (topSum * 10000 / spending).round(),
       overdueCount: overdue,
       liabilities: liabilities,
+      debtMonthlyInterest: monthlyInterest,
+      maxDebtApr: maxApr,
       paidToLiabilities: paidRow.read<int>('s'),
       daysInMonth: r.days,
       daysElapsed: elapsed.clamp(0, r.days),

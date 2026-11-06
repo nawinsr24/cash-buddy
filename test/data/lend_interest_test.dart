@@ -1,5 +1,7 @@
+import 'package:cash_buddy/data/insights_repo.dart';
 import 'package:cash_buddy/data/repo.dart' show ValidationException;
 import 'package:cash_buddy/domain/dates.dart';
+import 'package:cash_buddy/domain/grade.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'helpers.dart';
@@ -182,6 +184,38 @@ void main() {
       expect(next!.date, Dates.day(2026, 12, 4));
       expect(next.amountMinor, 200000);
       expect((await e.repo.debtState(id)).totalAccrued, 0);
+    },
+  );
+
+  test(
+    'borrowing 3,00,000 at 2% a month shows in the stats and caps the score',
+    () async {
+      final e = await newEnv(opening: 50000000);
+      final r = e.repo;
+      await r.addTransaction(
+        type: 'credit',
+        amountMinor: 10000000,
+        categoryId: 'cat_salary',
+      );
+      await r.addTransaction(
+        type: 'debit',
+        amountMinor: 3000000,
+        categoryId: 'cat_food_groceries',
+      );
+      await r.createDebt(
+        direction: 'liability',
+        counterparty: 'Lender',
+        principalMinor: 30000000,
+        issuedOn: Dates.day(2026, 10, 4),
+        interestEnabled: true,
+        rateBps: 200,
+        ratePeriod: 'monthly',
+        accountId: 'acc_overall',
+      );
+      final s = await r.monthStats(2026, 11);
+      expect(s.debtMonthlyInterest, 600000); // ₹6,000 a month
+      expect(s.maxDebtApr, 24);
+      expect(computeGrade(s).score, lessThanOrEqualTo(69));
     },
   );
 }

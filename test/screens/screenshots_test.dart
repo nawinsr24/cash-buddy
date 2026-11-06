@@ -322,6 +322,15 @@ void main() {
       await shot(tester, '$p-2-dashboard-scrolled');
       await tester.drag(find.byType(Scrollable).first, const Offset(0, -700));
       await shot(tester, '$p-2b-insights');
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, -500));
+      await tapText(tester, 'Sub-categories');
+      await tester.pump(const Duration(seconds: 1));
+      await shot(tester, '$p-2c-money-went-sub');
+      await tapText(tester, 'Groceries');
+      await tester.pump(const Duration(seconds: 2));
+      await shot(tester, '$p-2d-category-insight');
+      await tester.tap(find.byTooltip('Back'));
+      await settle(tester);
       await tester.drag(find.byType(Scrollable).first, const Offset(0, 1200));
       await tester.pump(const Duration(seconds: 2));
       await settle(tester);

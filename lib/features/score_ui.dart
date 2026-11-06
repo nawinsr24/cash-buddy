@@ -341,7 +341,7 @@ class PlusScoreDetailPage extends ConsumerWidget {
     if (s.budgetMinor != null)
       'Budget discipline: full marks while you stay inside your budget.',
     'Spending discipline: full marks when you spend less than your usual.',
-    'Debt freedom: full marks when nothing is overdue.',
+    'Debt freedom: full marks when you owe nothing, or owe a little at a low rate. Interest and overdue dues cost marks.',
     'Wealth growth: full marks when you invest 15% of your income.',
     'Money awareness: full marks when you add entries on 20 days.',
     if (s.budgetMinor == null) 'No budget set, so the budget part is left out and the others count a little more.',
@@ -695,8 +695,8 @@ const _partInfo = <String, (String, String)>{
     'We compare this month with your average of the last 3 months. Spending the same or less gives full marks.',
   ),
   'Debt freedom': (
-    'Are your loans and dues under control?',
-    'You lose marks for overdue payments and for owing a lot. Paying on time keeps this full.',
+    'Is your debt small, cheap and paid on time?',
+    'You lose marks for owing a lot, for the interest it costs every month, for a high rate (24% a year or more) and for overdue payments. While you carry high-interest debt, your Money Health cannot go above "Okay", however well you save.',
   ),
   'Wealth growth': (
     'Are you putting money into investments?',

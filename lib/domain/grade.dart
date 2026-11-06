@@ -21,6 +21,11 @@ class MonthStats {
   /// Liabilities still owed at month end, and what was repaid on them in the month.
   final int liabilities, paidToLiabilities;
 
+  /// What the open loans cost in interest per month, and the highest yearly
+  /// rate (percent) among them. 0 when nothing is owed with interest.
+  final int debtMonthlyInterest;
+  final double maxDebtApr;
+
   /// Month length and how many of its days have passed (equal when complete).
   final int daysInMonth, daysElapsed;
 
@@ -54,6 +59,8 @@ class MonthStats {
     this.overdueCount = 0,
     this.liabilities = 0,
     this.paidToLiabilities = 0,
+    this.debtMonthlyInterest = 0,
+    this.maxDebtApr = 0,
     this.daysInMonth = 30,
     this.daysElapsed = 30,
     this.healthSpending = 0,
@@ -353,6 +360,19 @@ String levelFor(int score) {
   return 'Needs care';
 }
 
+/// The best score allowed while the debt picture is poor (null = no cap).
+/// High-interest borrowing (24%+ a year) or anything overdue holds the score
+/// at "Okay" (69) or lower; interest above a fifth of income holds it lower.
+int? debtCap(MonthStats s) {
+  final heavyInterest =
+      s.debtMonthlyInterest > 0 &&
+      (s.income <= 0 || s.debtMonthlyInterest / s.income >= 0.2);
+  if (heavyInterest) return 49;
+  if (s.maxDebtApr >= 36) return 59;
+  if (s.maxDebtApr >= 24 || s.overdueCount > 0 && s.liabilities > 0) return 69;
+  return null;
+}
+
 double _clamp01(double v) => v.isNaN ? 0 : math.max(0.0, math.min(1.0, v));
 
 /// How well spending followed the budget: 1.0 while at or under it, then
@@ -377,10 +397,23 @@ MoneyGrade computeGrade(MonthStats s) {
     final ratio = s.projectedSpending / s.prevAvgSpending;
     discipline = _clamp01((1.5 - ratio) / 0.6); // <=0.9 full, >=1.5 zero
   }
-  // Debt freedom: overdue items and a heavy liability load cost points.
-  var debt = 1.0 - math.min(0.5, s.overdueCount * 0.25);
+  // Debt freedom: overdue items, a heavy debt load, the interest it costs and
+  // a high rate all cost points. Borrowing at 24% a year or more can never
+  // look "good" (see the cap below).
+  var debt = 1.0 - math.min(0.4, s.overdueCount * 0.2);
   if (s.income > 0 && s.liabilities > 0) {
-    debt -= 0.5 * _clamp01(s.liabilities / (s.income * 6.0));
+    debt -= 0.3 * _clamp01(s.liabilities / (s.income * 6.0));
+  }
+  if (s.income > 0 && s.debtMonthlyInterest > 0) {
+    // interest eating 10% of income or more is the worst case
+    debt -= 0.4 * _clamp01(s.debtMonthlyInterest / (s.income * 0.10));
+  } else if (s.debtMonthlyInterest > 0) {
+    debt -= 0.4;
+  }
+  if (s.maxDebtApr >= 36) {
+    debt -= 0.3;
+  } else if (s.maxDebtApr >= 18) {
+    debt -= 0.15 + 0.15 * _clamp01((s.maxDebtApr - 18) / 18);
   }
   debt = _clamp01(debt);
   // Wealth growth: 15% of income invested earns full marks.
@@ -393,9 +426,9 @@ MoneyGrade computeGrade(MonthStats s) {
   const wSave = 25.0,
       wBudget = 20.0,
       wDisc = 15.0,
-      wDebt = 15.0,
+      wDebt = 20.0,
       wWealth = 15.0,
-      wAware = 10.0;
+      wAware = 5.0;
   final total =
       wSave + wDisc + wDebt + wWealth + wAware + (hasBudget ? wBudget : 0);
   final k = 100 / total;
@@ -421,7 +454,11 @@ MoneyGrade computeGrade(MonthStats s) {
     part('Money awareness', aware, wAware, 'Log your spending on more days'),
   ];
   final sum = parts.fold<double>(0, (a, p) => a + p.score);
-  return MoneyGrade(sum.round().clamp(0, 100), parts, s.thin);
+  var score = sum.round().clamp(0, 100);
+  // Strong saving can never hide a debt problem.
+  final cap = debtCap(s);
+  if (cap != null && score > cap) score = cap;
+  return MoneyGrade(score, parts, s.thin);
 }
 
 // ───────────────────────── words ─────────────────────────

@@ -102,24 +102,22 @@ void main() {
     },
   );
 
-  testWidgets('dashboard shows the four pillars and defaults to This month', (
-    tester,
-  ) async {
-    await pump(tester, opening: 100000);
-    for (final t in [
-      'Total Spending',
-      'Total Income',
-      'Incoming Debts',
-      'Liabilities',
-    ]) {
-      expect(find.text(t), findsOneWidget, reason: t);
-    }
-    final chip = tester.widget<ChoiceChip>(
-      find.widgetWithText(ChoiceChip, 'This month'),
-    );
-    expect(chip.selected, isTrue);
-    expect(find.text('₹1,000.00'), findsWidgets);
-  });
+  testWidgets(
+    'dashboard always shows income and spending, debt tiles only when there are debts',
+    (tester) async {
+      await pump(tester, opening: 100000);
+      for (final t in ['Total Spending', 'Total Income']) {
+        expect(find.text(t), findsOneWidget, reason: t);
+      }
+      expect(find.text('Incoming Debts'), findsNothing);
+      expect(find.text('Liabilities'), findsNothing);
+      final chip = tester.widget<ChoiceChip>(
+        find.widgetWithText(ChoiceChip, 'This month'),
+      );
+      expect(chip.selected, isTrue);
+      expect(find.text('₹1,000.00'), findsWidgets);
+    },
+  );
 
   testWidgets('adding a transaction updates balance and Total Spending', (
     tester,

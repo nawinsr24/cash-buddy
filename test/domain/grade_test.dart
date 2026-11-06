@@ -303,4 +303,63 @@ void main() {
       );
     });
   });
+
+  test('high-interest borrowing cannot hide behind good saving', () {
+    const great = MonthStats(
+      income: 10000000,
+      spending: 5000000,
+      invested: 2000000,
+      activeDays: 25,
+      txnCount: 40,
+      prevAvgSpending: 6000000,
+    );
+    final clean = computeGrade(great);
+    expect(clean.score, greaterThanOrEqualTo(85));
+    // ₹3,00,000 owed at 2% a month (24% a year): interest ₹6,000 a month
+    final borrowed = computeGrade(
+      MonthStats(
+        income: 10000000,
+        spending: 5000000,
+        invested: 2000000,
+        activeDays: 25,
+        txnCount: 40,
+        prevAvgSpending: 6000000,
+        liabilities: 30000000,
+        debtMonthlyInterest: 600000,
+        maxDebtApr: 24,
+      ),
+    );
+    expect(borrowed.score, lessThanOrEqualTo(69));
+    expect(borrowed.score, lessThan(clean.score - 15));
+    // 3% a month is worse still
+    final worse = computeGrade(
+      MonthStats(
+        income: 10000000,
+        spending: 5000000,
+        invested: 2000000,
+        activeDays: 25,
+        txnCount: 40,
+        prevAvgSpending: 6000000,
+        liabilities: 30000000,
+        debtMonthlyInterest: 900000,
+        maxDebtApr: 36,
+      ),
+    );
+    expect(worse.score, lessThan(borrowed.score));
+    // cheap debt (8% a year) costs little
+    final cheap = computeGrade(
+      MonthStats(
+        income: 10000000,
+        spending: 5000000,
+        invested: 2000000,
+        activeDays: 25,
+        txnCount: 40,
+        prevAvgSpending: 6000000,
+        liabilities: 30000000,
+        debtMonthlyInterest: 200000,
+        maxDebtApr: 8,
+      ),
+    );
+    expect(cheap.score, greaterThan(borrowed.score));
+  });
 }

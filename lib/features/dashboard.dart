@@ -12,7 +12,9 @@ import '../domain/money.dart';
 import '../providers.dart';
 import '../ui/motion.dart';
 import '../ui/theme.dart';
+import '../ui/emoji.dart';
 import 'budget.dart';
+import 'category_insight_page.dart';
 import 'cash_move.dart';
 import 'grade_ui.dart';
 import 'score_ui.dart';
@@ -63,48 +65,13 @@ class DashboardPage extends ConsumerWidget {
               total: d.totalBalance,
               split: settings?.split ?? false,
               trend: _trend(d),
-              income: d.income,
-              spent: d.spending,
             ),
             const SizedBox(height: Sp.x3),
             const BudgetCard(),
             const SizedBox(height: Sp.x3),
             const PlusScoreCard(),
             const SizedBox(height: Sp.x3),
-            GridView(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: Sp.x3,
-                crossAxisSpacing: Sp.x3,
-                // Height grows with the user's text size so nothing clips.
-                mainAxisExtent:
-                    68 +
-                    92 *
-                        MediaQuery.textScalerOf(context)
-                            .scale(1)
-                            .clamp(1.0, 2.2),
-              ),
-              children: [
-                Reveal(
-                  index: 1,
-                  child: PillarCard(pillar: Pillar.spending, data: d),
-                ),
-                Reveal(
-                  index: 2,
-                  child: PillarCard(pillar: Pillar.income, data: d),
-                ),
-                Reveal(
-                  index: 3,
-                  child: PillarCard(pillar: Pillar.incoming, data: d),
-                ),
-                Reveal(
-                  index: 4,
-                  child: PillarCard(pillar: Pillar.liabilities, data: d),
-                ),
-              ],
-            ),
+            _PillarGrid(data: d),
             const SizedBox(height: Sp.x3),
             Reveal(index: 5, child: ReceivedSpentChart(data: d)),
             if (invest.isNotEmpty) ...[
@@ -117,9 +84,11 @@ class DashboardPage extends ConsumerWidget {
             const SectionTitle('Insights'),
             const InsightsStrip(),
             const SectionTitle('Where your money went'),
-            CategoryDonut(
-              slices: d.spendingByCategory,
+            MoneyWent(
+              main: d.spendingByCategory,
+              subs: d.spendingBySub,
               total: d.spending,
+              range: d.range,
               emptyText: 'No spending in this period',
             ),
           ],
@@ -234,13 +203,10 @@ class _BalanceCard extends ConsumerWidget {
   final int total;
   final bool split;
   final List<double> trend;
-  final int income, spent;
   const _BalanceCard({
     required this.total,
     required this.split,
     this.trend = const [],
-    this.income = 0,
-    this.spent = 0,
   });
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -306,21 +272,10 @@ class _BalanceCard extends ConsumerWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(Sp.x5),
+              padding: const EdgeInsets.fromLTRB(Sp.x5, Sp.x4, Sp.x5, Sp.x4),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    alignment: Alignment.center,
-                    margin: const EdgeInsets.only(bottom: Sp.x3),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: const Text('👛', style: TextStyle(fontSize: 20)),
-                  ),
                   Text(
                     'TOTAL BALANCE',
                     style: context.text.labelSmall?.copyWith(
@@ -345,30 +300,8 @@ class _BalanceCard extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(height: Sp.x4),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _flow(
-                          Icons.south_west,
-                          'In',
-                          income,
-                          const Color(0xFF9CF0D2),
-                        ),
-                      ),
-                      const SizedBox(width: Sp.x3),
-                      Expanded(
-                        child: _flow(
-                          Icons.north_east,
-                          'Out',
-                          spent,
-                          const Color(0xFFFFC2CF),
-                        ),
-                      ),
-                    ],
-                  ),
                   if (split && accounts.isNotEmpty) ...[
-                    const SizedBox(height: Sp.x4),
+                    const SizedBox(height: Sp.x3),
                     Wrap(
                       spacing: Sp.x2,
                       runSpacing: Sp.x2,
@@ -420,34 +353,6 @@ class _BalanceCard extends ConsumerWidget {
     );
   }
 }
-
-Widget _flow(IconData icon, String label, int minor, Color tint) => Container(
-  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-  decoration: BoxDecoration(
-    color: Colors.white.withValues(alpha: 0.12),
-    borderRadius: BorderRadius.circular(16),
-  ),
-  child: Row(
-    children: [
-      Icon(icon, size: 18, color: tint),
-      const SizedBox(width: 8),
-      Expanded(
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: Text(
-            '$label  ${Money.compact(minor)}',
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-              fontSize: 14,
-            ),
-          ),
-        ),
-      ),
-    ],
-  ),
-);
 
 Widget _chip(String text, {bool strong = false, bool dark = true}) => Container(
   padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
@@ -603,12 +508,21 @@ class PillarCard extends StatelessWidget {
                 Row(
                   children: [
                     Container(
-                      width: 8,
-                      height: 8,
+                      width: 30,
+                      height: 30,
+                      alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: color,
-                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(
+                          alpha: lightMode ? 0.7 : 0.1,
+                        ),
+                        borderRadius: BorderRadius.circular(10),
                       ),
+                      child: Text(switch (pillar) {
+                        Pillar.spending => '💸',
+                        Pillar.income => '💰',
+                        Pillar.incoming => '🤝',
+                        Pillar.liabilities => '🏦',
+                      }, style: const TextStyle(fontSize: 15)),
                     ),
                     const SizedBox(width: Sp.x2),
                     Expanded(
@@ -740,11 +654,15 @@ class CategoryDonut extends StatelessWidget {
   final List<CatSlice> slices;
   final int total;
   final String emptyText;
+
+  /// Tapping a row opens that category's page (null = rows are not tappable).
+  final void Function(CatSlice slice)? onTapSlice;
   const CategoryDonut({
     super.key,
     required this.slices,
     required this.total,
     required this.emptyText,
+    this.onTapSlice,
   });
 
   @override
@@ -768,18 +686,20 @@ class CategoryDonut extends StatelessWidget {
         .skip(ChartColors.count)
         .fold<int>(0, (a, s) => a + s.totalMinor);
     final brightness = Theme.of(context).brightness;
-    final shown = <({String name, int minor, Color color})>[
+    final shown = <({String name, int minor, Color color, CatSlice? slice})>[
       for (var i = 0; i < top.length; i++)
         (
           name: top[i].name,
           minor: top[i].totalMinor,
           color: ChartColors.at(i, brightness),
+          slice: top[i],
         ),
       if (rest > 0)
         (
           name: 'Others',
           minor: rest,
           color: ChartColors.at(0, brightness, others: true),
+          slice: null,
         ),
     ];
     final summary = shown
@@ -846,38 +766,123 @@ class CategoryDonut extends StatelessWidget {
               ),
             ),
             const SizedBox(height: Sp.x3),
-            for (final s in shown)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: Sp.x1 + 2),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 12,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [ChartColors.soft(s.color), s.color],
+            for (final (i, s) in shown.indexed)
+              Reveal(
+                index: i,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap:
+                      s.slice == null ||
+                          onTapSlice == null ||
+                          s.slice!.categoryId == '_none'
+                      ? null
+                      : () {
+                          haptic();
+                          onTapSlice!(s.slice!);
+                        },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: Sp.x2,
+                      horizontal: 2,
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 36,
+                          height: 36,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                s.color.withValues(alpha: 0.28),
+                                s.color.withValues(alpha: 0.12),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: s.color.withValues(alpha: 0.5),
+                            ),
+                          ),
+                          child: Text(
+                            s.slice == null
+                                ? '🧺'
+                                : (s.slice!.categoryId == '_none'
+                                      ? '🏷️'
+                                      : emojiForCategory(
+                                          s.slice!.name,
+                                          s.slice!.parentName,
+                                        )),
+                            style: const TextStyle(fontSize: 18),
+                          ),
                         ),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                    const SizedBox(width: Sp.x3),
-                    Expanded(
-                      child: Text(
-                        s.name,
-                        overflow: TextOverflow.ellipsis,
-                        style: context.text.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
+                        const SizedBox(width: Sp.x3),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                s.name,
+                                overflow: TextOverflow.ellipsis,
+                                style: context.text.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              if (s.slice?.parentName != null)
+                                Text(
+                                  s.slice!.parentName!,
+                                  style: context.text.labelSmall?.copyWith(
+                                    color: context.cash.textMuted,
+                                  ),
+                                ),
+                              const SizedBox(height: 4),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(4),
+                                child: TweenAnimationBuilder<double>(
+                                  tween: Tween(end: s.minor / total),
+                                  duration: const Duration(milliseconds: 800),
+                                  curve: Curves.easeOutCubic,
+                                  builder: (_, v, _) => LinearProgressIndicator(
+                                    value: v,
+                                    minHeight: 5,
+                                    color: s.color,
+                                    backgroundColor: s.color.withValues(
+                                      alpha: 0.14,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: Sp.x3),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            MoneyText(
+                              s.minor,
+                              style: context.text.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            Text(
+                              '${(s.minor * 100 / total).round()}%',
+                              style: context.text.labelSmall?.copyWith(
+                                color: context.cash.textMuted,
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (s.slice != null &&
+                            onTapSlice != null &&
+                            s.slice!.categoryId != '_none')
+                          Icon(
+                            Icons.chevron_right,
+                            size: 18,
+                            color: context.cash.textMuted,
+                          ),
+                      ],
                     ),
-                    Text(
-                      '${(s.minor * 100 / total).round()}%',
-                      style: TextStyle(color: context.cash.textMuted),
-                    ),
-                    const SizedBox(width: Sp.x3),
-                    MoneyText(s.minor, style: context.text.bodyMedium),
-                  ],
+                  ),
                 ),
               ),
           ],
@@ -1032,11 +1037,20 @@ class PillarDetailPage extends ConsumerWidget {
         ),
       ),
       SectionTitle(spending ? 'By category' : 'By source'),
-      CategoryDonut(
-        slices: slices,
-        total: total,
-        emptyText: 'Nothing recorded in this period',
-      ),
+      if (spending)
+        MoneyWent(
+          main: slices,
+          subs: x.spendingBySub,
+          total: total,
+          range: x.range,
+          emptyText: 'Nothing recorded in this period',
+        )
+      else
+        CategoryDonut(
+          slices: slices,
+          total: total,
+          emptyText: 'Nothing recorded in this period',
+        ),
       if (spending) ...[
         if (x.cashSpending + x.onlineSpending > 0) ...[
           const SectionTitle('Cash vs online'),
@@ -1438,4 +1452,128 @@ class ReceivedSpentChart extends StatelessWidget {
       ),
     ],
   );
+}
+
+/// Spending and Income always show; Incoming Debts and Liabilities only when
+/// there is something in them. An odd last tile takes the full width.
+class _PillarGrid extends StatelessWidget {
+  final DashboardData data;
+  const _PillarGrid({required this.data});
+  @override
+  Widget build(BuildContext context) {
+    final pillars = [
+      Pillar.spending,
+      Pillar.income,
+      if (data.incomingDebts > 0) Pillar.incoming,
+      if (data.liabilities > 0) Pillar.liabilities,
+    ];
+    final h =
+        68 + 92 * MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 2.2);
+    final rows = <Widget>[];
+    for (var i = 0; i < pillars.length; i += 2) {
+      final pair = pillars.skip(i).take(2).toList();
+      rows.add(
+        Padding(
+          padding: EdgeInsets.only(top: i == 0 ? 0 : Sp.x3),
+          child: SizedBox(
+            height: h,
+            child: Row(
+              children: [
+                for (var k = 0; k < pair.length; k++) ...[
+                  if (k > 0) const SizedBox(width: Sp.x3),
+                  Expanded(
+                    child: Reveal(
+                      index: i + k + 1,
+                      child: PillarCard(pillar: pair[k], data: data),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeOutCubic,
+      alignment: Alignment.topCenter,
+      child: Column(children: rows),
+    );
+  }
+}
+
+/// "Where your money went": main categories or sub-categories, tap any row
+/// for that category's full analysis.
+class MoneyWent extends StatefulWidget {
+  final List<CatSlice> main, subs;
+  final int total;
+  final DateRange range;
+  final String emptyText;
+  const MoneyWent({
+    super.key,
+    required this.main,
+    required this.subs,
+    required this.total,
+    required this.range,
+    required this.emptyText,
+  });
+  @override
+  State<MoneyWent> createState() => _MoneyWentState();
+}
+
+class _MoneyWentState extends State<MoneyWent> {
+  bool _sub = false;
+  @override
+  Widget build(BuildContext context) {
+    final hasSubs = widget.subs.any((s) => s.parentName != null);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (hasSubs && widget.total > 0)
+          Padding(
+            padding: const EdgeInsets.only(bottom: Sp.x3),
+            child: SegmentedButton<bool>(
+              showSelectedIcon: false,
+              segments: const [
+                ButtonSegment(value: false, label: Text('Main categories')),
+                ButtonSegment(value: true, label: Text('Sub-categories')),
+              ],
+              selected: {_sub},
+              onSelectionChanged: (v) {
+                haptic();
+                setState(() => _sub = v.first);
+              },
+            ),
+          ),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 350),
+          switchInCurve: Curves.easeOutCubic,
+          transitionBuilder: (child, anim) => FadeTransition(
+            opacity: anim,
+            child: SlideTransition(
+              position: Tween(
+                begin: const Offset(0, 0.04),
+                end: Offset.zero,
+              ).animate(anim),
+              child: child,
+            ),
+          ),
+          child: CategoryDonut(
+            key: ValueKey(_sub),
+            slices: _sub ? widget.subs : widget.main,
+            total: widget.total,
+            emptyText: widget.emptyText,
+            onTapSlice: (s) => pushReveal(
+              context,
+              CategoryInsightPage(
+                categoryId: s.categoryId,
+                range: widget.range,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }
