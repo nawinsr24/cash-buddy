@@ -1,6 +1,6 @@
 # Cash++: status (2026-11-04)
 
-Verified by automated tests (`flutter test`: 231 pass, `flutter analyze`: clean)
+Verified by automated tests (`flutter test`: 240 pass, `flutter analyze`: clean)
 
 | Area | Evidence |
 |---|---|

@@ -11,6 +11,7 @@ import '../ui/art.dart';
 import 'category_picker.dart';
 import '../ui/celebrate.dart';
 import '../ui/emoji.dart';
+import '../ui/motion.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
 
@@ -179,7 +180,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                   );
                 }
                 final t = it as Transaction;
-                return _TxnTile(
+                final tile = _TxnTile(
                   txn: t,
                   category: cats[t.categoryId],
                   parent: cats[cats[t.categoryId]?.parentId],
@@ -187,6 +188,8 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                   toAccount: accounts[t.toAccountId],
                   showAccount: settings?.split ?? false,
                 );
+                // the first screenful glides in one after another
+                return i < 12 ? Reveal(index: i, child: tile) : tile;
               },
             );
           },

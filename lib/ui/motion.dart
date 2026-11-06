@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -293,6 +294,100 @@ class _TiltCardState extends State<TiltCard> {
         child: child,
       ),
       child: widget.child,
+    ),
+  );
+}
+
+/// Springs a child in from nothing (buttons, badges) once, when it first shows.
+class PopIn extends StatelessWidget {
+  final Widget child;
+  final Duration delay;
+  const PopIn({
+    super.key,
+    required this.child,
+    this.delay = const Duration(milliseconds: 250),
+  });
+  @override
+  Widget build(BuildContext context) {
+    final total = 600 + delay.inMilliseconds;
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: Duration(milliseconds: total),
+      curve: Interval(
+        delay.inMilliseconds / total,
+        1,
+        curve: Curves.elasticOut,
+      ),
+      builder: (_, t, c) => Transform.scale(
+        scale: t.clamp(0.0, 1.2),
+        child: Opacity(opacity: t.clamp(0.0, 1.0), child: c),
+      ),
+      child: child,
+    );
+  }
+}
+
+/// A soft diagonal gleam that sweeps across a card once after it appears, and
+/// again whenever [replay] changes. Put it on top of the card's content; it
+/// ignores touches. (One-shot, so it never keeps the screen animating.)
+class ShineSweep extends StatefulWidget {
+  final int replay;
+  const ShineSweep({super.key, this.replay = 0});
+  @override
+  State<ShineSweep> createState() => _ShineSweepState();
+}
+
+class _ShineSweepState extends State<ShineSweep>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1300),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _t = Timer(const Duration(milliseconds: 500), () {
+      if (mounted) _c.forward(from: 0);
+    });
+  }
+
+  @override
+  void didUpdateWidget(ShineSweep old) {
+    super.didUpdateWidget(old);
+    if (old.replay != widget.replay) _c.forward(from: 0);
+  }
+
+  Timer? _t;
+
+  @override
+  void dispose() {
+    _t?.cancel();
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => IgnorePointer(
+    child: AnimatedBuilder(
+      animation: _c,
+      builder: (_, _) {
+        if (_c.value == 0 || _c.value == 1) return const SizedBox.shrink();
+        final t = Curves.easeInOut.transform(_c.value);
+        return ShaderMask(
+          blendMode: BlendMode.srcATop,
+          shaderCallback: (r) => LinearGradient(
+            begin: Alignment(-1.6 + 3.2 * t, -0.6),
+            end: Alignment(-0.9 + 3.2 * t, 0.6),
+            colors: [
+              Colors.white.withValues(alpha: 0),
+              Colors.white.withValues(alpha: 0.22),
+              Colors.white.withValues(alpha: 0),
+            ],
+          ).createShader(r),
+          child: const SizedBox.expand(child: ColoredBox(color: Colors.white)),
+        );
+      },
     ),
   );
 }

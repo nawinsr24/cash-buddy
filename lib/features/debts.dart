@@ -116,7 +116,8 @@ class _DebtList extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: Sp.x3),
-            for (final s in open) _DebtTile(s, color),
+            for (final (i, s) in open.indexed)
+              Reveal(index: i + 1, child: _DebtTile(s, color)),
             if (settled.isNotEmpty) ...[
               const SectionTitle('Settled'),
               for (final s in settled) _DebtTile(s, context.cash.textMuted),

@@ -15,6 +15,7 @@ import '../ui/theme.dart';
 import '../ui/emoji.dart';
 import 'budget.dart';
 import 'category_insight_page.dart';
+import 'performance_sheet.dart';
 import 'cash_move.dart';
 import 'grade_ui.dart';
 import 'score_ui.dart';
@@ -40,12 +41,54 @@ class DashboardPage extends ConsumerWidget {
     final pending = ref.watch(pendingSmsProvider).value?.length ?? 0;
     final invest = ref.watch(investSummariesProvider).value ?? const [];
     return Scaffold(
-      appBar: AppBar(title: const BrandLogo()),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => showTransactionSheet(context),
-        icon: const Icon(Icons.add),
-        label: const Text('Add'),
-        extendedPadding: const EdgeInsets.symmetric(horizontal: 22),
+      appBar: AppBar(
+        title: const FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: BrandLogo(),
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: Sp.x3),
+            child: MediaQuery.withClampedTextScaling(
+              maxScaleFactor: 1.1,
+              child: Pressable(
+                onTap: () {
+                  haptic();
+                  showPerformanceSheet(context);
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 7,
+                  ),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF5232E0), Color(0xFF7B5CF0)],
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Text(
+                    '✨ Performance',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: PopIn(
+        child: FloatingActionButton.extended(
+          onPressed: () => showTransactionSheet(context),
+          icon: const Icon(Icons.add),
+          label: const Text('Add'),
+          extendedPadding: const EdgeInsets.symmetric(horizontal: 22),
+        ),
       ),
       body: data.when(
         skipLoadingOnReload: true,
@@ -256,12 +299,13 @@ class _BalanceCard extends ConsumerWidget {
                 ),
               ),
             ),
+            const Positioned.fill(child: ShineSweep()),
             Positioned(
               right: 18,
-              top: 18,
+              top: 14,
               child: SizedBox(
-                width: 110,
-                height: 52,
+                width: 100,
+                height: 34,
                 child: TweenAnimationBuilder<double>(
                   tween: Tween(begin: 0, end: 1),
                   duration: const Duration(milliseconds: 1100),
@@ -534,7 +578,6 @@ class PillarCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    Icon(Icons.north_east, size: 16, color: c.textMuted),
                   ],
                 ),
                 const Spacer(),

@@ -94,10 +94,12 @@ class InvestPage extends ConsumerWidget {
     final list = ref.watch(investSummariesProvider);
     return Scaffold(
       appBar: AppBar(title: const Text('Invest')),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => pickInvestmentKind(context),
-        icon: const Icon(Icons.add),
-        label: const Text('Add investment'),
+      floatingActionButton: PopIn(
+        child: FloatingActionButton.extended(
+          onPressed: () => pickInvestmentKind(context),
+          icon: const Icon(Icons.add),
+          label: const Text('Add investment'),
+        ),
       ),
       body: list.when(
         skipLoadingOnReload: true,

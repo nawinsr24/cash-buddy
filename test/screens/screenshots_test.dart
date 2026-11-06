@@ -318,6 +318,11 @@ void main() {
       await tester.tap(find.byTooltip('Close'));
       await settle(tester);
       await shot(tester, '$p-1-dashboard');
+      await tapText(tester, '✨ Performance');
+      await tester.pump(const Duration(seconds: 2));
+      await shot(tester, '$p-1b-performance');
+      await tester.tapAt(const Offset(10, 60));
+      await settle(tester);
       await tester.drag(find.byType(Scrollable).first, const Offset(0, -500));
       await shot(tester, '$p-2-dashboard-scrolled');
       await tester.drag(find.byType(Scrollable).first, const Offset(0, -700));

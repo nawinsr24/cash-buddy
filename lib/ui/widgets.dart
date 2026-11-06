@@ -84,11 +84,20 @@ class SectionTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.fromLTRB(Sp.x1, Sp.x6, Sp.x1, Sp.x3),
-    child: Row(
-      children: [
-        Expanded(child: Eyebrow(text)),
-        ?trailing,
-      ],
+    child: TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 520),
+      curve: Curves.easeOutCubic,
+      builder: (_, t, c) => Opacity(
+        opacity: t,
+        child: Transform.translate(offset: Offset(-16 * (1 - t), 0), child: c),
+      ),
+      child: Row(
+        children: [
+          Expanded(child: Eyebrow(text)),
+          ?trailing,
+        ],
+      ),
     ),
   );
 }
