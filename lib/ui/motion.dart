@@ -374,18 +374,20 @@ class _ShineSweepState extends State<ShineSweep>
       builder: (_, _) {
         if (_c.value == 0 || _c.value == 1) return const SizedBox.shrink();
         final t = Curves.easeInOut.transform(_c.value);
-        return ShaderMask(
-          blendMode: BlendMode.srcATop,
-          shaderCallback: (r) => LinearGradient(
-            begin: Alignment(-1.6 + 3.2 * t, -0.6),
-            end: Alignment(-0.9 + 3.2 * t, 0.6),
-            colors: [
-              Colors.white.withValues(alpha: 0),
-              Colors.white.withValues(alpha: 0.22),
-              Colors.white.withValues(alpha: 0),
-            ],
-          ).createShader(r),
-          child: const SizedBox.expand(child: ColoredBox(color: Colors.white)),
+        return SizedBox.expand(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment(-1.6 + 3.2 * t, -0.6),
+                end: Alignment(-0.9 + 3.2 * t, 0.6),
+                colors: [
+                  Colors.white.withValues(alpha: 0),
+                  Colors.white.withValues(alpha: 0.16),
+                  Colors.white.withValues(alpha: 0),
+                ],
+              ),
+            ),
+          ),
         );
       },
     ),

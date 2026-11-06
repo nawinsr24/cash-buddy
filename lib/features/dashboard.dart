@@ -332,9 +332,8 @@ class _BalanceCard extends ConsumerWidget {
                   FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
-                    child: RollingMoney(
-                      minor: total,
-                      format: (v) => Money.format(v),
+                    child: Text(
+                      Money.format(total),
                       style: context.text.headlineLarge?.copyWith(
                         fontWeight: FontWeight.w800,
                         fontSize: 38,

@@ -57,11 +57,66 @@ void main() {
 
   test('overspending is stated in plain numbers', () {
     final l = sum(base(spending: 12000000));
-    expect(l[0].text, contains('₹20,000.00 more than you earned'));
+    expect(l[0].text, contains('₹20,000.00 more than you have'));
   });
 
   test('a good month ends on encouragement', () {
     final l = sum(base(spending: 5000000, invested: 2000000));
     expect(l[2].emoji, '🌟');
+  });
+
+  test('no income never ends on "doing really well"', () {
+    final l = sum(
+      const MonthStats(
+        spending: 953500,
+        txnCount: 20,
+        daysElapsed: 6,
+        daysInMonth: 30,
+        budgetMinor: 3500000,
+      ),
+    );
+    expect(l[2].emoji, isNot('🌟'));
+    expect(l[2].text, contains('income'));
+  });
+
+  test('names the biggest want and roasts it only when roast is on', () {
+    final s = MonthStats(
+      income: 10000000,
+      spending: 5000000,
+      txnCount: 30,
+      subs: const {'Hotel & Restaurant': 1500000},
+      mains: const {'Food': 1500000},
+    );
+    final hot = performanceSummary(s, computeGrade(s));
+    expect(hot[1].text, contains('Hotel & Restaurant'));
+    expect(hot[1].text, contains('kitchen'));
+    final mild = performanceSummary(s, computeGrade(s), roast: false);
+    expect(mild[1].text, isNot(contains('kitchen')));
+  });
+
+  test('over-budget pace gives a daily allowance', () {
+    final s = MonthStats(
+      income: 10000000,
+      spending: 2000000,
+      txnCount: 30,
+      daysElapsed: 10,
+      daysInMonth: 30,
+      budgetMinor: 4000000,
+    );
+    final l = performanceSummary(s, computeGrade(s));
+    expect(l[2].text, contains('a day for the next 20 days'));
+  });
+
+  test('new category titles are picked', () {
+    MonthStats m(Map<String, int> subs) => MonthStats(
+      income: 10000000,
+      spending: 9000000,
+      txnCount: 30,
+      activeDays: 10,
+      subs: subs,
+    );
+    expect(pickTitle(m({'Hotel & Restaurant': 3000000})), TitleId.orderInKing);
+    expect(pickTitle(m({'Gift to Lover': 900000})), TitleId.giftCupid);
+    expect(pickTitle(m({'Late Fees': 400000})), TitleId.feeDonor);
   });
 }

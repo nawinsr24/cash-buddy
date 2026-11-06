@@ -158,6 +158,47 @@ extension InsightsRepo on Repo {
           readsFrom: {db.transactions, db.categories},
         )
         .get();
+    // every main category and sub-category by name, for the smart summary
+    final mainRows = await db
+        .customSelect(
+          '''SELECT COALESCE(p.name, c.name) AS n, SUM(t.amount_minor) AS s
+             FROM transactions t JOIN categories c ON c.id = t.category_id
+             LEFT JOIN categories p ON p.id = c.parent_id
+             WHERE t.type='debit' AND t.source NOT IN ('debt','invest')
+               AND t.deleted_at IS NULL AND t.date BETWEEN ? AND ?
+             GROUP BY COALESCE(p.id, c.id)''',
+          variables: [Variable(r.startStr), Variable(r.endStr)],
+          readsFrom: {db.transactions, db.categories},
+        )
+        .get();
+    final subRows = await db
+        .customSelect(
+          '''SELECT c.name AS n, SUM(t.amount_minor) AS s
+             FROM transactions t JOIN categories c ON c.id = t.category_id
+             WHERE c.parent_id IS NOT NULL AND t.type='debit'
+               AND t.source NOT IN ('debt','invest')
+               AND t.deleted_at IS NULL AND t.date BETWEEN ? AND ?
+             GROUP BY c.id''',
+          variables: [Variable(r.startStr), Variable(r.endStr)],
+          readsFrom: {db.transactions, db.categories},
+        )
+        .get();
+    final big = await db
+        .customSelect(
+          '''SELECT t.amount_minor AS a, COALESCE(c.name, t.merchant, t.note) AS l
+             FROM transactions t LEFT JOIN categories c ON c.id = t.category_id
+             WHERE t.type='debit' AND t.source NOT IN ('debt','invest')
+               AND t.deleted_at IS NULL AND t.date BETWEEN ? AND ?
+             ORDER BY t.amount_minor DESC LIMIT 1''',
+          variables: [Variable(r.startStr), Variable(r.endStr)],
+          readsFrom: {db.transactions, db.categories},
+        )
+        .get();
+    final lastM = Dates.addMonths(Dates.day(y, m, 1), -1);
+    final prevSpending = await _sumType(
+      'debit',
+      _monthRange(lastM.year, lastM.month),
+    );
     int lifeOf(String id) {
       for (final x in life) {
         if (x.read<String>('cid') == id) return x.read<int>('s');
@@ -264,6 +305,11 @@ extension InsightsRepo on Repo {
       hobbySpending: lifeOf('cat_hobbies'),
       tripSpending: lifeOf('cat_tours_trips'),
       homeSent: lifeOf('cat_sent_home'),
+      mains: {for (final x in mainRows) x.read<String>('n'): x.read<int>('s')},
+      subs: {for (final x in subRows) x.read<String>('n'): x.read<int>('s')},
+      biggestAmt: big.isEmpty ? 0 : big.first.read<int>('a'),
+      biggestLabel: big.isEmpty ? null : big.first.read<String?>('l'),
+      prevSpending: prevSpending,
     );
   }
 

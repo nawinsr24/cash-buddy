@@ -18,6 +18,7 @@ class _PerformanceBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final data = ref.watch(plusScoreProvider).value;
+    final roast = ref.watch(roastModeProvider).value ?? true;
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(Sp.x5, 0, Sp.x5, Sp.x5),
@@ -26,13 +27,13 @@ class _PerformanceBody extends ConsumerWidget {
                 height: 200,
                 child: Center(child: CircularProgressIndicator.adaptive()),
               )
-            : _content(context, data.stats, data.grade, data.prevScore),
+            : _content(context, data.stats, data.grade, data.prevScore, roast),
       ),
     );
   }
 
-  Widget _content(BuildContext context, stats, grade, int? prev) {
-    final lines = performanceSummary(stats, grade);
+  Widget _content(BuildContext context, stats, grade, int? prev, bool roast) {
+    final lines = performanceSummary(stats, grade, roast: roast);
     final delta = prev == null || grade.building ? null : grade.score - prev;
     return Column(
       mainAxisSize: MainAxisSize.min,

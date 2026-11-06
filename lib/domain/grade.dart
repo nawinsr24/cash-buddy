@@ -46,6 +46,16 @@ class MonthStats {
   /// The month's budget, when one is set.
   final int? budgetMinor;
 
+  /// Spending per main category and per sub-category (name → minor units).
+  final Map<String, int> mains, subs;
+
+  /// The single biggest expense and what it was for.
+  final int biggestAmt;
+  final String? biggestLabel;
+
+  /// Total spending of the previous full month (0 when unknown).
+  final int prevSpending;
+
   const MonthStats({
     this.income = 0,
     this.spending = 0,
@@ -72,7 +82,22 @@ class MonthStats {
     this.tripSpending = 0,
     this.homeSent = 0,
     this.budgetMinor,
+    this.mains = const {},
+    this.subs = const {},
+    this.biggestAmt = 0,
+    this.biggestLabel,
+    this.prevSpending = 0,
   });
+
+  /// Spending in the main category or sub-category called [name].
+  int cat(String name) => (mains[name] ?? 0) + (subs[name] ?? 0);
+
+  /// Sum of several categories (mains and subs by name).
+  int catSum(List<String> names) => names.fold(0, (a, n) => a + cat(n));
+
+  /// Share of spending, in percent, taken by [names].
+  int pctOf(List<String> names) =>
+      spending <= 0 ? 0 : (catSum(names) * 100 / spending).round();
 
   bool get complete => daysElapsed >= daysInMonth;
 
@@ -105,6 +130,13 @@ class MonthStats {
           tripSpending: tripSpending,
           homeSent: homeSent,
           budgetMinor: budgetMinor,
+          debtMonthlyInterest: debtMonthlyInterest,
+          maxDebtApr: maxDebtApr,
+          mains: mains,
+          subs: subs,
+          biggestAmt: biggestAmt,
+          biggestLabel: biggestLabel,
+          prevSpending: prevSpending,
         );
   int get saved => income - spending;
   double get saveRate => income <= 0 ? 0 : saved / income;
@@ -156,6 +188,16 @@ enum TitleId {
   gearAddict,
   treatChampion,
   homeHero,
+  orderInKing,
+  giftCupid,
+  gadgetFan,
+  glowUp,
+  bingeMode,
+  roadWarrior,
+  partyMode,
+  feeDonor,
+  petParent,
+  kidsFirst,
   balancedSpender,
 }
 
@@ -180,6 +222,16 @@ extension TitleInfo on TitleId {
     TitleId.gearAddict => '🚴',
     TitleId.treatChampion => '🛍️',
     TitleId.homeHero => '🏡',
+    TitleId.orderInKing => '🛵',
+    TitleId.giftCupid => '💘',
+    TitleId.gadgetFan => '📱',
+    TitleId.glowUp => '💅',
+    TitleId.bingeMode => '🍿',
+    TitleId.roadWarrior => '⛽',
+    TitleId.partyMode => '🎉',
+    TitleId.feeDonor => '🪙',
+    TitleId.petParent => '🐾',
+    TitleId.kidsFirst => '🧸',
     TitleId.balancedSpender => '🧭',
   };
 
@@ -204,6 +256,16 @@ extension TitleInfo on TitleId {
     TitleId.gearAddict => 'Hobby Lover',
     TitleId.treatChampion => 'Shopping Lover',
     TitleId.homeHero => 'Family First',
+    TitleId.orderInKing => 'Order-In King',
+    TitleId.giftCupid => 'Gift Cupid',
+    TitleId.gadgetFan => 'Gadget Fan',
+    TitleId.glowUp => 'Glow-Up Mode',
+    TitleId.bingeMode => 'Binge Mode',
+    TitleId.roadWarrior => 'Road Warrior',
+    TitleId.partyMode => 'Party Mode',
+    TitleId.feeDonor => 'Fee Donor',
+    TitleId.petParent => 'Pet Parent',
+    TitleId.kidsFirst => 'Kids First',
     TitleId.balancedSpender => 'Balanced',
   };
 
@@ -231,6 +293,24 @@ extension TitleInfo on TitleId {
     TitleId.treatChampion =>
       'Shopping or entertainment was your biggest spend.',
     TitleId.homeHero => 'You sent 10% or more of your income home.',
+    TitleId.orderInKing =>
+      'Restaurants, delivery and snacks took 25% or more of your spending.',
+    TitleId.giftCupid =>
+      'Gifts and dates for your partner took 8% or more of your spending.',
+    TitleId.gadgetFan =>
+      'Gadgets and phones took 12% or more of your spending.',
+    TitleId.glowUp =>
+      'Salon, skin care and grooming took 10% or more of your spending.',
+    TitleId.bingeMode =>
+      'Movies, shows and fun took 15% or more of your spending.',
+    TitleId.roadWarrior =>
+      'Fuel, rides and vehicle costs took 25% or more of your spending.',
+    TitleId.partyMode =>
+      'Gifts, functions and celebrations took 15% or more of your spending.',
+    TitleId.feeDonor =>
+      'Late fees, bank charges and fines took 3% or more of your spending.',
+    TitleId.petParent => 'Your pets took 8% or more of your spending.',
+    TitleId.kidsFirst => 'Your kids took 20% or more of your spending.',
     TitleId.balancedSpender => 'Nothing was too high or too low.',
   };
 
@@ -242,10 +322,34 @@ extension TitleInfo on TitleId {
     TitleId.budgetNinja ||
     TitleId.comebackKid ||
     TitleId.homeHero ||
+    TitleId.petParent ||
+    TitleId.kidsFirst ||
     TitleId.consistencyHero => true,
     _ => false,
   };
 }
+
+const _kids = ['Kids'];
+const _pets = ['Pets'];
+const _fees = ['Late Fees', 'Bank Charges', 'Fines'];
+const _eatOut = [
+  'Hotel & Restaurant',
+  'Food Delivery',
+  'Snacks',
+  'Sweets & Bakery',
+  'Canteen Meals',
+];
+const _lover = ['Gift to Lover', 'Partner'];
+const _gadgets = ['Electronics & Gadgets', 'Mobile & Accessories'];
+const _glow = ['Personal Care'];
+const _screen = ['Entertainment'];
+const _road = ['Transport'];
+const _party = [
+  'Birthday & Anniversary',
+  'Wedding & Function',
+  'Festival Expenses',
+  'Gift to Friends',
+];
 
 bool _isFood(String? c) => (c ?? '').toLowerCase().contains('food');
 bool _isFun(String? c) {
@@ -288,6 +392,18 @@ TitleId pickTitle(MonthStats s) {
   }
   if (sp > 0 && s.tripSpending * 100 >= sp * 30) return TitleId.wanderlust;
   if (sp > 0 && s.hobbySpending * 100 >= sp * 15) return TitleId.gearAddict;
+  if (sp > 0) {
+    if (s.pctOf(_kids) >= 20) return TitleId.kidsFirst;
+    if (s.pctOf(_pets) >= 8) return TitleId.petParent;
+    if (s.pctOf(_fees) >= 3) return TitleId.feeDonor;
+    if (s.pctOf(_eatOut) >= 25) return TitleId.orderInKing;
+    if (s.pctOf(_lover) >= 8) return TitleId.giftCupid;
+    if (s.pctOf(_gadgets) >= 12) return TitleId.gadgetFan;
+    if (s.pctOf(_glow) >= 10) return TitleId.glowUp;
+    if (s.pctOf(_screen) >= 15) return TitleId.bingeMode;
+    if (s.pctOf(_road) >= 25) return TitleId.roadWarrior;
+    if (s.pctOf(_party) >= 15) return TitleId.partyMode;
+  }
   if (_isFun(s.topCategory)) return TitleId.treatChampion;
   return TitleId.balancedSpender;
 }
@@ -496,7 +612,18 @@ String nextStep(MonthStats s, {bool roast = true}) {
 List<String> titleLines(TitleId t, MonthStats s, {required bool roast}) {
   // A medical month, or money sent to family, is never a joke.
   if (s.healthDriven || s.homeDriven) roast = false;
+  if (t == TitleId.petParent || t == TitleId.kidsFirst) roast = false;
   final vice = _m(s.viceSpending);
+  final eatOut = _m(s.catSum(_eatOut));
+  final lover = _m(s.catSum(_lover));
+  final gadgets = _m(s.catSum(_gadgets));
+  final glow = _m(s.catSum(_glow));
+  final screen = _m(s.catSum(_screen));
+  final road = _m(s.catSum(_road));
+  final party = _m(s.catSum(_party));
+  final fees = _m(s.catSum(_fees));
+  final pets = _m(s.catSum(_pets));
+  final kids = _m(s.catSum(_kids));
   final friends = _m(s.friendsSpending);
   final trip = _m(s.tripSpending);
   final hobby = _m(s.hobbySpending);
@@ -566,6 +693,36 @@ List<String> titleLines(TitleId t, MonthStats s, {required bool roast}) {
       ],
       TitleId.homeHero => [
         'You sent $home home. Looking after family is the best spending.',
+      ],
+      TitleId.orderInKing => [
+        'Eating out and snacks cost $eatOut this month. Cooking a few meals at home would help.',
+      ],
+      TitleId.giftCupid => [
+        '$lover on gifts and dates. Lovely, just keep an eye on the total.',
+      ],
+      TitleId.gadgetFan => [
+        '$gadgets on gadgets and phones this month. Worth checking if you needed them all.',
+      ],
+      TitleId.glowUp => [
+        '$glow on personal care. Looking after yourself is fine, in a balance.',
+      ],
+      TitleId.bingeMode => [
+        '$screen on entertainment this month. Fun is good, just keep it in check.',
+      ],
+      TitleId.roadWarrior => [
+        '$road on travel and vehicle costs. Sharing rides or planning trips can bring it down.',
+      ],
+      TitleId.partyMode => [
+        '$party on gifts and celebrations. Nice memories, but plan the next ones.',
+      ],
+      TitleId.feeDonor => [
+        '$fees went on fees and fines. Most of it can be avoided with reminders.',
+      ],
+      TitleId.petParent => [
+        '$pets on your pets this month. They are lucky to have you.',
+      ],
+      TitleId.kidsFirst => [
+        '$kids on your kids this month. That is money well spent.',
       ],
       TitleId.balancedSpender => [
         'A normal month. Nothing too high or too low.',
@@ -650,6 +807,52 @@ List<String> titleLines(TitleId t, MonthStats s, {required bool roast}) {
     TitleId.homeHero => [
       'You sent $home home. That is a great heart!',
       'Family first: $home sent home. Well done.',
+    ],
+    TitleId.orderInKing => [
+      '$eatOut on restaurants, delivery and snacks. Your kitchen is filing a missing-person report.',
+      'Delivery guy knows your address better than your family does. $eatOut gone on eating out.',
+      '$eatOut on food you did not cook. Even the stove is jealous of the delivery bag.',
+    ],
+    TitleId.giftCupid => [
+      '$lover spent on love. Romance is great, but your bank balance is not in love with you.',
+      'Cupid called. He wants his commission back. $lover on gifts and dates.',
+      '$lover on the partner. Hope they at least say thank you in public.',
+    ],
+    TitleId.gadgetFan => [
+      '$gadgets on gadgets. The old phone was fine, was it not?',
+      'Another gadget, another dent. $gadgets this month. Does it make you richer? No.',
+      '$gadgets on tech. Your wallet needs a software update too.',
+    ],
+    TitleId.glowUp => [
+      '$glow on glow-up. Looking good, feeling broke. Choose one.',
+      'Salon and skin care took $glow. Your savings could use a facial too.',
+      '$glow on grooming. Shine bright, but not brighter than your savings.',
+    ],
+    TitleId.bingeMode => [
+      '$screen on movies and fun. The popcorn cost more than the movie.',
+      '$screen on entertainment. Your life is a show, and the budget is the villain.',
+      'You paid $screen to be entertained, while your savings watched in silence.',
+    ],
+    TitleId.roadWarrior => [
+      '$road on travel and vehicle. Your tank is full, your wallet is empty.',
+      'Fuel, rides and service: $road. Is your vehicle a pet or a vehicle?',
+      '$road went on the road. Try one bus ride, your bank will thank you.',
+    ],
+    TitleId.partyMode => [
+      '$party on gifts and celebrations. Everyone had a party, except your savings.',
+      'Birthdays, functions and festivals took $party. You are the sponsor of everyone\'s happiness.',
+      '$party on celebrations. Generous heart, tired wallet.',
+    ],
+    TitleId.feeDonor => [
+      '$fees on fees and fines. That is free money to the bank, with a thank-you note from you.',
+      'You donated $fees to banks and late fees. They did not even send a thank-you.',
+      '$fees wasted on charges. Set a reminder, it is cheaper than a fine.',
+    ],
+    TitleId.petParent => [
+      '$pets on your pets this month. They are lucky to have you.',
+    ],
+    TitleId.kidsFirst => [
+      '$kids on your kids this month. That is money well spent.',
     ],
     TitleId.balancedSpender => [
       'A normal month. Nothing too good or too bad.',
