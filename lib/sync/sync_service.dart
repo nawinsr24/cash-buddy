@@ -5,7 +5,9 @@ import 'package:flutter/widgets.dart';
 import '../data/repo.dart';
 import 'backup.dart';
 import 'drive_remote.dart';
+import '../data/db_key.dart';
 import 'sync_engine.dart';
+import 'vault.dart';
 
 /// Wires the sync engine to Google Drive and decides *when* to sync:
 /// on foreground, and debounced after local changes. No polling, no timers
@@ -51,8 +53,15 @@ class SetupSignIn {
 class SyncService with WidgetsBindingObserver {
   final Repo repo;
   final SignInFn _signIn;
-  SyncService(this.repo, {SignInFn? signIn})
-    : _signIn = signIn ?? _googleSignIn;
+  SyncService(this.repo, {SignInFn? signIn, Vault? vault})
+    : _signIn = signIn ?? _googleSignIn,
+      vault = vault ?? Vault(const SecureSecretStore());
+
+  /// Encrypts everything sent to Drive and every backup file.
+  final Vault vault;
+
+  /// Error text that tells the screen to ask for a backup passphrase first.
+  static const needsPassphrase = 'PASSPHRASE_NEEDED';
 
   /// The account signed in during this session (display only).
   String? signedInEmail;
@@ -99,6 +108,7 @@ class SyncService with WidgetsBindingObserver {
 
   /// Interactive: sign in, take a safety backup, enable Online Mode and merge.
   Future<SyncResult> goOnline() async {
+    if (!await vault.isSet) return const SyncResult(0, 0, 0, needsPassphrase);
     final ({RemoteStore remote, String? email})? signed;
     try {
       signed = await _signIn();
@@ -106,7 +116,7 @@ class SyncService with WidgetsBindingObserver {
       return SyncResult(0, 0, 0, e.message);
     }
     if (signed == null) return const SyncResult(0, 0, 0, 'Sign-in cancelled');
-    await createBackup(repo);
+    await createBackup(repo, vault: vault);
     _remote = signed.remote;
     signedInEmail = signed.email;
     await repo.setSetting('dataMode', 'online');
@@ -117,6 +127,9 @@ class SyncService with WidgetsBindingObserver {
   /// nothing locally; Online Mode is only switched on by [finishSetupOnline]
   /// or [restoreFromDrive].
   Future<SetupSignIn> signInForSetup() async {
+    if (!await vault.isSet) {
+      return const SetupSignIn(ok: false, error: needsPassphrase);
+    }
     _report(SyncStage.signingIn, 0, 0);
     try {
       final signed = await _signIn();
@@ -181,6 +194,9 @@ class SyncService with WidgetsBindingObserver {
     if (!force && await repo.dataMode != 'online') {
       return const SyncResult(0, 0, 0);
     }
+    if (!await vault.isSet) {
+      return const SyncResult(0, 0, 0, needsPassphrase);
+    }
     final remote = _remote ??= await DriveRemote.restore();
     if (remote == null) {
       await repo.setSetting(
@@ -192,7 +208,13 @@ class SyncService with WidgetsBindingObserver {
     _running = true;
     try {
       final device = await repo.getSetting('deviceId') ?? 'dev';
-      return await SyncEngine(repo, remote, device, onProgress: _report).sync();
+      return await SyncEngine(
+        repo,
+        remote,
+        device,
+        onProgress: _report,
+        vault: vault,
+      ).sync();
     } finally {
       _running = false;
       _end();

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../l10n/l10n.dart';
 import '../data/db.dart';
 import '../data/invest_repo.dart';
 import '../data/repo.dart' show ValidationException;
@@ -93,13 +94,11 @@ class InvestPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final list = ref.watch(investSummariesProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Invest')),
-      floatingActionButton: PopIn(
-        child: FloatingActionButton.extended(
-          onPressed: () => pickInvestmentKind(context),
-          icon: const Icon(Icons.add),
-          label: const Text('Add investment'),
-        ),
+      appBar: AppBar(title: Text(tr('Invest'))),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => pickInvestmentKind(context),
+        icon: const Icon(Icons.add),
+        label: Text(tr('Add investment')),
       ),
       body: list.when(
         skipLoadingOnReload: true,
@@ -116,7 +115,7 @@ class InvestPage extends ConsumerWidget {
               action: FilledButton.icon(
                 style: FilledButton.styleFrom(minimumSize: const Size(220, 52)),
                 icon: const Icon(Icons.add),
-                label: const Text('Add your first investment'),
+                label: Text(tr('Add your first investment')),
                 onPressed: () => pickInvestmentKind(context),
               ),
             );
@@ -312,7 +311,7 @@ class _InvestFormState extends ConsumerState<_InvestForm> {
   String get kind => widget.kind;
   bool get isCustom => kind == 'custom';
 
-  String _m(int? v) => v == null ? '' : (v / 100).toStringAsFixed(2);
+  String _m(int? v) => v == null ? '' : Money.edit(v);
   late final name = TextEditingController(text: e?.name ?? '');
   late final growth = TextEditingController(
     text: e?.expectedGrowthBps == null
@@ -470,7 +469,7 @@ class _InvestFormState extends ConsumerState<_InvestForm> {
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration: InputDecoration(
             labelText: '$label (optional)',
-            prefixText: '₹ ',
+            prefixText: '${Money.symbol} ',
             helperText: hint,
           ),
         ),
@@ -555,11 +554,11 @@ class _InvestFormState extends ConsumerState<_InvestForm> {
         const SizedBox(height: Sp.x2),
         SegmentedButton<String>(
           showSelectedIcon: false,
-          segments: const [
-            ButtonSegment(value: 'daily', label: Text('Daily')),
-            ButtonSegment(value: 'weekly', label: Text('Weekly')),
-            ButtonSegment(value: 'monthly', label: Text('Monthly')),
-            ButtonSegment(value: 'yearly', label: Text('Yearly')),
+          segments: [
+            ButtonSegment(value: 'daily', label: Text(tr('Daily'))),
+            ButtonSegment(value: 'weekly', label: Text(tr('Weekly'))),
+            ButtonSegment(value: 'monthly', label: Text(tr('Monthly'))),
+            ButtonSegment(value: 'yearly', label: Text(tr('Yearly'))),
           ],
           selected: {cycle},
           onSelectionChanged: (v) => setState(() => cycle = v.first),
@@ -656,8 +655,8 @@ class _InvestFormState extends ConsumerState<_InvestForm> {
         const SizedBox(height: Sp.x2),
         SegmentedButton<String>(
           showSelectedIcon: false,
-          segments: const [
-            ButtonSegment(value: 'never', label: Text('Never')),
+          segments: [
+            ButtonSegment(value: 'never', label: Text(tr('Never'))),
             ButtonSegment(value: 'count', label: Text('After N')),
             ButtonSegment(value: 'date', label: Text('On a date')),
           ],
@@ -762,9 +761,9 @@ class _InvestFormState extends ConsumerState<_InvestForm> {
             if (isCustom) ...[
               SegmentedButton<bool>(
                 showSelectedIcon: false,
-                segments: const [
-                  ButtonSegment(value: false, label: Text('One time')),
-                  ButtonSegment(value: true, label: Text('Recurring')),
+                segments: [
+                  ButtonSegment(value: false, label: Text(tr('One time'))),
+                  ButtonSegment(value: true, label: Text(tr('Recurring'))),
                 ],
                 selected: {recurring},
                 onSelectionChanged: (v) => setState(() => recurring = v.first),
@@ -809,9 +808,9 @@ class _InvestFormState extends ConsumerState<_InvestForm> {
                     labelText: 'Pay from (optional)',
                   ),
                   items: [
-                    const DropdownMenuItem(
+                    DropdownMenuItem(
                       value: null,
-                      child: Text('Default account'),
+                      child: Text(tr('Default account')),
                     ),
                     for (final a in accounts)
                       DropdownMenuItem(value: a.id, child: Text(a.name)),
@@ -882,11 +881,11 @@ class InvestDetailPage extends ConsumerWidget {
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(d, false),
-                        child: const Text('Cancel'),
+                        child: Text(tr('Cancel')),
                       ),
                       TextButton(
                         onPressed: () => Navigator.pop(d, true),
-                        child: const Text('Delete'),
+                        child: Text(tr('Delete')),
                       ),
                     ],
                   ),
@@ -897,9 +896,9 @@ class InvestDetailPage extends ConsumerWidget {
                 }
               }
             },
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: 'edit', child: Text('Edit')),
-              PopupMenuItem(value: 'delete', child: Text('Delete')),
+            itemBuilder: (_) => [
+              PopupMenuItem(value: 'edit', child: Text(tr('Edit'))),
+              PopupMenuItem(value: 'delete', child: Text(tr('Delete'))),
             ],
           ),
         ],
@@ -1044,7 +1043,7 @@ class InvestDetailPage extends ConsumerWidget {
                 Expanded(
                   child: TextButton.icon(
                     icon: const Icon(Icons.redeem),
-                    label: const Text('Dividend'),
+                    label: Text(tr('Dividend')),
                     onPressed: () =>
                         showEntrySheet(context, inv, type: 'dividend'),
                   ),
@@ -1109,28 +1108,28 @@ class InvestDetailPage extends ConsumerWidget {
     final c = TextEditingController(
       text: inv.currentValueMinor == null
           ? ''
-          : (inv.currentValueMinor! / 100).toStringAsFixed(2),
+          : Money.edit(inv.currentValueMinor!),
     );
     final v = await showDialog<int?>(
       context: context,
       builder: (d) => AlertDialog(
-        title: const Text('Current value'),
+        title: Text(tr('Current value')),
         content: AmountField(
           controller: c,
-          label: 'Worth today',
+          label: tr('Worth today'),
           autofocus: true,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(d),
-            child: const Text('Cancel'),
+            child: Text(tr('Cancel')),
           ),
           TextButton(
             onPressed: () {
               final m = Money.parse(c.text);
               if (m != null && m >= 0) Navigator.pop(d, m);
             },
-            child: const Text('Save'),
+            child: Text(tr('Save')),
           ),
         ],
       ),
@@ -1236,9 +1235,7 @@ class _EntrySheet extends ConsumerStatefulWidget {
 
 class _EntrySheetState extends ConsumerState<_EntrySheet> {
   late final amount = TextEditingController(
-    text: widget.suggest == null
-        ? ''
-        : (widget.suggest! / 100).toStringAsFixed(2),
+    text: widget.suggest == null ? '' : Money.edit(widget.suggest!),
   );
   final note = TextEditingController();
   late DateTime date = widget.date ?? Dates.today();
@@ -1317,7 +1314,7 @@ class _EntrySheetState extends ConsumerState<_EntrySheet> {
             const SizedBox(height: Sp.x3),
             TextField(
               controller: note,
-              decoration: const InputDecoration(labelText: 'Note (optional)'),
+              decoration: InputDecoration(labelText: tr('Note (optional)')),
             ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
@@ -1340,7 +1337,7 @@ class _EntrySheetState extends ConsumerState<_EntrySheet> {
                   style: TextStyle(color: context.cash.spending),
                 ),
               ),
-            FilledButton(onPressed: _save, child: const Text('Save')),
+            FilledButton(onPressed: _save, child: Text(tr('Save'))),
           ],
         ),
       ),
@@ -1546,7 +1543,7 @@ class _InstalmentRow extends ConsumerWidget {
                   periodKey: k,
                   date: date.isAfter(today) ? today : date,
                 ),
-                child: const Text('Pay'),
+                child: Text(tr('Pay')),
               ),
           ],
         ),

@@ -95,9 +95,8 @@ class _Body extends StatelessWidget {
                 FittedBox(
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
-                  child: RollingMoney(
-                    minor: x.total,
-                    format: (v) => Money.format(v),
+                  child: Text(
+                    Money.format(x.total),
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 38,
@@ -409,7 +408,7 @@ class _MonthsChart extends StatelessWidget {
                       duration: const Duration(milliseconds: 700),
                       curve: Curves.easeOutCubic,
                       BarChartData(
-                        maxY: maxV / 100 * 1.2,
+                        maxY: maxV / Money.unit * 1.2,
                         alignment: BarChartAlignment.spaceAround,
                         gridData: const FlGridData(show: false),
                         borderData: FlBorderData(show: false),
@@ -440,7 +439,7 @@ class _MonthsChart extends StatelessWidget {
                               x: i,
                               barRods: [
                                 BarChartRodData(
-                                  toY: m.minor / 100,
+                                  toY: m.minor / Money.unit,
                                   width: 22,
                                   color: i == x.monthly.length - 1
                                       ? base

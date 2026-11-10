@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../l10n/l10n.dart';
 import '../data/insights_repo.dart';
 import '../domain/grade.dart';
 import '../domain/money.dart';
@@ -107,7 +108,7 @@ class TitleBanner extends ConsumerWidget {
                 ),
                 const Icon(Icons.chevron_right, color: Colors.white),
                 IconButton(
-                  tooltip: 'Dismiss',
+                  tooltip: tr('Dismiss'),
                   icon: const Icon(
                     Icons.close,
                     color: Colors.white70,
@@ -170,7 +171,7 @@ class TitleRevealPage extends ConsumerWidget {
                     Align(
                       alignment: Alignment.centerLeft,
                       child: IconButton(
-                        tooltip: 'Close',
+                        tooltip: tr('Close'),
                         icon: const Icon(Icons.close, color: Colors.white),
                         onPressed: () => Navigator.of(context).pop(),
                       ),
@@ -450,7 +451,7 @@ class TrophyShelfPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final list = ref.watch(titleHistoryProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Trophy shelf')),
+      appBar: AppBar(title: Text(tr('Your titles'))),
       body: list.when(
         skipLoadingOnReload: true,
         loading: () =>

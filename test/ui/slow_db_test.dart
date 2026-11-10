@@ -21,7 +21,7 @@ class SlowRepo extends Repo {
   }
 }
 
-class _AllowAuth implements Authenticator {
+class _AllowAuth extends Authenticator {
   int calls = 0;
   @override
   Future<bool> get available async => true;
@@ -51,7 +51,8 @@ void main() {
         child: const CashBuddyApp(),
       ),
     );
-    for (var i = 0; i < 12; i++) {
+    // wait for the first load (each setting read is deliberately slow)
+    for (var i = 0; i < 60 && find.byType(Shell).evaluate().isEmpty; i++) {
       await tester.runAsync(
         () => Future<void>.delayed(const Duration(milliseconds: 30)),
       );

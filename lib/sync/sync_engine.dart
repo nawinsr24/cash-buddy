@@ -7,6 +7,7 @@ import '../data/db.dart';
 import '../data/repo.dart';
 import '../domain/hlc.dart';
 import 'gzip_codec.dart';
+import 'vault.dart';
 
 /// Minimal immutable-object store (Google Drive appDataFolder in production,
 /// in-memory in tests). Files are write-once: no remote file is ever rewritten.
@@ -83,7 +84,17 @@ class SyncEngine {
   final RemoteStore remote;
   final String deviceId;
   final SyncProgressFn? onProgress;
-  SyncEngine(this.repo, this.remote, this.deviceId, {this.onProgress});
+
+  /// When set, every file is encrypted before it leaves the phone. Older
+  /// unencrypted files are still readable.
+  final Vault? vault;
+  SyncEngine(
+    this.repo,
+    this.remote,
+    this.deviceId, {
+    this.onProgress,
+    this.vault,
+  });
   void _p(SyncStage s, [int done = 0, int total = 0]) =>
       onProgress?.call(s, done, total);
 
@@ -179,7 +190,11 @@ class SyncEngine {
       'payload': payload,
     });
     final name = 'seg/$deviceId/${seq.toString().padLeft(8, '0')}.json.gz';
-    await remote.write(name, gzipEncode(utf8.encode(envelope)));
+    final packed = gzipEncode(utf8.encode(envelope));
+    await remote.write(
+      name,
+      vault == null ? packed : await vault!.encrypt(packed),
+    );
     // Only advance the cursor after the upload succeeded.
     await repo.setSetting('segSeq', '$seq');
     await repo.setSetting('lastPushedHlc', maxHlc);
@@ -204,8 +219,17 @@ class SyncEngine {
     for (final name in pending) {
       _p(SyncStage.downloading, segs, pending.length);
       final bytes = await remote.read(name);
+      var raw = bytes;
+      if (Vault.isEncrypted(raw)) {
+        if (vault == null) {
+          throw VaultException(
+            'Your cloud data is protected with a backup password. Enter it to continue.',
+          );
+        }
+        raw = await vault!.decrypt(raw);
+      }
       final env =
-          jsonDecode(utf8.decode(gzipDecode(bytes))) as Map<String, dynamic>;
+          jsonDecode(utf8.decode(gzipDecode(raw))) as Map<String, dynamic>;
       final payload = env['payload'] as String;
       if (sha256.convert(utf8.encode(payload)).toString() != env['sha256']) {
         throw StateError('Corrupt segment $name (checksum mismatch)');

@@ -9,6 +9,9 @@ import 'package:cash_buddy/app.dart';
 import 'package:cash_buddy/data/budget_repo.dart';
 import 'package:cash_buddy/data/invest_repo.dart';
 import 'package:cash_buddy/domain/dates.dart';
+import 'package:cash_buddy/features/shell.dart' show ShellState;
+import 'package:cash_buddy/domain/money.dart';
+import 'package:cash_buddy/l10n/l10n.dart';
 import 'package:cash_buddy/domain/sms_parser.dart';
 import 'package:cash_buddy/features/settings.dart' show CategoriesPage;
 import 'package:cash_buddy/providers.dart';
@@ -58,6 +61,12 @@ Future<void> shot(WidgetTester tester, String name) async {
 }
 
 void main() {
+  // language and currency are app-wide statics: start every test clean
+  setUp(() {
+    L10n.use('en');
+    Money.configure();
+    ShellState.resetAutoScanLimits();
+  });
   artGallery();
   loaderShot();
   for (final dark in [false, true]) {
@@ -350,6 +359,15 @@ void main() {
       await shot(tester, '$p-2e2-budget-year');
       await tester.drag(find.byType(Scrollable).first, const Offset(0, -500));
       await shot(tester, '$p-2f-budget-splits');
+      await tester.tap(find.byTooltip('Edit budget'));
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 400)),
+      );
+      await shot(tester, '$p-2g-budget-editor-overall');
+      await tapText(tester, 'By category');
+      await shot(tester, '$p-2h-budget-editor-category');
+      await tester.binding.handlePopRoute();
+      await settle(tester);
       await tester.tap(find.byTooltip('Back'));
       await settle(tester);
       await tapText(tester, 'Activity', last: true);
@@ -378,14 +396,14 @@ void main() {
       await tapText(tester, 'Settings', last: true);
       await shot(tester, '$p-10-settings');
       await tester.scrollUntilVisible(
-        find.text('Trophy shelf'),
+        find.text('Your titles'),
         200,
         scrollable: find.byType(Scrollable).first,
       );
-      await tester.ensureVisible(find.text('Trophy shelf'));
+      await tester.ensureVisible(find.text('Your titles'));
       await tester.drag(find.byType(Scrollable).first, const Offset(0, -200));
       await settle(tester);
-      await tapText(tester, 'Trophy shelf');
+      await tapText(tester, 'Your titles');
       await shot(tester, '$p-13-trophies');
       await tester.tap(find.byTooltip('Back'));
       await settle(tester);
@@ -393,15 +411,15 @@ void main() {
       await tapText(tester, 'Home', last: true);
       await tapText(tester, 'Add');
       await shot(tester, '$p-14-add-sheet');
-      await tapText(tester, 'Uncategorised');
+      await tapText(tester, 'No category');
       await shot(tester, '$p-15-category-picker');
       await tester.ensureVisible(find.text('Hobbies').first);
       await tapText(tester, 'Hobbies');
       await shot(tester, '$p-16-category-subs');
       await tester.tap(find.byTooltip('Back to categories'));
       await settle(tester);
-      await tester.ensureVisible(find.text('Sent Home').first);
-      await tapText(tester, 'Sent Home');
+      await tester.ensureVisible(find.text('Family Support').first);
+      await tapText(tester, 'Family Support');
       await tapText(tester, 'Parents');
       await tester.enterText(find.byType(TextField).first, '5000');
       await tapText(tester, 'Add', last: true);
@@ -489,4 +507,165 @@ void loaderShot() {
     await shot(tester, 'loader-restore');
     await tester.pumpWidget(const SizedBox());
   });
+
+  for (final dark in [false, true]) {
+    testWidgets('first-run setup ${dark ? 'dark' : 'light'}', (tester) async {
+      await tester.runAsync(loadFonts);
+      tester.view.physicalSize = const Size(390 * 2, 844 * 2);
+      tester.view.devicePixelRatio = 2;
+      tester.platformDispatcher.platformBrightnessTestValue = dark
+          ? Brightness.dark
+          : Brightness.light;
+      tester.platformDispatcher.localeTestValue = const Locale('en', 'IN');
+      addTearDown(() {
+        tester.view.reset();
+        tester.platformDispatcher.clearAllTestValues();
+      });
+      late TestEnv env;
+      await tester.runAsync(() async {
+        env = await newEnv(now: DateTime(2026, 11, 5, 10));
+        await env.db.delete(env.db.settings).go();
+        await env.db.delete(env.db.accounts).go();
+      });
+      addTearDown(() => tester.runAsync(() => env.db.close()));
+      await tester.pumpWidget(
+        RepaintBoundary(
+          key: _key,
+          child: ProviderScope(
+            overrides: [repoProvider.overrideWithValue(env.repo)],
+            child: const CashBuddyApp(),
+          ),
+        ),
+      );
+      await settle(tester);
+      final p = dark ? 'dark' : 'light';
+      await shot(tester, '$p-s0-language');
+      await tapText(tester, 'Currency');
+      await shot(tester, '$p-s0b-currency-list');
+      await tester.binding.handlePopRoute();
+      await settle(tester);
+      await tapText(tester, 'Continue');
+      await shot(tester, '$p-s1-data');
+      await tapText(tester, 'Keep on this phone only');
+      await tapText(tester, 'Continue');
+      await tapText(tester, 'One balance');
+      await shot(tester, '$p-s2-accounts');
+      await tapText(tester, 'Continue');
+      await shot(tester, '$p-s3-bank-messages');
+      await tapText(tester, 'Continue');
+      await shot(tester, '$p-s4-balance');
+      await tapText(tester, 'Continue');
+      await shot(tester, '$p-s5-reminder');
+      await tapText(tester, 'Skip');
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 400)),
+      );
+      await shot(tester, '$p-s6-budget');
+      await tapText(tester, 'Skip for now');
+      await shot(tester, '$p-s7-look');
+      await tapText(tester, 'Skip');
+      await shot(tester, '$p-s8-privacy');
+    });
+  }
+
+  testWidgets('global: Hindi with US dollars', (tester) async {
+    await tester.runAsync(loadFonts);
+    tester.view.physicalSize = const Size(390 * 2, 844 * 2);
+    tester.view.devicePixelRatio = 2;
+    addTearDown(() {
+      tester.view.reset();
+      tester.platformDispatcher.clearAllTestValues();
+    });
+    late TestEnv env;
+    await tester.runAsync(() async {
+      env = await newEnv(opening: 250000, now: DateTime(2026, 11, 5, 10));
+      await env.repo.setSetting('language', 'hi');
+      await env.repo.setSetting('currency', 'USD');
+      await env.repo.addTransaction(
+        type: 'debit',
+        amountMinor: 4550,
+        categoryId: 'cat_food_dining',
+        date: Dates.day(2026, 11, 3),
+      );
+      await env.repo.setBudget(120000);
+    });
+    addTearDown(() => tester.runAsync(() => env.db.close()));
+    await tester.pumpWidget(
+      RepaintBoundary(
+        key: _key,
+        child: ProviderScope(
+          overrides: [repoProvider.overrideWithValue(env.repo)],
+          child: const CashBuddyApp(),
+        ),
+      ),
+    );
+    await settle(tester);
+    await shot(tester, 'global-hi-usd-dashboard');
+    await tapText(tester, 'सेटिंग्स', last: true);
+    await shot(tester, 'global-hi-usd-settings');
+  });
+
+  for (final dark in [false, true]) {
+    testWidgets('wording review ${dark ? 'dark' : 'light'}', (tester) async {
+      await tester.runAsync(loadFonts);
+      tester.view.physicalSize = const Size(390 * 2, 844 * 2);
+      tester.view.devicePixelRatio = 2;
+      tester.platformDispatcher.platformBrightnessTestValue = dark
+          ? Brightness.dark
+          : Brightness.light;
+      addTearDown(() {
+        tester.view.reset();
+        tester.platformDispatcher.clearAllTestValues();
+      });
+      late TestEnv env;
+      await tester.runAsync(() async {
+        env = await newEnv(
+          accountMode: 'split',
+          opening: 8500000,
+          now: DateTime(2026, 11, 5, 10),
+        );
+        await env.repo.addTransaction(
+          type: 'debit',
+          amountMinor: 45000,
+          categoryId: 'cat_food_dining',
+          date: Dates.day(2026, 11, 3),
+        );
+      });
+      addTearDown(() => tester.runAsync(() => env.db.close()));
+      await tester.pumpWidget(
+        RepaintBoundary(
+          key: _key,
+          child: ProviderScope(
+            overrides: [repoProvider.overrideWithValue(env.repo)],
+            child: const CashBuddyApp(),
+          ),
+        ),
+      );
+      await settle(tester);
+      final p = dark ? 'dark' : 'light';
+      await tapText(tester, 'Activity', last: true);
+      await tester.scrollUntilVisible(
+        find.text('Starting balance'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await shot(tester, '$p-w1-activity-opening');
+      await tapText(tester, 'Settings', last: true);
+      await shot(tester, '$p-w2-settings-top');
+      Future<void> scrollTo(String t, String name) async {
+        await tester.scrollUntilVisible(
+          find.text(t),
+          250,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await shot(tester, name);
+      }
+
+      await scrollTo('AUTOMATIC ENTRIES', '$p-w3-settings-automatic');
+      await scrollTo('MONTH-END TITLE', '$p-w4-settings-titles');
+      await tester.tap(find.text('How we talk to you'));
+      await settle(tester);
+      await shot(tester, '$p-w5-tone-sheet');
+    });
+  }
 }

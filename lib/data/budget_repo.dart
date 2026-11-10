@@ -96,11 +96,92 @@ extension BudgetRepo on Repo {
     await setSetting('budgetMigrated', '1');
   }
 
+  /// 'overall' (one amount) or 'category' (an amount per category; the total
+  /// is their sum). Existing budgets stay 'overall'.
+  Future<String> budgetMode() async =>
+      (await _item('mode'))?.key == 'category' ? 'category' : 'overall';
+
+  Future<void> setBudgetMode(String mode) async {
+    if (mode == 'category') {
+      await _putItem('mode', 'mode', key: 'category', amount: 0);
+    } else {
+      // keep today's total as the one overall amount
+      final now = today;
+      final total = await budgetFor(now.year, now.month);
+      await _putItem('mode', 'mode', key: 'overall', amount: 0);
+      if (total != null && total > 0) {
+        await _putItem('base', 'base', amount: total);
+      }
+    }
+  }
+
   Future<int?> budgetFor(int y, int m) async {
+    if (await budgetMode() == 'category') {
+      final sum = (await budgetSplits(month: monthKey(y, m))).values
+          .fold<int>(0, (a, b) => a + b);
+      return sum > 0 ? sum : null;
+    }
     final over = await _item('month:${monthKey(y, m)}');
     if (over != null) return over.amountMinor;
     return (await _item('base'))?.amountMinor;
   }
+
+  /// Saves a budget split by category. For every month, or only for [month]
+  /// (then that month has its own list and other months are untouched).
+  Future<void> saveCategoryBudget(
+    Map<String, int> amounts, {
+    DateTime? month,
+  }) async {
+    final clean = {
+      for (final e in amounts.entries)
+        if (e.value > 0) e.key: e.value,
+    };
+    if (clean.isEmpty) {
+      throw ValidationException('Enter an amount for at least one category');
+    }
+    await _putItem('mode', 'mode', key: 'category', amount: 0);
+    if (month == null) {
+      for (final id in (await budgetSplits()).keys) {
+        if (!clean.containsKey(id)) await _dropItem('split:$id');
+      }
+      for (final e in clean.entries) {
+        await _putItem('split:${e.key}', 'split', key: e.key, amount: e.value);
+      }
+    } else {
+      final mk = monthKey(month.year, month.month);
+      for (final r in await _monthSplitRows(mk)) {
+        if (!clean.containsKey(r.key.split('|').last)) await _dropItem(r.id);
+      }
+      for (final e in clean.entries) {
+        await _putItem(
+          'msplit:$mk|${e.key}',
+          'msplit',
+          key: '$mk|${e.key}',
+          amount: e.value,
+        );
+      }
+    }
+    final t = month ?? today;
+    if (await _item('since') == null) {
+      await _putItem(
+        'since',
+        'since',
+        key: monthKey(t.year, t.month),
+        amount: 0,
+      );
+    }
+  }
+
+  Future<List<BudgetItem>> _monthSplitRows(String mk) async =>
+      (await (db.select(db.budgetItems)
+                ..where((t) => t.kind.equals('msplit') & t.deletedAt.isNull()))
+              .get())
+          .where((r) => r.key.startsWith('$mk|'))
+          .toList();
+
+  /// Whether [month] has its own category amounts.
+  Future<bool> hasMonthCategoryBudget(String mk) async =>
+      (await _monthSplitRows(mk)).isNotEmpty;
 
   /// Sets the budget for every month, or only for [month] when given.
   Future<void> setBudget(int? minor, {DateTime? month}) async {
@@ -130,7 +211,15 @@ extension BudgetRepo on Repo {
     }
   }
 
-  Future<Map<String, int>> budgetSplits() async {
+  /// Category amounts for [month] ("YYYY-MM"): that month's own list when it
+  /// has one, else the amounts that repeat every month.
+  Future<Map<String, int>> budgetSplits({String? month}) async {
+    if (month != null) {
+      final own = await _monthSplitRows(month);
+      if (own.isNotEmpty) {
+        return {for (final r in own) r.key.split('|').last: r.amountMinor};
+      }
+    }
     final rows = await (db.select(
       db.budgetItems,
     )..where((t) => t.kind.equals('split') & t.deletedAt.isNull())).get();
@@ -182,7 +271,7 @@ extension BudgetRepo on Repo {
         : (now.isAfter(r.end) ? r.days : now.difference(r.start).inDays + 1);
     final byCat = await _spentByMainCategory(r);
     final spent = byCat.values.fold<int>(0, (a, b) => a + b);
-    final splits = await budgetSplits();
+    final splits = await budgetSplits(month: monthKey(y, m));
     final cats = {for (final c in await categories(kind: 'debit')) c.id: c};
     final rows = <SplitRow>[];
     var inSplits = 0;
@@ -220,7 +309,9 @@ extension BudgetRepo on Repo {
       month: m,
       budget: budget,
       spent: spent,
-      monthOnly: await _item('month:${monthKey(y, m)}') != null,
+      monthOnly:
+          await _item('month:${monthKey(y, m)}') != null ||
+          await hasMonthCategoryBudget(monthKey(y, m)),
       splits: rows,
       daysInMonth: r.days,
       daysElapsed: elapsed,

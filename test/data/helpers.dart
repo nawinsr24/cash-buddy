@@ -1,3 +1,5 @@
+import 'package:cash_buddy/data/db_key.dart';
+import 'package:cash_buddy/sync/vault.dart';
 import 'package:cash_buddy/data/db.dart';
 import 'package:cash_buddy/data/repo.dart';
 import 'package:cash_buddy/domain/hlc.dart';
@@ -40,4 +42,11 @@ Future<TestEnv> newEnv({
     openingBankMinor: 0,
   );
   return env;
+}
+
+/// A vault with a passphrase already set, for tests that sync.
+Future<Vault> testVault() async {
+  final v = Vault(MemorySecretStore(), iterations: 1000);
+  await v.setPassphrase('test passphrase');
+  return v;
 }

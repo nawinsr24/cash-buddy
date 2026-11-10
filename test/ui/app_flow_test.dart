@@ -1,4 +1,5 @@
 import 'package:cash_buddy/app.dart';
+import 'package:cash_buddy/data/budget_repo.dart';
 import 'package:cash_buddy/data/invest_repo.dart';
 import 'package:cash_buddy/data/repo.dart';
 import 'package:cash_buddy/domain/dates.dart';
@@ -10,6 +11,20 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../data/helpers.dart';
 
+/// From the opening-balance step to the end of the first-run wizard,
+/// skipping every optional step.
+Future<void> finishWizard(WidgetTester tester) async {
+  await tapText(tester, 'Continue'); // balance -> reminder
+  await tapText(tester, 'Skip'); // reminder -> budget
+  await tester.runAsync(
+    () => Future<void>.delayed(const Duration(milliseconds: 300)),
+  );
+  await settle(tester);
+  await tapText(tester, 'Skip for now'); // budget -> look
+  await tapText(tester, 'Skip'); // look -> privacy
+  await tapText(tester, 'Start using Cash++');
+}
+
 Future<TestEnv> pump(
   WidgetTester tester, {
   bool onboarded = true,
@@ -18,6 +33,7 @@ Future<TestEnv> pump(
   Size size = const Size(390, 844),
   double textScale = 1.0,
   Brightness? brightness,
+  DateTime? now,
 }) async {
   tester.view.physicalSize = size * 3;
   tester.view.devicePixelRatio = 3;
@@ -34,7 +50,7 @@ Future<TestEnv> pump(
     env = await newEnv(
       accountMode: accountMode,
       opening: opening,
-      now: DateTime.now(),
+      now: now ?? DateTime.now(),
     );
     if (!onboarded) {
       await env.db.delete(env.db.settings).go();
@@ -78,25 +94,33 @@ void main() {
   testWidgets(
     'onboarding: explicit choices, then lands on dashboard with opening balance',
     (tester) async {
+      tester.platformDispatcher.localeTestValue = const Locale('en', 'IN');
+      addTearDown(tester.platformDispatcher.clearLocaleTestValue);
       await pump(tester, onboarded: false);
+      // first question: language and currency (English and INR come first)
+      expect(find.text('Language and currency'), findsOneWidget);
+      expect(find.text('English'), findsOneWidget);
+      await tapText(tester, 'Continue');
       expect(find.text('Where should your data live?'), findsOneWidget);
       // Continue is disabled until a choice is made (nothing silently pre-selected)
       expect(
         tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
         isNull,
       );
-      await tapText(tester, 'Offline Mode');
+      await tapText(tester, 'Keep on this phone only');
       await tapText(tester, 'Continue');
       expect(find.text('How do you track your money?'), findsOneWidget);
       expect(
         tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
         isNull,
       );
-      await tapText(tester, 'Combined account');
+      await tapText(tester, 'One balance');
+      await tapText(tester, 'Continue');
+      expect(find.text('Add bank messages automatically'), findsOneWidget);
       await tapText(tester, 'Continue');
       expect(find.text('Opening balance'), findsOneWidget);
       await tester.enterText(find.byType(TextField).first, '5000');
-      await tapText(tester, 'Start using Cash++');
+      await finishWizard(tester);
       expect(find.text('TOTAL BALANCE'), findsOneWidget);
       expect(find.text('₹5,000.00'), findsWidgets);
     },
@@ -241,7 +265,7 @@ void main() {
     );
     await tapText(tester, 'Add transaction');
     await settle(tester);
-    await tester.tap(find.text('Discard').first, warnIfMissed: false);
+    await tester.tap(find.text('Ignore').first, warnIfMissed: false);
     await settle(tester);
     final txns = await tester.runAsync(
       () => env.repo.searchTransactions(const TxnFilter()),
@@ -312,7 +336,12 @@ void main() {
   testWidgets('month-end banner opens the title with a health note', (
     tester,
   ) async {
-    final env = await pump(tester, opening: 1000000);
+    // fixed early-November clock: the banner only shows in the first week
+    final env = await pump(
+      tester,
+      opening: 1000000,
+      now: DateTime(2026, 11, 4, 10),
+    );
     await tester.runAsync(() async {
       final r = env.repo;
       await r.addTransaction(
@@ -362,8 +391,19 @@ void main() {
     await tapText(tester, 'Set a monthly budget');
     expect(find.text('No budget yet'), findsOneWidget);
     await tapText(tester, 'Set my budget');
+    // the editor reads the database first
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 300)),
+    );
+    await settle(tester);
     await tester.enterText(find.byType(TextField).first, '5000');
     await tapText(tester, 'Save budget');
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 300)),
+    );
+    await settle(tester);
+    await tester.pump(const Duration(seconds: 2));
+    await settle(tester);
     expect(find.text('Under budget'), findsOneWidget);
     await tester.runAsync(
       () => env.repo.addTransaction(
@@ -389,6 +429,79 @@ void main() {
     expect(find.text('Over budget'), findsOneWidget);
   });
 
+  testWidgets('budget by category: the total adds up by itself', (
+    tester,
+  ) async {
+    final env = await pump(tester, opening: 10000000);
+    await tapText(tester, 'Set a monthly budget');
+    await tapText(tester, 'Set my budget');
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 300)),
+    );
+    await settle(tester);
+    await tapText(tester, 'By category');
+    final fields = find.byType(TextField);
+    await tester.enterText(fields.at(0), '3000');
+    await tester.enterText(fields.at(1), '2000');
+    await settle(tester);
+    expect(find.text('₹5,000.00'), findsWidgets);
+    await tester.ensureVisible(find.text('Save budget'));
+    await settle(tester);
+    await tapText(tester, 'Save budget');
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 300)),
+    );
+    await settle(tester);
+    final now = env.repo.today;
+    final total = await tester.runAsync(
+      () => env.repo.budgetFor(now.year, now.month),
+    );
+    expect(total, 500000);
+    expect(await tester.runAsync(() => env.repo.budgetMode()), 'category');
+  });
+
+  testWidgets('opening balance is listed in Activity and can be edited', (
+    tester,
+  ) async {
+    final env = await pump(tester, opening: 5000000);
+    await tapText(tester, 'Activity', last: true);
+    await tester.scrollUntilVisible(
+      find.text('Starting balance'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('Opening balance'), findsOneWidget);
+    await tester.tap(find.text('Opening balance'));
+    await settle(tester);
+    await tester.enterText(find.byType(TextField).last, '60000');
+    await tapText(tester, 'Save');
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 300)),
+    );
+    await settle(tester);
+    final total = await tester.runAsync(() => env.repo.balances());
+    expect(total!.values.fold<int>(0, (a, b) => a + b), 6000000);
+  });
+
+  testWidgets('tone is explained with an example of each style', (
+    tester,
+  ) async {
+    await pump(tester);
+    await tapText(tester, 'Settings', last: true);
+    await tester.scrollUntilVisible(
+      find.text('How we talk to you'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.text('How we talk to you'));
+    await settle(tester);
+    expect(find.textContaining('gives you a title'), findsOneWidget);
+    expect(find.text('Friendly'), findsWidgets);
+    expect(find.text('Honest and funny'), findsWidgets);
+    expect(find.textContaining('Where is the extra money'), findsOneWidget);
+    expect(find.textContaining('never joke about health'), findsOneWidget);
+  });
+
   testWidgets('online mode asks for confirmation before Google sign-in', (
     tester,
   ) async {
@@ -396,9 +509,9 @@ void main() {
     await tapText(tester, 'Settings', last: true);
     await tester.tap(find.byType(Switch).first);
     await settle(tester);
-    expect(find.text('Turn on Online Mode?'), findsOneWidget);
+    expect(find.text('Back up to Google Drive?'), findsOneWidget);
     await tapText(tester, 'Cancel');
-    expect(find.text('Turn on Online Mode?'), findsNothing);
+    expect(find.text('Back up to Google Drive?'), findsNothing);
   });
 
   testWidgets('home shows the Money Grade and the insights strip', (
@@ -420,7 +533,7 @@ void main() {
   ) async {
     final env = await pump(tester, opening: 1000000);
     await tapText(tester, 'Add');
-    await tapText(tester, 'Uncategorised'); // the category field
+    await tapText(tester, 'No category'); // the category field
     // main tiles, including the new life categories
     for (final n in [
       'Cigarettes',
@@ -428,7 +541,7 @@ void main() {
       'Hobbies',
       'Friends',
       'Tours & Trips',
-      'Sent Home',
+      'Family Support',
     ]) {
       await tester.scrollUntilVisible(
         find.text(n),
@@ -458,7 +571,7 @@ void main() {
     final env = await pump(tester, opening: 1000000);
     await tapText(tester, 'Add');
     await tapText(tester, 'Sent money home'); // quick chip
-    expect(find.text('Sent Home'), findsOneWidget);
+    expect(find.text('Family Support'), findsOneWidget);
     await tester.enterText(find.byType(TextField).first, '5000');
     await tapText(tester, 'Add', last: true);
     await settle(tester);
@@ -541,19 +654,19 @@ void main() {
     final env = await pump(tester, opening: 250000);
     await tapText(tester, 'Settings', last: true);
     await tester.scrollUntilVisible(
-      find.text('Combined account'),
+      find.text('One balance'),
       200,
       scrollable: find.byType(Scrollable).first,
     );
     final sw = find.descendant(
-      of: find.widgetWithText(ListTile, 'Combined account'),
+      of: find.widgetWithText(ListTile, 'One balance'),
       matching: find.byType(Switch),
     );
     await tester.ensureVisible(sw);
     await settle(tester);
     await tester.tap(sw);
     await settle(tester);
-    expect(find.text('Split accounts'), findsOneWidget);
+    expect(find.text('Separate balances'), findsOneWidget);
     expect(await tester.runAsync(() => env.repo.totalBalance()), 250000);
   });
 

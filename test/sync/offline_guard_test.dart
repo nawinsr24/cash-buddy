@@ -26,7 +26,7 @@ void main() {
     () async {
       final e = await newEnv(); // onboarded as offline
       final spy = SpyRemote();
-      final svc = SyncService(e.repo)..useRemote(spy);
+      final svc = SyncService(e.repo, vault: await testVault())..useRemote(spy);
       await e.repo.addTransaction(type: 'debit', amountMinor: 100);
       final res = await svc.syncNow();
       expect(res.ok, isTrue);
@@ -39,7 +39,7 @@ void main() {
     final e = await newEnv();
     await e.repo.setSetting('dataMode', 'online');
     final spy = SpyRemote();
-    final svc = SyncService(e.repo)..useRemote(spy);
+    final svc = SyncService(e.repo, vault: await testVault())..useRemote(spy);
     await e.repo.addTransaction(type: 'debit', amountMinor: 100);
     final res = await svc.syncNow();
     expect(res.ok, isTrue);

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../l10n/l10n.dart';
 import '../data/db.dart';
 import '../data/repo.dart';
 import '../domain/dates.dart';
@@ -27,7 +28,7 @@ class _DebtsPageState extends ConsumerState<DebtsPage>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Debts'),
+        title: Text(tr('Debts')),
         bottom: TabBar(
           controller: _tabs,
           tabs: const [
@@ -318,14 +319,14 @@ class _AddDebtSheetState extends ConsumerState<AddDebtSheet> {
               ),
             ),
             const SizedBox(height: Sp.x3),
-            AmountField(controller: _amount, label: 'Principal'),
+            AmountField(controller: _amount, label: tr('Loan amount')),
             const SizedBox(height: Sp.x3),
             if (split)
               DropdownButtonFormField<String>(
                 initialValue:
                     accountId ??
                     (accounts.isNotEmpty ? accounts.first.id : null),
-                decoration: const InputDecoration(labelText: 'Account'),
+                decoration: InputDecoration(labelText: tr('Account')),
                 items: [
                   for (final a in accounts)
                     DropdownMenuItem(value: a.id, child: Text(a.name)),
@@ -334,7 +335,7 @@ class _AddDebtSheetState extends ConsumerState<AddDebtSheet> {
               ),
             SwitchListTile.adaptive(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Charge interest'),
+              title: Text(tr('Charge interest')),
               value: interest,
               onChanged: (v) => setState(() => interest = v),
             ),
@@ -347,8 +348,8 @@ class _AddDebtSheetState extends ConsumerState<AddDebtSheet> {
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
-                      decoration: const InputDecoration(
-                        labelText: 'Rate',
+                      decoration: InputDecoration(
+                        labelText: tr('Rate'),
                         suffixText: '%',
                       ),
                     ),
@@ -375,9 +376,9 @@ class _AddDebtSheetState extends ConsumerState<AddDebtSheet> {
               const SizedBox(height: Sp.x3),
               SegmentedButton<String>(
                 showSelectedIcon: false,
-                segments: const [
-                  ButtonSegment(value: 'simple', label: Text('Simple')),
-                  ButtonSegment(value: 'compound', label: Text('Compound')),
+                segments: [
+                  ButtonSegment(value: 'simple', label: Text(tr('Simple'))),
+                  ButtonSegment(value: 'compound', label: Text(tr('Compound'))),
                 ],
                 selected: {type},
                 onSelectionChanged: (s) => setState(() => type = s.first),
@@ -452,7 +453,7 @@ class _AddDebtSheetState extends ConsumerState<AddDebtSheet> {
             const SizedBox(height: Sp.x5),
             FilledButton(
               onPressed: saving ? null : _save,
-              child: const Text('Save'),
+              child: Text(tr('Save')),
             ),
           ],
         ),
@@ -509,18 +510,18 @@ class DebtDetailPage extends ConsumerWidget {
                     final ok = await showDialog<bool>(
                       context: context,
                       builder: (c) => AlertDialog(
-                        title: const Text('Delete this debt?'),
+                        title: Text(tr('Delete this debt?')),
                         content: const Text(
                           'Its repayments and linked ledger entries are removed and balances are restored.',
                         ),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(c, false),
-                            child: const Text('Cancel'),
+                            child: Text(tr('Cancel')),
                           ),
                           TextButton(
                             onPressed: () => Navigator.pop(c, true),
-                            child: const Text('Delete'),
+                            child: Text(tr('Delete')),
                           ),
                         ],
                       ),
@@ -553,14 +554,20 @@ class DebtDetailPage extends ConsumerWidget {
                     }
                   }
                 },
-                itemBuilder: (_) => const [
+                itemBuilder: (_) => [
                   PopupMenuItem(
                     value: 'combined',
                     child: Text('One payment: interest first, then principal'),
                   ),
                   PopupMenuItem(
                     value: 'writeoff',
-                    child: Text('Write off an amount'),
+                    child: Row(
+                      children: [
+                        Expanded(child: Text(tr('Waive an amount'))),
+                        SizedBox(width: 8),
+                        Icon(Icons.info_outline, size: 18),
+                      ],
+                    ),
                   ),
                   PopupMenuItem(value: 'delete', child: Text('Delete debt')),
                 ],
@@ -772,7 +779,7 @@ class _EventTile extends ConsumerWidget {
           TrailingMoney(e.amountMinor, style: context.text.bodyMedium),
           if (e.type == 'repayment' || e.type == 'writeoff')
             IconButton(
-              tooltip: 'Delete',
+              tooltip: tr('Delete'),
               icon: const Icon(Icons.delete_outline),
               onPressed: () => ref.read(repoProvider).deleteDebtEvent(e.id),
             ),
@@ -805,6 +812,7 @@ class _RepaymentSheetState extends ConsumerState<_RepaymentSheet> {
   late final _amount = TextEditingController();
   DateTime date = Dates.today();
   String? error;
+  bool _showInfo = false;
 
   Future<void> _save() async {
     final amt = Money.parse(_amount.text);
@@ -840,18 +848,46 @@ class _RepaymentSheetState extends ConsumerState<_RepaymentSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            widget.writeOff
-                ? 'Write off'
-                : widget.target == 'interest'
-                ? (widget.rec ? 'Interest received' : 'Interest paid')
-                : widget.target == 'principal'
-                ? (widget.rec ? 'Principal received' : 'Principal paid')
-                : 'Record payment',
-            style: context.text.titleLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  widget.writeOff
+                      ? 'Waive an amount'
+                      : widget.target == 'interest'
+                      ? (widget.rec ? 'Interest received' : 'Interest paid')
+                      : widget.target == 'principal'
+                      ? (widget.rec ? 'Principal received' : 'Principal paid')
+                      : 'Record payment',
+                  style: context.text.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              if (widget.writeOff)
+                IconButton(
+                  tooltip: 'What does this mean?',
+                  icon: Icon(
+                    _showInfo ? Icons.info : Icons.info_outline,
+                    color: context.scheme.primary,
+                  ),
+                  onPressed: () => setState(() => _showInfo = !_showInfo),
+                ),
+            ],
           ),
+          if (widget.writeOff && _showInfo)
+            Container(
+              margin: const EdgeInsets.only(bottom: Sp.x2),
+              padding: const EdgeInsets.all(Sp.x3),
+              decoration: BoxDecoration(
+                color: context.scheme.primaryContainer,
+                borderRadius: BorderRadius.circular(Sp.rCard),
+              ),
+              child: Text(
+                'Use this when you agree to drop part of what is left. That amount is closed with no money moving, so your balance does not change.',
+                style: context.text.bodySmall?.copyWith(height: 1.35),
+              ),
+            ),
           Text(
             widget.target == 'interest'
                 ? (widget.max > 0
@@ -873,8 +909,7 @@ class _RepaymentSheetState extends ConsumerState<_RepaymentSheet> {
             children: [
               ActionChip(
                 label: const Text('Full amount'),
-                onPressed: () =>
-                    _amount.text = (widget.max / 100).toStringAsFixed(2),
+                onPressed: () => _amount.text = Money.edit(widget.max),
               ),
             ],
           ),
@@ -908,7 +943,7 @@ class _RepaymentSheetState extends ConsumerState<_RepaymentSheet> {
             onPressed: widget.target == 'interest' && widget.max <= 0
                 ? null
                 : _save,
-            child: const Text('Save'),
+            child: Text(tr('Save')),
           ),
         ],
       ),

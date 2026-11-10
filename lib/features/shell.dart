@@ -5,6 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/insights_repo.dart';
 import '../data/repo.dart';
+import '../l10n/l10n.dart';
+import '../platform/features.dart';
+import '../platform/remote_flags.dart';
 import '../platform/diag.dart';
 import '../platform/notifications.dart';
 import '../platform/reminders.dart';
@@ -39,6 +42,13 @@ class ShellState extends ConsumerState<Shell> with WidgetsBindingObserver {
   static final _scanTimes = <DateTime>[];
   static DateTime? _pausedUntil;
 
+  /// Tests open the app many times in a row; start each one with a clean slate.
+  @visibleForTesting
+  static void resetAutoScanLimits() {
+    _scanTimes.clear();
+    _pausedUntil = null;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -57,7 +67,11 @@ class ShellState extends ConsumerState<Shell> with WidgetsBindingObserver {
       }
       _writesThisSecond = 0;
     });
-    _autoScan();
+    // after the first frame: it invalidates providers, which is not allowed
+    // while the tree is still being built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _autoScan();
+    });
   }
 
   @override
@@ -104,10 +118,15 @@ class ShellState extends ConsumerState<Shell> with WidgetsBindingObserver {
     _lastAutoScan = nowT;
     ref.invalidate(bannerTitleProvider);
     final repo = ref.read(repoProvider);
-    final enabled = await repo.getSetting('smsEnabled') == '1';
+    final allowed = Features.smsReading(
+      remoteFlag: await repo.getSetting('flag_sms') != '0',
+    );
+    final enabled = allowed && await repo.getSetting('smsEnabled') == '1';
+    unawaited(refreshRemoteFlags(repo));
     if (SmsReader.supported) {
       await SmsReader.instance.setSecure(
-        await repo.getSetting('appLock') == '1',
+        await repo.getSetting('hidePreview') != '0' ||
+            await repo.getSetting('appLock') == '1',
       );
       await SmsReader.instance.setAutoDetect(enabled);
       if (enabled) await scanSmsInbox(repo);
@@ -219,7 +238,7 @@ class ShellState extends ConsumerState<Shell> with WidgetsBindingObserver {
         index: i,
         items: [
           for (final t in tabs)
-            FunNavItem(t.icon, t.selectedIcon, t.label, badge: t.badge),
+            FunNavItem(t.icon, t.selectedIcon, tr(t.label), badge: t.badge),
         ],
         onTap: (v) {
           if (v != _index) haptic();

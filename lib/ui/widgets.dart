@@ -84,20 +84,11 @@ class SectionTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.fromLTRB(Sp.x1, Sp.x6, Sp.x1, Sp.x3),
-    child: TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0, end: 1),
-      duration: const Duration(milliseconds: 520),
-      curve: Curves.easeOutCubic,
-      builder: (_, t, c) => Opacity(
-        opacity: t,
-        child: Transform.translate(offset: Offset(-16 * (1 - t), 0), child: c),
-      ),
-      child: Row(
-        children: [
-          Expanded(child: Eyebrow(text)),
-          ?trailing,
-        ],
-      ),
+    child: Row(
+      children: [
+        Expanded(child: Eyebrow(text)),
+        ?trailing,
+      ],
     ),
   );
 }
@@ -214,14 +205,15 @@ class AmountField extends StatelessWidget {
     controller: controller,
     autofocus: autofocus,
     keyboardType: const TextInputType.numberWithOptions(decimal: true),
-    inputFormatters: [
-      FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
-    ],
+    inputFormatters: [FilteringTextInputFormatter.allow(Money.inputPattern)],
     style: context.text.headlineSmall?.copyWith(
       fontWeight: FontWeight.w700,
       fontFeatures: moneyFeatures,
     ),
-    decoration: InputDecoration(labelText: label, prefixText: '₹ '),
+    decoration: InputDecoration(
+      labelText: label,
+      prefixText: '${Money.symbol} ',
+    ),
   );
 }
 

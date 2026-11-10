@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../l10n/l10n.dart';
 import '../data/db.dart';
 import '../domain/dates.dart';
 import '../domain/sms_parser.dart';
@@ -25,21 +26,20 @@ class InboxPage extends ConsumerWidget {
     final cats = ref.watch(categoriesProvider).value ?? [];
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Inbox'),
+        title: Text(tr('Bank messages to review')),
         actions: [
           if (SmsReader.supported)
             IconButton(
-              tooltip: 'Scan messages',
-              icon: const Icon(Icons.manage_search),
+              tooltip: tr('Check for new alerts'),
+              icon: const Icon(Icons.refresh),
               onPressed: () => scanAndReport(context, ref),
             ),
-          // Paste import is only a fallback where the app cannot read SMS (iOS / web).
-          if (!SmsReader.supported)
-            IconButton(
-              tooltip: 'Import messages',
-              icon: const Icon(Icons.content_paste),
-              onPressed: () => showSheet(context, (_) => const ImportSheet()),
-            ),
+          // Older messages (and phones that cannot see alerts) use paste.
+          IconButton(
+            tooltip: 'Add from a copied message',
+            icon: const Icon(Icons.content_paste),
+            onPressed: () => showSheet(context, (_) => const ImportSheet()),
+          ),
         ],
       ),
       body: pending.when(
@@ -54,12 +54,12 @@ class InboxPage extends ConsumerWidget {
               icon: Icons.mark_email_read_outlined,
               title: 'All caught up',
               body: SmsReader.supported
-                  ? 'New bank transactions are detected automatically and appear here. Review each one and add it yourself, or discard it.'
+                  ? 'New bank alerts appear here automatically. Check each one and add it, or ignore it. For older messages, copy the message and use the paste button.'
                   : 'This device cannot read your messages. Copy a bank SMS and import it to review it here.',
               action: SmsReader.supported
                   ? OutlinedButton.icon(
                       icon: const Icon(Icons.manage_search),
-                      label: const Text('Scan messages now'),
+                      label: Text(tr('Check for new alerts')),
                       onPressed: () => scanAndReport(context, ref),
                     )
                   : FilledButton.icon(
@@ -67,7 +67,7 @@ class InboxPage extends ConsumerWidget {
                         minimumSize: const Size(200, 48),
                       ),
                       icon: const Icon(Icons.content_paste),
-                      label: const Text('Import messages'),
+                      label: Text(tr('Import messages')),
                       onPressed: () =>
                           showSheet(context, (_) => const ImportSheet()),
                     ),
@@ -96,18 +96,18 @@ class InboxPage extends ConsumerWidget {
                             final ok = await showDialog<bool>(
                               context: context,
                               builder: (c) => AlertDialog(
-                                title: Text('Discard all ${list.length}?'),
+                                title: Text('Ignore all ${list.length}?'),
                                 content: const Text(
                                   'Nothing is added to your records. Useful to clear old messages.',
                                 ),
                                 actions: [
                                   TextButton(
                                     onPressed: () => Navigator.pop(c, false),
-                                    child: const Text('Cancel'),
+                                    child: Text(tr('Cancel')),
                                   ),
                                   TextButton(
                                     onPressed: () => Navigator.pop(c, true),
-                                    child: const Text('Discard all'),
+                                    child: Text(tr('Ignore all')),
                                   ),
                                 ],
                               ),
@@ -119,7 +119,7 @@ class InboxPage extends ConsumerWidget {
                               }
                             }
                           },
-                          child: const Text('Discard all'),
+                          child: Text(tr('Ignore all')),
                         ),
                     ],
                   ),
@@ -216,7 +216,7 @@ class _SmsTileState extends ConsumerState<_SmsTile> {
                         minimumSize: const Size.fromHeight(48),
                       ),
                       icon: const Icon(Icons.close),
-                      label: const Text('Discard'),
+                      label: Text(tr('Ignore')),
                       onPressed: () {
                         haptic();
                         ref.read(repoProvider).discardSms(s.id);
@@ -230,7 +230,7 @@ class _SmsTileState extends ConsumerState<_SmsTile> {
                         minimumSize: const Size.fromHeight(48),
                       ),
                       icon: const Icon(Icons.edit_note),
-                      label: const Text('Review & add'),
+                      label: Text(tr('Review & add')),
                       onPressed: () async {
                         haptic();
                         final m = await ref
@@ -319,8 +319,8 @@ class _ImportSheetState extends ConsumerState<ImportSheet> {
             controller: _text,
             minLines: 5,
             maxLines: 10,
-            decoration: const InputDecoration(
-              labelText: 'Message text',
+            decoration: InputDecoration(
+              labelText: tr('Message text'),
               alignLabelWithHint: true,
             ),
           ),
@@ -330,7 +330,7 @@ class _ImportSheetState extends ConsumerState<ImportSheet> {
               OutlinedButton.icon(
                 onPressed: _paste,
                 icon: const Icon(Icons.content_paste),
-                label: const Text('Paste'),
+                label: Text(tr('Paste')),
               ),
             ],
           ),
@@ -342,7 +342,7 @@ class _ImportSheetState extends ConsumerState<ImportSheet> {
           const SizedBox(height: Sp.x4),
           FilledButton(
             onPressed: _import,
-            child: const Text('Find transactions'),
+            child: Text(tr('Find transactions')),
           ),
         ],
       ),

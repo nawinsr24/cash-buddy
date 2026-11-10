@@ -3,12 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../data/budget_repo.dart';
-import '../data/db.dart';
-import '../data/repo.dart' show ValidationException;
+import '../l10n/l10n.dart';
 import '../domain/budget.dart';
 import '../domain/money.dart';
 import '../providers.dart';
+import 'budget_editor.dart';
 import '../ui/emoji.dart';
 import '../ui/motion.dart';
 import '../ui/theme.dart';
@@ -94,40 +93,29 @@ class BudgetCard extends ConsumerWidget {
     if (!async.hasValue) return const SizedBox.shrink();
     final b = async.value;
     void go() => pushReveal(context, const BudgetPage());
+    final muted = context.cash.textMuted;
     if (b == null) {
       return Pressable(
         onTap: go,
-        child: Container(
-          padding: const EdgeInsets.all(Sp.x4),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(Sp.rCard),
-            color: context.scheme.primaryContainer,
-          ),
-          child: Row(
-            children: [
-              Icon(Icons.flag_outlined, color: context.scheme.primary),
-              const SizedBox(width: Sp.x3),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Set a monthly budget',
-                      style: context.text.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
+        child: Card(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: Sp.x4,
+              vertical: Sp.x3,
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Set a monthly budget',
+                    style: context.text.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
                     ),
-                    Text(
-                      'Know if you finish under, on or over it.',
-                      style: context.text.bodySmall?.copyWith(
-                        color: context.cash.textMuted,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-              const Icon(Icons.arrow_forward, size: 20),
-            ],
+                Icon(Icons.chevron_right, size: 20, color: muted),
+              ],
+            ),
           ),
         ),
       );
@@ -139,73 +127,43 @@ class BudgetCard extends ConsumerWidget {
       child: Card(
         child: Padding(
           padding: const EdgeInsets.all(Sp.x4),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _BudgetRing(
-                fraction: b.fraction,
-                color: color,
-                size: 76,
-                center: Text(
-                  '${(b.fraction * 100).round()}%',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 17,
-                    color: context.scheme.onSurface,
-                    fontFeatures: moneyFeatures,
+              Eyebrow(tr('Budget')),
+              const SizedBox(height: 4),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: Money.format(b.remaining.abs()),
+                        style: context.text.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.8,
+                          color: over ? color : null,
+                          fontFeatures: moneyFeatures,
+                        ),
+                      ),
+                      TextSpan(
+                        text: over ? '  over' : '  left',
+                        style: context.text.bodyMedium?.copyWith(color: muted),
+                      ),
+                    ],
                   ),
                 ),
               ),
-              const SizedBox(width: Sp.x4),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Expanded(child: Eyebrow('Budget')),
-                        _StatePill(b.state),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: Text.rich(
-                        TextSpan(
-                          children: [
-                            TextSpan(
-                              text: Money.format(b.remaining.abs()),
-                              style: context.text.titleLarge?.copyWith(
-                                fontWeight: FontWeight.w800,
-                                fontSize: 24,
-                                letterSpacing: -0.8,
-                                color: over ? color : null,
-                                fontFeatures: moneyFeatures,
-                              ),
-                            ),
-                            TextSpan(
-                              text: over ? '  over' : '  left',
-                              style: context.text.bodyMedium?.copyWith(
-                                color: context.cash.textMuted,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      b.complete
-                          ? 'of ${Money.format(b.budget)}'
-                          : 'of ${Money.format(b.budget)}  ·  ${b.daysLeft} days left',
-                      style: context.text.bodySmall?.copyWith(
-                        color: context.cash.textMuted,
-                      ),
-                    ),
-                  ],
-                ),
+              const SizedBox(height: Sp.x3),
+              _Bar(fraction: b.fraction, color: color, height: 6),
+              const SizedBox(height: Sp.x2),
+              Text(
+                b.complete
+                    ? 'of ${Money.format(b.budget)}'
+                    : 'of ${Money.format(b.budget)}  ·  ${b.daysLeft} days left',
+                style: context.text.bodySmall?.copyWith(color: muted),
               ),
-              const Icon(Icons.chevron_right, size: 20),
             ],
           ),
         ),
@@ -247,7 +205,7 @@ class BudgetPage extends ConsumerWidget {
     final month = DateFormat('MMMM y').format(ref.read(repoProvider).today);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Monthly budget'),
+        title: Text(tr('Monthly budget')),
         actions: [
           IconButton(
             tooltip: b == null ? 'Set budget' : 'Edit budget',
@@ -266,7 +224,7 @@ class BudgetPage extends ConsumerWidget {
               action: FilledButton.icon(
                 style: FilledButton.styleFrom(minimumSize: const Size(200, 52)),
                 icon: const Icon(Icons.add),
-                label: const Text('Set my budget'),
+                label: Text(tr('Set my budget')),
                 onPressed: () => showBudgetSheet(context),
               ),
             )
@@ -382,22 +340,7 @@ class BudgetPage extends ConsumerWidget {
             ),
           ),
         ],
-        SectionTitle(
-          'Splitups',
-          trailing: TextButton.icon(
-            icon: const Icon(Icons.add, size: 18),
-            label: const Text('Add split'),
-            onPressed: () => _addSplit(context, ref, b),
-          ),
-        ),
-        if (b.splits.isEmpty)
-          Padding(
-            padding: const EdgeInsets.all(Sp.x4),
-            child: Text(
-              'Optional. Set aside part of the budget for categories like Food or Movies. They are a guide: only the overall budget decides under, on or over.',
-              style: TextStyle(color: c.textMuted),
-            ),
-          ),
+        if (b.splits.isNotEmpty) SectionTitle(tr('By category')),
         for (var i = 0; i < b.splits.length; i++)
           Reveal(index: i + 3, child: _splitRow(context, ref, b, b.splits[i])),
         if (b.splits.isNotEmpty) ...[
@@ -454,7 +397,7 @@ class BudgetPage extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: Sp.x2),
       child: Pressable(
-        onTap: s.isElse ? null : () => _editSplit(context, ref, s),
+        onTap: s.isElse ? null : () => showBudgetSheet(context),
         child: Card(
           child: Padding(
             padding: const EdgeInsets.all(Sp.x3),
@@ -508,100 +451,6 @@ class BudgetPage extends ConsumerWidget {
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Future<void> _editSplit(
-    BuildContext context,
-    WidgetRef ref,
-    SplitRow s,
-  ) async {
-    final ctl = TextEditingController(
-      text: (s.allocated / 100).toStringAsFixed(2),
-    );
-    final v = await showDialog<int?>(
-      context: context,
-      builder: (d) => AlertDialog(
-        title: Text('${s.name} split'),
-        content: AmountField(
-          controller: ctl,
-          label: 'Set aside',
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(d, -1),
-            child: const Text('Remove'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(d),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              final m = Money.parse(ctl.text);
-              if (m != null && m > 0) Navigator.pop(d, m);
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-    if (v == null) return;
-    await ref.read(repoProvider).setBudgetSplit(s.id, v < 0 ? null : v);
-  }
-
-  Future<void> _addSplit(
-    BuildContext context,
-    WidgetRef ref,
-    BudgetStatus b,
-  ) async {
-    final cats = (await ref.read(repoProvider).categories(kind: 'debit'))
-        .where((c) => c.parentId == null)
-        .toList();
-    final used = b.splits.map((s) => s.id).toSet();
-    final free = cats.where((c) => !used.contains(c.id)).toList();
-    if (!context.mounted) return;
-    if (free.isEmpty) {
-      toast(context, 'Every category already has a split.');
-      return;
-    }
-    final picked = await showSheet<Category>(
-      context,
-      (ctx) => SafeArea(
-        child: ListView(
-          shrinkWrap: true,
-          padding: const EdgeInsets.fromLTRB(Sp.x4, 0, Sp.x4, Sp.x5),
-          children: [
-            Text(
-              'Split for which category?',
-              style: ctx.text.titleLarge?.copyWith(fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(height: Sp.x3),
-            for (final c in free)
-              ListTile(
-                leading: Text(
-                  emojiForCategory(c.name),
-                  style: const TextStyle(fontSize: 24),
-                ),
-                title: Text(c.name),
-                onTap: () => Navigator.pop(ctx, c),
-              ),
-          ],
-        ),
-      ),
-    );
-    if (picked == null || !context.mounted) return;
-    await _editSplit(
-      context,
-      ref,
-      SplitRow(
-        id: picked.id,
-        name: picked.name,
-        colorValue: picked.colorValue,
-        allocated: 0,
-        spent: 0,
       ),
     );
   }
@@ -692,9 +541,9 @@ class _ChartCardState extends ConsumerState<_ChartCard> {
                   style: SegmentedButton.styleFrom(
                     visualDensity: VisualDensity.compact,
                   ),
-                  segments: const [
-                    ButtonSegment(value: false, label: Text('Month')),
-                    ButtonSegment(value: true, label: Text('Year')),
+                  segments: [
+                    ButtonSegment(value: false, label: Text(tr('Month'))),
+                    ButtonSegment(value: true, label: Text(tr('Year'))),
                   ],
                   selected: {year},
                   onSelectionChanged: (v) => setState(() => year = v.first),
@@ -776,15 +625,8 @@ class _YearLegend extends StatelessWidget {
   ]);
 }
 
-/// Short axis labels: 500, 5K, 50K, 1.5L (lakh), 1.2Cr.
-String _k(double v) {
-  String t(double x) =>
-      x == x.roundToDouble() ? x.round().toString() : x.toStringAsFixed(1);
-  if (v >= 10000000) return '₹${t(v / 10000000)}Cr';
-  if (v >= 100000) return '₹${t(v / 100000)}L';
-  if (v >= 1000) return '₹${t(v / 1000)}K';
-  return '₹${v.round()}';
-}
+/// Short axis labels in the user's currency: 500, 5K, 1.5L (India) or 1.5M.
+String _k(double v) => Money.compact(Money.fromMajor(v)).replaceAll('.0', '');
 
 class _MonthChart extends ConsumerWidget {
   final BudgetStatus status;
@@ -797,21 +639,22 @@ class _MonthChart extends ConsumerWidget {
     final muted = context.cash.textMuted;
     final spots = [
       FlSpot(0, 0),
-      for (var i = 0; i < daily.length; i++) FlSpot(i + 1.0, daily[i] / 100),
+      for (var i = 0; i < daily.length; i++)
+        FlSpot(i + 1.0, daily[i] / Money.unit),
     ];
     final today = daily.length;
     final maxV =
         [
-          b.budget / 100,
-          b.projected / 100,
-          (daily.isEmpty ? 0 : daily.last) / 100,
+          b.budget / Money.unit,
+          b.projected / Money.unit,
+          (daily.isEmpty ? 0 : daily.last) / Money.unit,
         ].reduce((a, c) => a > c ? a : c) *
         1.12;
     // the first week is too little to project from
     final pace = !b.complete && today >= 7
         ? [
-            FlSpot(today.toDouble(), daily.last / 100),
-            FlSpot(b.daysInMonth.toDouble(), b.projected / 100),
+            FlSpot(today.toDouble(), daily.last / Money.unit),
+            FlSpot(b.daysInMonth.toDouble(), b.projected / Money.unit),
           ]
         : <FlSpot>[];
     return ExcludeSemantics(
@@ -856,7 +699,7 @@ class _MonthChart extends ConsumerWidget {
           extraLinesData: ExtraLinesData(
             horizontalLines: [
               HorizontalLine(
-                y: b.budget / 100,
+                y: b.budget / Money.unit,
                 color: muted,
                 strokeWidth: 1.4,
                 dashArray: [6, 5],
@@ -868,7 +711,7 @@ class _MonthChart extends ConsumerWidget {
               getTooltipItems: (spots) => [
                 for (final s in spots)
                   LineTooltipItem(
-                    'Day ${s.x.round()}  ${Money.format((s.y * 100).round())}',
+                    'Day ${s.x.round()}  ${Money.format(Money.fromMajor(s.y))}',
                     const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w700,
@@ -930,8 +773,8 @@ class _YearChart extends ConsumerWidget {
     for (final m in months) {
       maxV = [
         maxV,
-        m.spent / 100,
-        (m.budget ?? 0) / 100,
+        m.spent / Money.unit,
+        (m.budget ?? 0) / Money.unit,
       ].reduce((a, c) => a > c ? a : c);
     }
     Color barColor(BudgetYearMonth m) => switch (m.state) {
@@ -1022,118 +865,17 @@ class _YearChart extends ConsumerWidget {
                 x: i,
                 barRods: [
                   BarChartRodData(
-                    toY: months[i].future ? 0 : months[i].spent / 100,
+                    toY: months[i].future ? 0 : months[i].spent / Money.unit,
                     width: 13,
                     borderRadius: BorderRadius.circular(5),
                     color: barColor(months[i]),
                     backDrawRodData: BackgroundBarChartRodData(
                       show: months[i].budget != null,
-                      toY: (months[i].budget ?? 0) / 100,
+                      toY: (months[i].budget ?? 0) / Money.unit,
                       color: muted.withValues(alpha: 0.16),
                     ),
                   ),
                 ],
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ───────────────────────── set / edit the budget ─────────────────────────
-Future<void> showBudgetSheet(BuildContext context) =>
-    showSheet(context, (_) => const _BudgetSheet());
-
-class _BudgetSheet extends ConsumerStatefulWidget {
-  const _BudgetSheet();
-  @override
-  ConsumerState<_BudgetSheet> createState() => _BudgetSheetState();
-}
-
-class _BudgetSheetState extends ConsumerState<_BudgetSheet> {
-  final amount = TextEditingController();
-  bool thisMonthOnly = false;
-  String? error;
-  bool loaded = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final b = ref.watch(budgetStatusProvider).value;
-    if (!loaded && b != null) {
-      amount.text = (b.budget / 100).toStringAsFixed(2);
-      thisMonthOnly = b.monthOnly;
-      loaded = true;
-    }
-    final now = ref.read(repoProvider).today;
-    final month = DateFormat('MMMM').format(now);
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(Sp.x5, 0, Sp.x5, Sp.x5),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '🎯 Monthly budget',
-              style: context.text.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: Sp.x1),
-            Text(
-              'The most you want to spend in a month. Investments and money lent are not counted.',
-              style: context.text.bodySmall?.copyWith(
-                color: context.cash.textMuted,
-              ),
-            ),
-            const SizedBox(height: Sp.x4),
-            AmountField(controller: amount, label: 'Budget', autofocus: true),
-            const SizedBox(height: Sp.x3),
-            SegmentedButton<bool>(
-              showSelectedIcon: false,
-              segments: [
-                const ButtonSegment(value: false, label: Text('Every month')),
-                ButtonSegment(value: true, label: Text('Only $month')),
-              ],
-              selected: {thisMonthOnly},
-              onSelectionChanged: (v) =>
-                  setState(() => thisMonthOnly = v.first),
-            ),
-            if (error != null)
-              Padding(
-                padding: const EdgeInsets.only(top: Sp.x2),
-                child: Text(
-                  error!,
-                  style: TextStyle(color: context.cash.spending),
-                ),
-              ),
-            const SizedBox(height: Sp.x4),
-            FilledButton(
-              onPressed: () async {
-                final m = Money.parse(amount.text);
-                if (m == null || m <= 0) {
-                  setState(() => error = 'Enter an amount above zero');
-                  return;
-                }
-                try {
-                  await ref
-                      .read(repoProvider)
-                      .setBudget(m, month: thisMonthOnly ? now : null);
-                  if (context.mounted) Navigator.pop(context);
-                } on ValidationException catch (e) {
-                  setState(() => error = e.message);
-                }
-              },
-              child: const Text('Save budget'),
-            ),
-            if (b != null)
-              TextButton(
-                onPressed: () async {
-                  await ref.read(repoProvider).setBudget(null);
-                  await ref.read(repoProvider).setBudget(null, month: now);
-                  if (context.mounted) Navigator.pop(context);
-                },
-                child: const Text('Remove budget'),
               ),
           ],
         ),

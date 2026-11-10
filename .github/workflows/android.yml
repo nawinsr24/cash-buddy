@@ -51,17 +51,23 @@ jobs:
       - name: Build APK (retries on flaky downloads)
         run: |
           for attempt in 1 2 3; do
-            if flutter build apk --release; then exit 0; fi
+            if flutter build apk --release --flavor sideload --dart-define=STORE=sideload --obfuscate --split-debug-info=build/symbols; then exit 0; fi
             echo "Build attempt $attempt failed; retrying in 20s"
             sleep 20
           done
           exit 1
       - name: Name the APK
-        run: cp build/app/outputs/flutter-apk/app-release.apk cash-buddy.apk
+        run: cp build/app/outputs/flutter-apk/app-sideload-release.apk cash-buddy.apk
       - uses: actions/upload-artifact@v4
         with:
           name: cash-buddy-apk
           path: cash-buddy.apk
+      # Needed to read crash reports from the obfuscated build. Keep private.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: debug-symbols
+          path: build/symbols
+          retention-days: 90
       - name: Publish rolling "latest" release
         env:
           GH_TOKEN: ${{ github.token }}

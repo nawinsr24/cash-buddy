@@ -109,7 +109,7 @@ void main() {
           meetsGuideline(textContrastGuideline),
           reason: 'Add sheet',
         );
-        await tapText(tester, 'Uncategorised');
+        await tapText(tester, 'No category');
         await tester.pump(const Duration(seconds: 1));
         await expectLater(
           tester,

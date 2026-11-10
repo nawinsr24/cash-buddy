@@ -36,6 +36,15 @@ android {
         versionName = flutter.versionName
     }
 
+    // Two builds of the same app (same package id):
+    //  - sideload: the APK shared directly; includes SMS reading
+    //  - play: for Google Play; no SMS permission until Google approves it
+    flavorDimensions += "store"
+    productFlavors {
+        create("sideload") { dimension = "store" }
+        create("play") { dimension = "store" }
+    }
+
     signingConfigs {
         if (hasReleaseKey) {
             create("release") {

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'data/db.dart';
+import 'platform/features.dart';
 import 'data/budget_repo.dart';
 import 'data/insights_repo.dart';
 import 'data/invest_repo.dart';
@@ -11,6 +12,7 @@ import 'domain/budget.dart';
 import 'domain/dates.dart';
 import 'sync/sync_service.dart';
 import 'domain/grade.dart';
+import 'l10n/l10n.dart';
 
 /// Online Mode's sync, started once for the whole app (not only when
 /// Settings is opened). It does nothing in Offline Mode.
@@ -46,10 +48,18 @@ class AppSettings {
   final String accountMode; // combined | split
   final String dataMode; // offline | online
   final bool smsEnabled;
+  final String language; // en | hi | ta
+  final String currency; // ISO code, INR by default
+
+  /// This build and the cloud switch both allow reading bank messages.
+  final bool smsAllowed;
   final bool reminderEnabled;
   final String reminderTime; // HH:mm
   final String themeMode; // system | light | dark
   final bool appLock;
+
+  /// Blanks the app in recent apps and blocks screenshots (on by default).
+  final bool hidePreview;
   final bool smsLearnDigits;
   final String? lastScanInfo;
 
@@ -62,10 +72,14 @@ class AppSettings {
     this.accountMode = 'combined',
     this.dataMode = 'offline',
     this.smsEnabled = false,
+    this.language = 'en',
+    this.currency = 'INR',
+    this.smsAllowed = false,
     this.reminderEnabled = false,
     this.reminderTime = '08:00',
     this.themeMode = 'system',
     this.appLock = false,
+    this.hidePreview = true,
     this.smsLearnDigits = false,
     this.lastScanInfo,
     this.lockAfterSeconds = 300,
@@ -86,6 +100,11 @@ final settingsProvider = FutureProvider.autoDispose<AppSettings>((ref) async {
     accountMode: await g('accountMode') ?? 'combined',
     dataMode: await g('dataMode') ?? 'offline',
     smsEnabled: await g('smsEnabled') == '1',
+    language: await g('language') ?? 'en',
+    currency: await g('currency') ?? 'INR',
+    smsAllowed:
+        (await g('currency') ?? 'INR') == 'INR' &&
+        Features.smsReading(remoteFlag: await g('flag_sms') != '0'),
     smsLearnDigits: await g('smsLearnDigits') == '1',
     lastScanInfo: await g('lastScanInfo'),
     lockAfterSeconds: int.tryParse(await g('lockAfterSeconds') ?? '') ?? 300,
@@ -93,6 +112,7 @@ final settingsProvider = FutureProvider.autoDispose<AppSettings>((ref) async {
     reminderTime: await g('reminderTime') ?? '08:00',
     themeMode: await g('themeMode') ?? 'system',
     appLock: await g('appLock') == '1',
+    hidePreview: await g('hidePreview') != '0',
     lastSyncAt: await g('lastSyncAt'),
     lastSyncError: (err == null || err.isEmpty) ? null : err,
   );
@@ -126,14 +146,14 @@ class PeriodSel {
   };
 
   static String label(PeriodPreset p) => switch (p) {
-    PeriodPreset.thisMonth => 'This month',
-    PeriodPreset.lastMonth => 'Last month',
-    PeriodPreset.last7 => '7 days',
-    PeriodPreset.last30 => '30 days',
-    PeriodPreset.last90 => '90 days',
-    PeriodPreset.quarter => 'Quarter',
-    PeriodPreset.year => 'Year',
-    PeriodPreset.custom => 'Custom',
+    PeriodPreset.thisMonth => tr('This month'),
+    PeriodPreset.lastMonth => tr('Last month'),
+    PeriodPreset.last7 => tr('7 days'),
+    PeriodPreset.last30 => tr('30 days'),
+    PeriodPreset.last90 => tr('90 days'),
+    PeriodPreset.quarter => tr('Quarter'),
+    PeriodPreset.year => tr('Year'),
+    PeriodPreset.custom => tr('Custom'),
   };
 }
 

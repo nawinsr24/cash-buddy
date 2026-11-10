@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android cloud backup stays on for easy phone changes, but the money
+     database and the keys that open it never leave the phone. Data comes back
+     on a new phone through the encrypted Drive sync. -->
+<full-backup-content>
+    <exclude domain="root" path="app_flutter" />
+    <exclude domain="database" path="." />
+    <exclude domain="file" path="." />
+    <exclude domain="sharedpref" path="." />
+    <exclude domain="external" path="." />
+</full-backup-content>

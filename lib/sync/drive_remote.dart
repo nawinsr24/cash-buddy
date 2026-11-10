@@ -46,7 +46,7 @@ class DriveRemote implements RemoteStore {
   static bool get configured => !kIsWeb && serverClientId.isNotEmpty;
 
   static const notConfiguredMessage =
-      'Google sign-in is not set up in this version of the app yet, so Online Mode cannot start. Your data stays safely on this phone in Offline Mode.';
+      'Google sign-in is not set up in this version of the app yet, so Google Drive backup cannot start. Your data stays safely on this phone.';
 
   /// Interactive sign-in + scope grant. Returns null if the user cancels;
   /// throws a readable [DriveSignInException] for any other failure.

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../l10n/l10n.dart';
 import '../data/db.dart';
 import '../data/repo.dart';
 import '../domain/dates.dart';
@@ -67,6 +68,13 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
     };
     final settings = ref.watch(settingsProvider).value;
     final active = !filter.isEmpty;
+    // the starting balances are shown at the very end (the oldest entries)
+    final openings = active
+        ? <Account>[]
+        : [
+            for (final a in accounts.values)
+              if (!a.archived && a.openingMinor != 0) a,
+          ];
     return PopScope(
       onPopInvokedWithResult: (didPop, _) {
         // A drill-down must not leave its filter on the Transactions tab.
@@ -76,7 +84,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Transactions'),
+          title: Text(tr('Transactions')),
           actions: [
             if (widget.onOpenInbox != null)
               IconButton(
@@ -89,7 +97,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                 onPressed: widget.onOpenInbox,
               ),
             IconButton(
-              tooltip: 'Filters',
+              tooltip: tr('Filters'),
               icon: Badge(
                 isLabelVisible: active,
                 smallSize: 8,
@@ -125,7 +133,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
           ),
         ),
         floatingActionButton: FloatingActionButton(
-          tooltip: 'Add transaction',
+          tooltip: tr('Add transaction'),
           onPressed: () => showTransactionSheet(context),
           child: const Icon(Icons.add),
         ),
@@ -135,7 +143,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
               const Center(child: CircularProgressIndicator.adaptive()),
           error: (e, _) => ErrorState(e),
           data: (list) {
-            if (list.isEmpty) {
+            if (list.isEmpty && openings.isEmpty) {
               return EmptyState(
                 art: Art.receipt,
                 icon: Icons.receipt_long_outlined,
@@ -153,7 +161,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                               .read(txnFilterProvider.notifier)
                               .set(const TxnFilter());
                         },
-                        child: const Text('Clear filters'),
+                        child: Text(tr('Clear filters')),
                       )
                     : null,
               );
@@ -168,11 +176,22 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
               }
               items.add(t);
             }
+            if (openings.isNotEmpty) {
+              items.add('__opening__');
+              items.addAll(openings);
+            }
             return ListView.builder(
               padding: const EdgeInsets.fromLTRB(Sp.x4, 0, Sp.x4, 96),
               itemCount: items.length,
               itemBuilder: (context, i) {
                 final it = items[i];
+                if (it == '__opening__') return const _OpeningHeader();
+                if (it is Account) {
+                  return _OpeningTile(
+                    account: it,
+                    showName: settings?.split ?? false,
+                  );
+                }
                 if (it is String) {
                   return _DayHeader(
                     it,
@@ -217,6 +236,106 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
           ),
         );
   }
+}
+
+class _OpeningHeader extends StatelessWidget {
+  const _OpeningHeader();
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(Sp.x1, Sp.x5, Sp.x1, Sp.x2),
+    child: Text(
+      'Starting balance',
+      style: context.text.labelLarge?.copyWith(color: context.cash.textMuted),
+    ),
+  );
+}
+
+/// What you had when you started. Shown with the other entries and editable.
+class _OpeningTile extends ConsumerWidget {
+  final Account account;
+  final bool showName;
+  const _OpeningTile({required this.account, required this.showName});
+
+  Future<void> _edit(BuildContext context, WidgetRef ref) async {
+    final ctl = TextEditingController(text: Money.edit(account.openingMinor));
+    final v = await showDialog<int>(
+      context: context,
+      builder: (d) => AlertDialog(
+        title: Text(tr('Opening balance')),
+        content: AmountField(
+          controller: ctl,
+          label: showName ? account.name : 'Money you had when you started',
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(d),
+            child: Text(tr('Cancel')),
+          ),
+          TextButton(
+            onPressed: () {
+              final m = Money.parse(ctl.text.isEmpty ? '0' : ctl.text);
+              if (m != null) Navigator.pop(d, m);
+            },
+            child: Text(tr('Save')),
+          ),
+        ],
+      ),
+    );
+    if (v == null) return;
+    await ref.read(repoProvider).updateAccount(account.id, openingMinor: v);
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => Card(
+    margin: const EdgeInsets.only(bottom: Sp.x2),
+    child: InkWell(
+      borderRadius: BorderRadius.circular(Sp.rCard),
+      onTap: () => _edit(context, ref),
+      child: Padding(
+        padding: const EdgeInsets.all(Sp.x4),
+        child: Row(
+          children: [
+            const Text('🏁', style: TextStyle(fontSize: 22)),
+            const SizedBox(width: Sp.x3),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    tr('Opening balance'),
+                    style: context.text.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    showName ? '${account.name} · tap to edit' : 'Tap to edit',
+                    style: context.text.bodySmall?.copyWith(
+                      color: context.cash.textMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: Sp.x2),
+            Flexible(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  Money.format(account.openingMinor),
+                  style: context.text.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: context.cash.income,
+                    fontFeatures: moneyFeatures,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 class _DayHeader extends StatelessWidget {
@@ -298,7 +417,7 @@ class _TxnTile extends ConsumerWidget {
               ? 'Debt'
               : txn.source == 'invest'
               ? 'Investment'
-              : 'Uncategorised')
+              : 'No category')
         : (parent != null
               ? '${parent!.name} › ${category!.name}'
               : category!.name);
@@ -368,7 +487,7 @@ class _TxnTile extends ConsumerWidget {
             context,
             'Transaction deleted',
             action: SnackBarAction(
-              label: 'Undo',
+              label: tr('Undo'),
               onPressed: () => repo.restoreTransaction(txn.id),
             ),
           );
@@ -388,10 +507,10 @@ class _FilterSheet extends ConsumerStatefulWidget {
 class _FilterSheetState extends ConsumerState<_FilterSheet> {
   late TxnFilter f = ref.read(txnFilterProvider);
   late final _min = TextEditingController(
-    text: f.minMinor == null ? '' : (f.minMinor! / 100).toString(),
+    text: f.minMinor == null ? '' : Money.edit(f.minMinor!, trimZeros: true),
   );
   late final _max = TextEditingController(
-    text: f.maxMinor == null ? '' : (f.maxMinor! / 100).toString(),
+    text: f.maxMinor == null ? '' : Money.edit(f.maxMinor!, trimZeros: true),
   );
 
   TxnFilter _copy({
@@ -501,7 +620,7 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
             ),
             Padding(
               padding: const EdgeInsets.only(top: Sp.x4, bottom: Sp.x2),
-              child: Text('Date range', style: context.text.labelLarge),
+              child: Text(tr('Date range'), style: context.text.labelLarge),
             ),
             OutlinedButton.icon(
               icon: const Icon(Icons.date_range),
@@ -530,7 +649,7 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
             ),
             Padding(
               padding: const EdgeInsets.only(top: Sp.x4, bottom: Sp.x2),
-              child: Text('Amount', style: context.text.labelLarge),
+              child: Text(tr('Amount'), style: context.text.labelLarge),
             ),
             Row(
               children: [
@@ -540,7 +659,7 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
-                    decoration: const InputDecoration(labelText: 'Min'),
+                    decoration: InputDecoration(labelText: tr('Min')),
                   ),
                 ),
                 const SizedBox(width: Sp.x3),
@@ -550,7 +669,7 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
-                    decoration: const InputDecoration(labelText: 'Max'),
+                    decoration: InputDecoration(labelText: tr('Max')),
                   ),
                 ),
               ],
@@ -569,7 +688,7 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
                           .set(const TxnFilter());
                       Navigator.pop(context);
                     },
-                    child: const Text('Reset'),
+                    child: Text(tr('Reset')),
                   ),
                 ),
                 const SizedBox(width: Sp.x3),
@@ -593,7 +712,7 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
                           );
                       Navigator.pop(context);
                     },
-                    child: const Text('Apply'),
+                    child: Text(tr('Apply')),
                   ),
                 ),
               ],
@@ -650,9 +769,9 @@ class _TxnFormState extends ConsumerState<_TxnForm> {
       'debit';
   late final _amount = TextEditingController(
     text: widget.edit != null
-        ? (widget.edit!.amountMinor / 100).toStringAsFixed(2)
+        ? Money.edit(widget.edit!.amountMinor)
         : widget.sms != null
-        ? (widget.sms!.amountMinor / 100).toStringAsFixed(2)
+        ? Money.edit(widget.sms!.amountMinor)
         : '',
   );
   late final _note = TextEditingController(text: widget.edit?.note ?? '');
@@ -775,13 +894,10 @@ class _TxnFormState extends ConsumerState<_TxnForm> {
             SegmentedButton<String>(
               showSelectedIcon: false,
               segments: [
-                const ButtonSegment(value: 'debit', label: Text('Spent')),
-                const ButtonSegment(value: 'credit', label: Text('Received')),
+                ButtonSegment(value: 'debit', label: Text(tr('Spent'))),
+                ButtonSegment(value: 'credit', label: Text(tr('Received'))),
                 if (split && widget.sms == null)
-                  const ButtonSegment(
-                    value: 'transfer',
-                    label: Text('Transfer'),
-                  ),
+                  ButtonSegment(value: 'transfer', label: Text(tr('Transfer'))),
               ],
               selected: {type},
               onSelectionChanged: (s) => setState(() {
@@ -838,7 +954,7 @@ class _TxnFormState extends ConsumerState<_TxnForm> {
                 const SizedBox(height: Sp.x4),
                 DropdownButtonFormField<String>(
                   initialValue: toAccountId,
-                  decoration: const InputDecoration(labelText: 'To account'),
+                  decoration: InputDecoration(labelText: tr('To account')),
                   items: [
                     for (final a in accounts)
                       DropdownMenuItem(value: a.id, child: Text(a.name)),
@@ -850,14 +966,14 @@ class _TxnFormState extends ConsumerState<_TxnForm> {
             const SizedBox(height: Sp.x4),
             TextField(
               controller: _merchant,
-              decoration: const InputDecoration(
-                labelText: 'Merchant / person (optional)',
+              decoration: InputDecoration(
+                labelText: tr('Merchant / person (optional)'),
               ),
             ),
             const SizedBox(height: Sp.x3),
             TextField(
               controller: _note,
-              decoration: const InputDecoration(labelText: 'Note (optional)'),
+              decoration: InputDecoration(labelText: tr('Note (optional)')),
             ),
             const SizedBox(height: Sp.x3),
             OutlinedButton.icon(

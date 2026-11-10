@@ -495,6 +495,7 @@ class Repo {
   /// Friendlier names for two default sub-categories (only if never renamed).
   static const _renames = <String, (String, String)>{
     'cat_food_dining': ('Dining', 'Hotel & Restaurant'),
+    'cat_sent_home': ('Sent Home', 'Family Support'),
   };
 
   /// Adds any default category an existing install is missing. Safe to run

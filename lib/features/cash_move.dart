@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../l10n/l10n.dart';
 import '../data/db.dart';
 import '../data/repo.dart' show ValidationException;
 import '../domain/dates.dart';
@@ -69,7 +70,7 @@ class _CashMoveState extends ConsumerState<_CashMove> {
       return Padding(
         padding: const EdgeInsets.all(Sp.x6),
         child: Text(
-          'Switch to Split accounts in Settings to move money between bank and cash.',
+          'Choose "Separate balances" in Settings to move money between bank and cash.',
           style: context.text.bodyLarge,
         ),
       );
@@ -142,7 +143,7 @@ class _CashMoveState extends ConsumerState<_CashMove> {
             const SizedBox(height: Sp.x3),
             TextField(
               controller: note,
-              decoration: const InputDecoration(labelText: 'Note (optional)'),
+              decoration: InputDecoration(labelText: tr('Note (optional)')),
             ),
             if (error != null)
               Padding(

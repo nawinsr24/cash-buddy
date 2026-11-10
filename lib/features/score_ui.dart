@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../l10n/l10n.dart';
 import '../domain/grade.dart';
 import '../providers.dart';
 import '../ui/motion.dart';
@@ -141,7 +142,7 @@ class PlusScoreCard extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Eyebrow('Money Health'),
+                    Eyebrow(tr('Money Health')),
                     const SizedBox(height: 2),
                     Row(
                       children: [
@@ -207,7 +208,7 @@ class PlusScoreDetailPage extends ConsumerWidget {
     final async = ref.watch(plusScoreProvider).value;
     final roast = ref.watch(roastModeProvider).value ?? true;
     return Scaffold(
-      appBar: AppBar(title: const Text('Money Health')),
+      appBar: AppBar(title: Text(tr('Money Health'))),
       body: async == null
           ? const Center(child: CircularProgressIndicator.adaptive())
           : _body(
@@ -684,7 +685,7 @@ class LiveTitleChip extends ConsumerWidget {
 const _partInfo = <String, (String, String)>{
   'Saving power': (
     'How much of your income you keep.',
-    'Example: you earn ₹30,000 and keep ₹9,000. That is 30% and gives full marks. Spending everything gives zero.',
+    'Example: you earn 30,000 and keep 9,000. That is 30% and gives full marks. Spending everything gives zero.',
   ),
   'Budget discipline': (
     'Did you stay inside the budget you set?',

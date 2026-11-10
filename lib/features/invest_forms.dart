@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../l10n/l10n.dart';
 import '../data/db.dart';
 import '../data/invest_repo.dart';
 import '../data/repo.dart' show ValidationException;
@@ -78,8 +79,8 @@ class LabeledField extends StatelessWidget {
   );
 }
 
-final _moneyFormat = [
-  FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
+List<TextInputFormatter> get _moneyFormat => [
+  FilteringTextInputFormatter.allow(Money.inputPattern),
 ];
 final _qtyFormat = [
   FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,4}')),
@@ -218,10 +219,7 @@ class _PayFrom extends ConsumerWidget {
             initialValue: accountId,
             isExpanded: true,
             items: [
-              const DropdownMenuItem(
-                value: null,
-                child: Text('Default account'),
-              ),
+              DropdownMenuItem(value: null, child: Text(tr('Default account'))),
               for (final a in accounts)
                 DropdownMenuItem(value: a.id, child: Text(a.name)),
             ],
@@ -340,7 +338,7 @@ class _StockBuyFormState extends ConsumerState<_StockBuyForm> {
               label: 'Price of 1 share',
               controller: price,
               hint: '2500',
-              prefix: '₹ ',
+              prefix: '${Money.symbol} ',
               keyboard: _decimal,
               formatters: _moneyFormat,
               onChanged: (_) => setState(() {}),
@@ -377,7 +375,7 @@ class _StockBuyFormState extends ConsumerState<_StockBuyForm> {
         label: 'Price of 1 share today (optional)',
         controller: today,
         hint: 'To see your profit or loss',
-        prefix: '₹ ',
+        prefix: '${Money.symbol} ',
         keyboard: _decimal,
         formatters: _moneyFormat,
       ),
@@ -396,7 +394,7 @@ class _StockBuyFormState extends ConsumerState<_StockBuyForm> {
       _gap(),
       FilledButton(
         onPressed: saving ? null : _save,
-        child: const Text('Add stock'),
+        child: Text(tr('Add stock')),
       ),
     ],
   );
@@ -496,7 +494,7 @@ class _ShareTradeState extends ConsumerState<_ShareTrade> {
                     ? 'Buy price of 1 share'
                     : 'Sell price of 1 share',
                 controller: price,
-                prefix: '₹ ',
+                prefix: '${Money.symbol} ',
                 keyboard: _decimal,
                 formatters: _moneyFormat,
                 onChanged: (_) => setState(() {}),
@@ -518,7 +516,7 @@ class _ShareTradeState extends ConsumerState<_ShareTrade> {
           ),
         _gap(),
         _DateButton(
-          label: 'Date',
+          label: tr('Date'),
           date: date,
           onPick: (d) => setState(() => date = d),
         ),
@@ -571,7 +569,7 @@ class _SharePriceState extends ConsumerState<_SharePrice> {
         LabeledField(
           label: 'Price of 1 share',
           controller: price,
-          prefix: '₹ ',
+          prefix: '${Money.symbol} ',
           keyboard: _decimal,
           formatters: _moneyFormat,
           autofocus: true,
@@ -700,15 +698,15 @@ class _FundFormState extends ConsumerState<_FundForm> {
       _gap(),
       SegmentedButton<bool>(
         showSelectedIcon: false,
-        segments: const [
+        segments: [
           ButtonSegment(
             value: true,
-            label: Text('Monthly SIP'),
+            label: Text(tr('Monthly SIP')),
             icon: Icon(Icons.autorenew, size: 18),
           ),
           ButtonSegment(
             value: false,
-            label: Text('One time'),
+            label: Text(tr('One time')),
             icon: Icon(Icons.looks_one_outlined, size: 18),
           ),
         ],
@@ -720,7 +718,7 @@ class _FundFormState extends ConsumerState<_FundForm> {
         label: sip ? 'Amount every month' : 'Amount you invested',
         controller: amount,
         hint: sip ? '5000' : '25000',
-        prefix: '₹ ',
+        prefix: '${Money.symbol} ',
         keyboard: _decimal,
         formatters: _moneyFormat,
       ),
@@ -754,7 +752,7 @@ class _FundFormState extends ConsumerState<_FundForm> {
         label: 'What it is worth today (optional)',
         controller: value,
         hint: 'To see your profit or loss',
-        prefix: '₹ ',
+        prefix: '${Money.symbol} ',
         keyboard: _decimal,
         formatters: _moneyFormat,
       ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/l10n.dart';
 import '../ui/motion.dart';
 import '../ui/theme.dart';
 
@@ -26,8 +27,8 @@ const _steps = <_Step>[
   ),
   _Step(
     '💬',
-    'SMS assistant',
-    'Reads bank SMS on this phone and suggests entries for you. You approve each one. SMS never leaves your phone.',
+    'Automatic entries',
+    'Cash++ sees your bank alerts in notifications, never your inbox, and suggests entries for you. You confirm each one. Nothing leaves your phone.',
   ),
   _Step(
     '🔔',
@@ -42,7 +43,7 @@ const _steps = <_Step>[
   _Step(
     '🏆',
     'Monthly title',
-    'At month end you get a fun title based on how you spent. You can switch the funny roast lines on or off here.',
+    'At month end you get a fun title based on how you spent. Choose a friendly or an honest and funny tone here.',
   ),
   _Step(
     '🎨',
@@ -154,13 +155,13 @@ class _TourState extends State<_Tour> {
             children: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Skip'),
+                child: Text(tr('Skip')),
               ),
               const Spacer(),
               if (_i > 0)
                 OutlinedButton(
                   onPressed: () => _go(_i - 1),
-                  child: const Text('Back'),
+                  child: Text(tr('Back')),
                 ),
               const SizedBox(width: Sp.x2),
               Pressable(

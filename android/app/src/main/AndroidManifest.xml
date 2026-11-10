@@ -5,14 +5,13 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
-    <!-- SMS assistant (optional; asked at runtime when the user turns it on).
-         Sideloaded builds only: Google Play restricts this permission. See docs/SMS.md -->
-    <uses-permission android:name="android.permission.READ_SMS"/>
-    <uses-permission android:name="android.permission.RECEIVE_SMS"/>
     <application
         android:label="Cash++"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="true"
+        android:fullBackupContent="@xml/backup_rules"
+        android:dataExtractionRules="@xml/data_extraction_rules">
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -35,13 +34,14 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <!-- Alerts when a transaction-like SMS arrives (only if the user enabled the assistant) -->
-        <receiver android:name=".SmsReceiver" android:exported="true"
-            android:permission="android.permission.BROADCAST_SMS">
-            <intent-filter android:priority="0">
-                <action android:name="android.provider.Telephony.SMS_RECEIVED"/>
+        <!-- Bank alerts: sees notifications from the messaging app only (never the SMS inbox) -->
+        <service android:name=".BankAlertListener" android:exported="true"
+            android:label="Cash++"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService"/>
             </intent-filter>
-        </receiver>
+        </service>
         <!-- Scheduled (daily review) notifications -->
         <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
         <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">

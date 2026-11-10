@@ -1,0 +1,132 @@
+import 'package:intl/intl.dart';
+
+/// A world currency. Decimals and the symbol come from the standard ISO 4217
+/// data in `intl`, so every currency formats correctly (yen has none, the
+/// Kuwaiti dinar has three).
+class Currency {
+  final String code, name;
+  const Currency(this.code, this.name);
+
+  int get decimals => NumberFormat.currency(name: code).decimalDigits ?? 2;
+
+  String get symbol => code == 'INR'
+      ? '₹'
+      : NumberFormat.simpleCurrency(name: code, locale: 'en_US').currencySymbol;
+
+  /// "INR · Indian Rupee" for pickers and search.
+  String get label => '$code · $name';
+}
+
+/// INR first (the main market), then the rest A to Z by name.
+const List<Currency> allCurrencies = [
+  Currency('INR', 'Indian Rupee'),
+  Currency('AED', 'UAE Dirham'),
+  Currency('AFN', 'Afghan Afghani'),
+  Currency('ALL', 'Albanian Lek'),
+  Currency('AMD', 'Armenian Dram'),
+  Currency('ARS', 'Argentine Peso'),
+  Currency('AUD', 'Australian Dollar'),
+  Currency('AZN', 'Azerbaijani Manat'),
+  Currency('BAM', 'Bosnia-Herzegovina Mark'),
+  Currency('BDT', 'Bangladeshi Taka'),
+  Currency('BGN', 'Bulgarian Lev'),
+  Currency('BHD', 'Bahraini Dinar'),
+  Currency('BND', 'Brunei Dollar'),
+  Currency('BOB', 'Bolivian Boliviano'),
+  Currency('BRL', 'Brazilian Real'),
+  Currency('BWP', 'Botswana Pula'),
+  Currency('BYN', 'Belarusian Ruble'),
+  Currency('CAD', 'Canadian Dollar'),
+  Currency('CHF', 'Swiss Franc'),
+  Currency('CLP', 'Chilean Peso'),
+  Currency('CNY', 'Chinese Yuan'),
+  Currency('COP', 'Colombian Peso'),
+  Currency('CRC', 'Costa Rican Colon'),
+  Currency('CZK', 'Czech Koruna'),
+  Currency('DKK', 'Danish Krone'),
+  Currency('DOP', 'Dominican Peso'),
+  Currency('DZD', 'Algerian Dinar'),
+  Currency('EGP', 'Egyptian Pound'),
+  Currency('ETB', 'Ethiopian Birr'),
+  Currency('EUR', 'Euro'),
+  Currency('GBP', 'British Pound'),
+  Currency('GEL', 'Georgian Lari'),
+  Currency('GHS', 'Ghanaian Cedi'),
+  Currency('GTQ', 'Guatemalan Quetzal'),
+  Currency('HKD', 'Hong Kong Dollar'),
+  Currency('HNL', 'Honduran Lempira'),
+  Currency('HRK', 'Croatian Kuna'),
+  Currency('HUF', 'Hungarian Forint'),
+  Currency('IDR', 'Indonesian Rupiah'),
+  Currency('ILS', 'Israeli Shekel'),
+  Currency('IQD', 'Iraqi Dinar'),
+  Currency('IRR', 'Iranian Rial'),
+  Currency('ISK', 'Icelandic Krona'),
+  Currency('JMD', 'Jamaican Dollar'),
+  Currency('JOD', 'Jordanian Dinar'),
+  Currency('JPY', 'Japanese Yen'),
+  Currency('KES', 'Kenyan Shilling'),
+  Currency('KGS', 'Kyrgyzstani Som'),
+  Currency('KHR', 'Cambodian Riel'),
+  Currency('KRW', 'South Korean Won'),
+  Currency('KWD', 'Kuwaiti Dinar'),
+  Currency('KZT', 'Kazakhstani Tenge'),
+  Currency('LAK', 'Lao Kip'),
+  Currency('LBP', 'Lebanese Pound'),
+  Currency('LKR', 'Sri Lankan Rupee'),
+  Currency('MAD', 'Moroccan Dirham'),
+  Currency('MDL', 'Moldovan Leu'),
+  Currency('MKD', 'Macedonian Denar'),
+  Currency('MMK', 'Myanmar Kyat'),
+  Currency('MNT', 'Mongolian Tugrik'),
+  Currency('MOP', 'Macanese Pataca'),
+  Currency('MUR', 'Mauritian Rupee'),
+  Currency('MVR', 'Maldivian Rufiyaa'),
+  Currency('MXN', 'Mexican Peso'),
+  Currency('MYR', 'Malaysian Ringgit'),
+  Currency('MZN', 'Mozambican Metical'),
+  Currency('NAD', 'Namibian Dollar'),
+  Currency('NGN', 'Nigerian Naira'),
+  Currency('NIO', 'Nicaraguan Cordoba'),
+  Currency('NOK', 'Norwegian Krone'),
+  Currency('NPR', 'Nepalese Rupee'),
+  Currency('NZD', 'New Zealand Dollar'),
+  Currency('OMR', 'Omani Rial'),
+  Currency('PAB', 'Panamanian Balboa'),
+  Currency('PEN', 'Peruvian Sol'),
+  Currency('PHP', 'Philippine Peso'),
+  Currency('PKR', 'Pakistani Rupee'),
+  Currency('PLN', 'Polish Zloty'),
+  Currency('PYG', 'Paraguayan Guarani'),
+  Currency('QAR', 'Qatari Riyal'),
+  Currency('RON', 'Romanian Leu'),
+  Currency('RSD', 'Serbian Dinar'),
+  Currency('RUB', 'Russian Ruble'),
+  Currency('RWF', 'Rwandan Franc'),
+  Currency('SAR', 'Saudi Riyal'),
+  Currency('SEK', 'Swedish Krona'),
+  Currency('SGD', 'Singapore Dollar'),
+  Currency('THB', 'Thai Baht'),
+  Currency('TJS', 'Tajikistani Somoni'),
+  Currency('TND', 'Tunisian Dinar'),
+  Currency('TRY', 'Turkish Lira'),
+  Currency('TTD', 'Trinidad & Tobago Dollar'),
+  Currency('TWD', 'New Taiwan Dollar'),
+  Currency('TZS', 'Tanzanian Shilling'),
+  Currency('UAH', 'Ukrainian Hryvnia'),
+  Currency('UGX', 'Ugandan Shilling'),
+  Currency('USD', 'US Dollar'),
+  Currency('UYU', 'Uruguayan Peso'),
+  Currency('UZS', 'Uzbekistani Som'),
+  Currency('VND', 'Vietnamese Dong'),
+  Currency('XAF', 'Central African CFA Franc'),
+  Currency('XOF', 'West African CFA Franc'),
+  Currency('YER', 'Yemeni Rial'),
+  Currency('ZAR', 'South African Rand'),
+  Currency('ZMW', 'Zambian Kwacha'),
+];
+
+Currency currencyByCode(String code) => allCurrencies.firstWhere(
+  (c) => c.code == code,
+  orElse: () => allCurrencies.first,
+);

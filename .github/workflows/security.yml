@@ -1,0 +1,19 @@
+name: Dependency check
+
+# Checks every package against the public vulnerability database (osv.dev).
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  vulns:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 tool/check_vulns.py

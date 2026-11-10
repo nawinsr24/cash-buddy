@@ -1,19 +1,23 @@
-# SMS assistant
+# Bank alerts (automatic entries)
 
-## Android (sideloaded APK)
-* Turning the assistant on shows the system **SMS** permission dialog (READ_SMS + RECEIVE_SMS).
-  Denied -> stays off. Granted -> the last 30 days are scanned.
-* **Real time:** `SmsReceiver.kt` fires when an SMS arrives. If it looks like an executed
-  transaction it posts a "New transaction detected" notification; tapping it opens the Inbox.
-  Nothing is stored or uploaded by the receiver.
-* **Scanning:** on app open/resume (and "Scan messages") `MainActivity.kt` reads
-  `content://sms/inbox`; Dart applies the real parser + dedup and queues *candidates*.
-  Only you confirm or discard. OTP / promo / failed / pending / balance-only are ignored.
-* Daily review reminder: set time in Settings; shows "N transactions are waiting" and is
-  rescheduled whenever the count changes; nothing is shown when nothing is pending.
-  "Send a test notification" verifies permission.
-* Google Play restricts SMS permissions: this is a direct-APK build. A Play release would
-  need a permissions declaration or a user-initiated-only design.
+Cash++ never opens the SMS inbox and has no SMS permission. It uses Android's
+**notification access** instead:
 
-## iOS / web
-No inbox access exists. Paste import is available in the Inbox tab as a fallback only.
+* Turning on "Add entries from bank messages" opens Android's notification access
+  screen, where the user switches on Cash++.
+* `BankAlertListener.kt` sees notifications from the phone's messaging app only
+  (the default SMS app, well-known ones, or an app that looks like one). Every
+  other notification from every other app is ignored at once and never stored.
+* If the text looks like an executed bank transaction, the alert waits in
+  `BankAlertQueue.kt` (private app storage, left out of backups, emptied when the
+  app takes it, at most 200 alerts for 7 days) and a private "tap to review"
+  notification is shown (lock screen shows a generic line only).
+* When the app opens, Dart takes the queue, applies the real parser
+  (`lib/domain/sms_parser.dart`), removes duplicates and puts candidates in
+  "Bank messages to review". The user confirms or ignores each one. Nothing is
+  added without a confirmation, and nothing leaves the phone.
+* Older messages: copy and paste or share them ("Add from a copied message").
+* iPhone: no automatic entries; paste, share or manual entry only.
+
+Limits: only alerts that arrive after access is switched on; the messaging app
+must show notifications; battery savers can stop the listener on some phones.

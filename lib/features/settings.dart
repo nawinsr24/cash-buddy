@@ -1,10 +1,9 @@
-import 'package:flutter/foundation.dart'
-    show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../l10n/l10n.dart';
 import '../data/db.dart';
 import '../data/repo.dart';
 import '../domain/money.dart';
@@ -15,6 +14,11 @@ import '../platform/reminders.dart';
 import '../platform/sms_reader.dart';
 import '../providers.dart';
 import '../sync/backup.dart';
+import '../domain/currency.dart';
+import 'inbox.dart' show ImportSheet;
+import 'tone.dart';
+import 'locale_pickers.dart';
+import 'passphrase.dart';
 import '../sync/drive_remote.dart';
 import '../sync/sync_service.dart';
 import '../ui/emoji.dart';
@@ -33,7 +37,7 @@ class SettingsPage extends ConsumerWidget {
     final async = ref.watch(settingsProvider);
     final repo = ref.watch(repoProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: Text(tr('Settings'))),
       body: async.when(
         skipLoadingOnReload: true,
         loading: () =>
@@ -46,13 +50,13 @@ class SettingsPage extends ConsumerWidget {
             Card(
               child: ListTile(
                 leading: const Text('🧭', style: TextStyle(fontSize: 26)),
-                title: const Text('Take a tour of Settings'),
+                title: Text(tr('Take a tour of Settings')),
                 subtitle: const Text('A 1-minute guide in simple words'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => showSettingsTour(context),
               ),
             ),
-            const _Group('Data'),
+            const _Group('Backup'),
             Card(
               child: Column(
                 children: [
@@ -62,11 +66,15 @@ class SettingsPage extends ConsumerWidget {
                           ? Icons.cloud_sync_outlined
                           : Icons.phonelink_lock_outlined,
                     ),
-                    title: Text(s.online ? 'Online Mode' : 'Offline Mode'),
+                    title: Text(
+                      s.online
+                          ? 'Back up to Google Drive'
+                          : 'Keep on this phone only',
+                    ),
                     subtitle: Text(
                       s.online
-                          ? 'Synced with your Google Drive'
-                          : 'Data stays on this device',
+                          ? 'Your data is also saved, encrypted, in your Google Drive'
+                          : 'Your data stays on this phone',
                     ),
                     trailing: Switch.adaptive(
                       value: s.online,
@@ -126,7 +134,7 @@ class SettingsPage extends ConsumerWidget {
                                     );
                                   }
                                 },
-                                child: const Text('Sync now'),
+                                child: Text(tr('Sync now')),
                               ),
                       ),
                     ),
@@ -134,10 +142,14 @@ class SettingsPage extends ConsumerWidget {
                   const Divider(height: 1),
                   ListTile(
                     leading: const Icon(Icons.save_alt),
-                    title: const Text('Create local backup'),
-                    subtitle: const Text('Checksummed file in the app folder'),
+                    title: Text(tr('Back up now')),
+                    subtitle: const Text(
+                      'Saves a protected copy on this phone',
+                    ),
                     onTap: () async {
-                      final path = await createBackup(repo);
+                      final vault = ref.read(syncServiceProvider).vault;
+                      if (!await ensurePassphrase(context, vault)) return;
+                      final path = await createBackup(repo, vault: vault);
                       if (context.mounted) {
                         toast(
                           context,
@@ -157,13 +169,11 @@ class SettingsPage extends ConsumerWidget {
                 children: [
                   ListTile(
                     leading: const Icon(Icons.account_balance_wallet_outlined),
-                    title: Text(
-                      s.split ? 'Split accounts' : 'Combined account',
-                    ),
+                    title: Text(s.split ? 'Separate balances' : 'One balance'),
                     subtitle: Text(
                       s.split
-                          ? 'Separate cash and bank balances'
-                          : 'One overall balance',
+                          ? 'Cash and each bank account kept apart.'
+                          : 'Cash and bank together in one total.',
                     ),
                     trailing: Switch.adaptive(
                       value: s.split,
@@ -181,7 +191,7 @@ class SettingsPage extends ConsumerWidget {
                   const Divider(height: 1),
                   ListTile(
                     leading: const Icon(Icons.savings_outlined),
-                    title: const Text('Manage accounts'),
+                    title: Text(tr('Manage accounts')),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () =>
                         Navigator.of(context)
@@ -190,7 +200,7 @@ class SettingsPage extends ConsumerWidget {
                   const Divider(height: 1),
                   ListTile(
                     leading: const Icon(Icons.category_outlined),
-                    title: const Text('Categories'),
+                    title: Text(tr('Categories')),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () =>
                         Navigator.of(context)
@@ -199,58 +209,62 @@ class SettingsPage extends ConsumerWidget {
                 ],
               ),
             ),
-            const _Group('SMS assistant'),
+            const _Group('Automatic entries'),
             Card(
               child: Column(
                 children: [
-                  SwitchListTile.adaptive(
-                    secondary: const Icon(Icons.sms_outlined),
-                    title: const Text('Detect transactions in bank messages'),
-                    subtitle: Text(
-                      defaultTargetPlatform == TargetPlatform.iOS
-                          ? 'iOS cannot read your messages. Import by paste or share; nothing is added until you confirm.'
-                          : 'Import messages and approve each one. Parsed on this device only.',
-                    ),
-                    value: s.smsEnabled,
-                    onChanged: (v) => _toggleSms(context, ref, v),
-                  ),
-                  if (s.smsEnabled && SmsReader.supported) ...[
-                    const Divider(height: 1),
-                    ListTile(
-                      leading: const Icon(Icons.manage_search),
-                      title: const Text('Scan messages now'),
-                      subtitle: Text(
-                        s.lastScanInfo == null
-                            ? 'Reads recent bank messages on this phone'
-                            : 'Last: ${s.lastScanInfo}',
+                  if (s.smsAllowed) ...[
+                    SwitchListTile.adaptive(
+                      secondary: const Icon(Icons.sms_outlined),
+                      title: Text(tr('Add entries from bank messages')),
+                      subtitle: const Text(
+                        'Cash++ turns your bank alerts into entries you confirm.',
                       ),
-                      onTap: () => scanAndReport(context, ref),
+                      value: s.smsEnabled,
+                      onChanged: (v) => _toggleSms(context, ref, v),
                     ),
+                    if (s.smsEnabled)
+                      FutureBuilder<bool>(
+                        future: SmsReader.instance.hasPermission(),
+                        builder: (context, snap) => snap.data == false
+                            ? ListTile(
+                                leading: const Icon(
+                                  Icons.notifications_off_outlined,
+                                ),
+                                title: const Text(
+                                  'Turn on notification access',
+                                ),
+                                subtitle: const Text(
+                                  'Cash++ needs it to see your bank alerts. Tap, then switch on Cash++ in the list.',
+                                ),
+                                onTap: () async {
+                                  AppLockGate.holdOff();
+                                  await SmsReader.instance.requestPermission();
+                                },
+                              )
+                            : const SizedBox.shrink(),
+                      ),
+                    const Divider(height: 1),
                   ],
+                  ListTile(
+                    leading: const Icon(Icons.content_paste),
+                    title: const Text('Add from a copied message'),
+                    subtitle: const Text(
+                      'Paste or share a bank message and Cash++ fills in the entry. Nothing is added until you confirm.',
+                    ),
+                    onTap: () => showSheet(context, (_) => const ImportSheet()),
+                  ),
                   if (s.smsEnabled && s.split) ...[
                     const Divider(height: 1),
                     SwitchListTile.adaptive(
                       secondary: const Icon(Icons.pin_outlined),
-                      title: const Text('Remember account digits'),
+                      title: Text(tr('Recognise my bank accounts')),
                       subtitle: const Text(
-                        'Optional. Learns the last 4 digits of a bank account from messages you confirm, so later ones are pre-selected. You can also type them in Accounts.',
+                        'Optional. Learns the last 4 digits of a bank account from entries you confirm, so later ones are pre-selected. You can also type them in Accounts.',
                       ),
                       value: s.smsLearnDigits,
                       onChanged: (v) =>
                           repo.setSetting('smsLearnDigits', v ? '1' : '0'),
-                    ),
-                  ],
-                  if (s.smsEnabled) ...[
-                    const Divider(height: 1),
-                    ListTile(
-                      leading: const Icon(Icons.delete_sweep_outlined),
-                      title: const Text('Delete stored message text'),
-                      onTap: () async {
-                        await repo.purgeSmsText();
-                        if (context.mounted) {
-                          toast(context, 'Stored message text deleted');
-                        }
-                      },
                     ),
                   ],
                 ],
@@ -262,7 +276,7 @@ class SettingsPage extends ConsumerWidget {
                 children: [
                   SwitchListTile.adaptive(
                     secondary: const Icon(Icons.notifications_active_outlined),
-                    title: const Text('Daily reminder'),
+                    title: Text(tr('Daily reminder')),
                     subtitle: const Text(
                       'Every day, even if nothing is waiting',
                     ),
@@ -304,7 +318,7 @@ class SettingsPage extends ConsumerWidget {
                   if (s.reminderEnabled)
                     ListTile(
                       leading: const Icon(Icons.schedule),
-                      title: const Text('Reminder time'),
+                      title: Text(tr('Reminder time')),
                       trailing: Text(
                         s.reminderTime,
                         style: context.text.titleMedium,
@@ -329,7 +343,7 @@ class SettingsPage extends ConsumerWidget {
                   const Divider(height: 1),
                   ListTile(
                     leading: const Icon(Icons.notifications_none),
-                    title: const Text('Send a test notification'),
+                    title: Text(tr('Send a test notification')),
                     subtitle: const Text(
                       'Checks that Cash++ can alert you on this phone',
                     ),
@@ -356,10 +370,25 @@ class SettingsPage extends ConsumerWidget {
               child: Column(
                 children: [
                   SwitchListTile.adaptive(
-                    secondary: const Icon(Icons.lock_outline),
-                    title: const Text('App lock'),
+                    secondary: const Icon(Icons.visibility_off_outlined),
+                    title: Text(tr('Hide Cash++ when switching apps')),
                     subtitle: const Text(
-                      'Require fingerprint, face or your phone PIN to open Cash++. Also hides the app in the recent-apps view.',
+                      'Blanks Cash++ in the recent-apps view and blocks screenshots.',
+                    ),
+                    value: s.hidePreview,
+                    onChanged: (v) async {
+                      await ref
+                          .read(repoProvider)
+                          .setSetting('hidePreview', v ? '1' : '0');
+                      await SmsReader.instance.setSecure(v || s.appLock);
+                    },
+                  ),
+                  const Divider(height: 1),
+                  SwitchListTile.adaptive(
+                    secondary: const Icon(Icons.lock_outline),
+                    title: Text(tr('App lock')),
+                    subtitle: const Text(
+                      'Require fingerprint, face or your phone PIN to open Cash++.',
                     ),
                     value: s.appLock,
                     onChanged: (v) => _toggleLock(context, ref, v),
@@ -378,8 +407,11 @@ class SettingsPage extends ConsumerWidget {
                           const SizedBox(height: Sp.x2),
                           SegmentedButton<int>(
                             showSelectedIcon: false,
-                            segments: const [
-                              ButtonSegment(value: 0, label: Text('Always')),
+                            segments: [
+                              ButtonSegment(
+                                value: 0,
+                                label: Text(tr('Always')),
+                              ),
                               ButtonSegment(value: 60, label: Text('1 min')),
                               ButtonSegment(value: 300, label: Text('5 min')),
                               ButtonSegment(value: 900, label: Text('15 min')),
@@ -397,37 +429,65 @@ class SettingsPage extends ConsumerWidget {
                 ],
               ),
             ),
-            const _Group('Monthly title'),
+            const _Group('Month-end title'),
             Card(
               child: Column(
                 children: [
                   Consumer(
                     builder: (context, ref, _) {
-                      final roast = ref.watch(roastModeProvider).value ?? true;
-                      return SwitchListTile.adaptive(
-                        secondary: const Text(
-                          '🔥',
+                      final funny = ref.watch(roastModeProvider).value ?? false;
+                      return ListTile(
+                        leading: const Text(
+                          '💬',
                           style: TextStyle(fontSize: 22),
                         ),
-                        title: const Text('Roast mode'),
-                        subtitle: const Text(
-                          'Brutally honest monthly titles and tips. Turn off for a kinder tone. Health spending is never roasted.',
-                        ),
-                        value: roast,
-                        onChanged: (v) =>
-                            repo.setSetting('roastMode', v ? '1' : '0'),
+                        title: Text(tr('How we talk to you')),
+                        subtitle: Text(funny ? 'Honest and funny' : 'Friendly'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => showToneSheet(context),
                       );
                     },
                   ),
                   const Divider(height: 1),
                   ListTile(
                     leading: const Text('🏆', style: TextStyle(fontSize: 22)),
-                    title: const Text('Trophy shelf'),
-                    subtitle: const Text('Your title for every month'),
+                    title: Text(tr('Your titles')),
+                    subtitle: const Text(
+                      'The title you earned each month, from your first month to now.',
+                    ),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () =>
                         Navigator.of(context)
                             .push(softRoute(const TrophyShelfPage())),
+                  ),
+                ],
+              ),
+            ),
+            const _Group('Language and currency'),
+            Card(
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.translate),
+                    title: Text(tr('Language')),
+                    subtitle: Text(
+                      appLanguages
+                          .firstWhere((l) => l.code == s.language)
+                          .native,
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () async {
+                      final c = await pickLanguageCode(context, s.language);
+                      if (c != null) await repo.setSetting('language', c);
+                    },
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.payments_outlined),
+                    title: Text(tr('Currency')),
+                    subtitle: Text(currencyByCode(s.currency).label),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => _changeCurrency(context, ref, s.currency),
                   ),
                 ],
               ),
@@ -438,20 +498,20 @@ class SettingsPage extends ConsumerWidget {
                 padding: const EdgeInsets.all(Sp.x4),
                 child: SegmentedButton<String>(
                   showSelectedIcon: false,
-                  segments: const [
+                  segments: [
                     ButtonSegment(
                       value: 'system',
-                      label: Text('System'),
+                      label: Text(tr('System')),
                       icon: Icon(Icons.brightness_auto),
                     ),
                     ButtonSegment(
                       value: 'light',
-                      label: Text('Light'),
+                      label: Text(tr('Light')),
                       icon: Icon(Icons.light_mode_outlined),
                     ),
                     ButtonSegment(
                       value: 'dark',
-                      label: Text('Dark'),
+                      label: Text(tr('Dark')),
                       icon: Icon(Icons.dark_mode_outlined),
                     ),
                   ],
@@ -461,15 +521,15 @@ class SettingsPage extends ConsumerWidget {
                 ),
               ),
             ),
-            const _Group('Diagnostics'),
+            const _Group('Help'),
             Card(
               child: Column(
                 children: [
                   ListTile(
                     leading: const Icon(Icons.bug_report_outlined),
-                    title: const Text('Event log'),
+                    title: Text(tr('Help and troubleshooting')),
                     subtitle: const Text(
-                      'What the app has been doing. Copy it if something looks wrong.',
+                      'Shows what the app has been doing. Copy it and send it to us if something looks wrong.',
                     ),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () =>
@@ -479,8 +539,8 @@ class SettingsPage extends ConsumerWidget {
                   const Divider(height: 1),
                   ListTile(
                     leading: const Icon(Icons.health_and_safety_outlined),
-                    title: const Text('Run integrity check'),
-                    subtitle: const Text('Verifies balances and debt postings'),
+                    title: Text(tr('Check my data')),
+                    subtitle: Text(tr('Makes sure your balances add up')),
                     onTap: () async {
                       final problems = await repo.checkInvariants();
                       if (!context.mounted) return;
@@ -498,7 +558,7 @@ class SettingsPage extends ConsumerWidget {
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(c),
-                              child: const Text('OK'),
+                              child: Text(tr('OK')),
                             ),
                           ],
                         ),
@@ -512,6 +572,35 @@ class SettingsPage extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _changeCurrency(
+    BuildContext context,
+    WidgetRef ref,
+    String current,
+  ) async {
+    final code = await pickCurrencyCode(context);
+    if (code == null || code == current || !context.mounted) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: Text('${tr('Currency')}: $code'),
+        content: const Text(
+          'This changes how amounts are shown. Your existing amounts are not converted: 1,000 stays 1,000 in the new currency.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(c, false),
+            child: Text(tr('Cancel')),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(c, true),
+            child: Text(tr('Continue')),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) await ref.read(repoProvider).setSetting('currency', code);
   }
 
   Future<void> _toggleLock(BuildContext context, WidgetRef ref, bool on) async {
@@ -532,7 +621,8 @@ class SettingsPage extends ConsumerWidget {
     );
     if (!ok) return;
     await repo.setSetting('appLock', on ? '1' : '0');
-    await SmsReader.instance.setSecure(on);
+    final hide = await repo.getSetting('hidePreview') != '0';
+    await SmsReader.instance.setSecure(on || hide);
   }
 
   Future<void> _toggleSms(BuildContext context, WidgetRef ref, bool on) async {
@@ -544,21 +634,20 @@ class SettingsPage extends ConsumerWidget {
       return;
     }
     if (SmsReader.supported) {
-      // Show the system permission dialog; only enable when it is granted.
+      // Android has no pop-up for notification access: it opens its own list.
       AppLockGate.holdOff();
       final granted = await SmsReader.instance.requestPermission();
-      if (!granted) {
-        if (context.mounted) {
-          toast(
-            context,
-            'SMS permission was denied. Allow "SMS" for Cash++ in Android Settings > Apps to enable this.',
-          );
-        }
-        return;
-      }
       await repo.setSetting('smsEnabled', '1');
       await SmsReader.instance.setAutoDetect(true);
-      if (context.mounted) await scanAndReport(context, ref);
+      if (!context.mounted) return;
+      if (granted) {
+        await scanAndReport(context, ref);
+      } else {
+        toast(
+          context,
+          'Switch on Cash++ in the notification access list, then come back.',
+        );
+      }
     } else {
       await repo.setSetting('smsEnabled', '1');
     }
@@ -570,12 +659,12 @@ class SettingsPage extends ConsumerWidget {
       await showDialog<void>(
         context: context,
         builder: (c) => AlertDialog(
-          title: const Text('Online Mode is not available yet'),
+          title: const Text('Google Drive backup is not available yet'),
           content: const Text(DriveRemote.notConfiguredMessage),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(c),
-              child: const Text('OK'),
+              child: Text(tr('OK')),
             ),
           ],
         ),
@@ -585,30 +674,33 @@ class SettingsPage extends ConsumerWidget {
     final ok = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
-        title: const Text('Turn on Online Mode?'),
+        title: const Text('Back up to Google Drive?'),
         content: const Text(
           'You will sign in with Google. A local backup is made first. Your data is then merged with any Cash++ data already in your private Drive app folder — nothing is overwritten or deleted.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(c, false),
-            child: const Text('Cancel'),
+            child: Text(tr('Cancel')),
           ),
           TextButton(
             onPressed: () => Navigator.pop(c, true),
-            child: const Text('Continue'),
+            child: Text(tr('Continue')),
           ),
         ],
       ),
     );
     if (ok != true) return;
+    if (!context.mounted) return;
+    final vault = ref.read(syncServiceProvider).vault;
+    if (!await ensurePassphrase(context, vault)) return;
     AppLockGate.holdOff(const Duration(minutes: 2));
     final r = await ref.read(syncServiceProvider).goOnline();
     if (context.mounted) {
       toast(
         context,
         r.ok
-            ? 'Online Mode on. ${r.pushedRows} sent, ${r.pulledRows} received.'
+            ? 'Google Drive backup is on. ${r.pushedRows} sent, ${r.pulledRows} received.'
             : 'Could not enable: ${r.error}',
       );
     }
@@ -618,18 +710,18 @@ class SettingsPage extends ConsumerWidget {
     final ok = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
-        title: const Text('Switch to Offline Mode?'),
+        title: const Text('Keep your data on this phone only?'),
         content: const Text(
-          'Syncing stops and you are signed out of Google. All data stays on this device. Data already in Drive is kept (remove it from your Google account settings if you want it gone).',
+          'Backing up stops and you are signed out of Google. All your data stays on this phone. What is already in Google Drive stays there; you can remove it from your Google account settings.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(c, false),
-            child: const Text('Cancel'),
+            child: Text(tr('Cancel')),
           ),
           TextButton(
             onPressed: () => Navigator.pop(c, true),
-            child: const Text('Switch'),
+            child: Text(tr('Keep on this phone')),
           ),
         ],
       ),
@@ -665,11 +757,11 @@ class AccountsPage extends ConsumerWidget {
     final bal = ref.watch(balancesProvider).value ?? {};
     final split = ref.watch(settingsProvider).value?.split ?? false;
     return Scaffold(
-      appBar: AppBar(title: const Text('Accounts')),
+      appBar: AppBar(title: Text(tr('Accounts'))),
       floatingActionButton: split
           ? FloatingActionButton.extended(
               icon: const Icon(Icons.add),
-              label: const Text('Add bank account'),
+              label: Text(tr('Add bank account')),
               onPressed: () => _edit(context, ref, null),
             )
           : null,
@@ -680,7 +772,7 @@ class AccountsPage extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.only(bottom: Sp.x3),
               child: Text(
-                'In Combined mode all balances are shown as one total. Switch to Split accounts in Settings to manage cash and banks separately.',
+                'Your cash and bank are shown together as one total. To keep them apart, choose "Separate balances" in Settings.',
                 style: context.text.bodySmall?.copyWith(
                   color: context.cash.textMuted,
                 ),
@@ -725,7 +817,7 @@ class AccountsPage extends ConsumerWidget {
   void _edit(BuildContext context, WidgetRef ref, Account? a) {
     final name = TextEditingController(text: a?.name ?? '');
     final opening = TextEditingController(
-      text: a == null ? '' : (a.openingMinor / 100).toStringAsFixed(2),
+      text: a == null ? '' : Money.edit(a.openingMinor),
     );
     final last4 = TextEditingController(text: a?.last4 ?? '');
     showSheet(
@@ -738,10 +830,10 @@ class AccountsPage extends ConsumerWidget {
             children: [
               TextField(
                 controller: name,
-                decoration: const InputDecoration(labelText: 'Name'),
+                decoration: InputDecoration(labelText: tr('Name')),
               ),
               const SizedBox(height: Sp.x3),
-              AmountField(controller: opening, label: 'Opening balance'),
+              AmountField(controller: opening, label: tr('Opening balance')),
               if (a == null || a.kind == 'bank') ...[
                 const SizedBox(height: Sp.x3),
                 TextField(
@@ -791,7 +883,7 @@ class AccountsPage extends ConsumerWidget {
                     if (c.mounted) toast(c, e.message);
                   }
                 },
-                child: const Text('Save'),
+                child: Text(tr('Save')),
               ),
             ],
           ),
@@ -861,7 +953,7 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage>
                       ),
                       trailing: kind == 'debit'
                           ? IconButton(
-                              tooltip: 'Add subcategory',
+                              tooltip: tr('Add subcategory'),
                               icon: const Icon(Icons.add),
                               onPressed: () => _edit(null, kind, parent: m),
                             )
@@ -893,7 +985,7 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Categories'),
+        title: Text(tr('Categories')),
         bottom: TabBar(
           controller: _tabs,
           tabs: const [
@@ -904,7 +996,7 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage>
       ),
       floatingActionButton: FloatingActionButton.extended(
         icon: const Icon(Icons.add),
-        label: const Text('Category'),
+        label: Text(tr('Category')),
         onPressed: () => _edit(null, _tabs.index == 0 ? 'debit' : 'credit'),
       ),
       body: TabBarView(
@@ -942,7 +1034,7 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage>
                   controller: name,
                   autofocus: true,
                   textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(labelText: 'Name'),
+                  decoration: InputDecoration(labelText: tr('Name')),
                 ),
                 const SizedBox(height: Sp.x4),
                 Wrap(
@@ -953,7 +1045,7 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage>
                       Semantics(
                         button: true,
                         selected: color == s,
-                        label: 'Colour',
+                        label: tr('Colour'),
                         child: GestureDetector(
                           onTap: () => set(() => color = s),
                           child: Container(
@@ -985,7 +1077,7 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage>
                             foregroundColor: ctx.cash.spending,
                           ),
                           onPressed: () => _delete(ctx, c),
-                          child: const Text('Delete'),
+                          child: Text(tr('Delete')),
                         ),
                       ),
                     if (c != null) const SizedBox(width: Sp.x3),
@@ -1015,7 +1107,7 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage>
                             if (ctx.mounted) toast(ctx, e.message);
                           }
                         },
-                        child: const Text('Save'),
+                        child: Text(tr('Save')),
                       ),
                     ),
                   ],
@@ -1060,7 +1152,7 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage>
   }
 }
 
-/// Scans the inbox and tells the user what happened.
+/// Checks for new bank alerts and tells the user what happened.
 Future<void> scanAndReport(BuildContext context, WidgetRef ref) async {
   final r = await scanSmsInbox(ref.read(repoProvider));
   if (!context.mounted) return;
@@ -1073,8 +1165,8 @@ Future<void> scanAndReport(BuildContext context, WidgetRef ref) async {
     r.ok
         ? (r.added > 0
               ? '${r.added} transaction${r.added == 1 ? '' : 's'} found. Review them in the Inbox tab.'
-              : 'Scanned ${r.scanned} messages, nothing new to review.')
-        : 'Scan failed: ${r.error}',
+              : 'Checked your bank alerts, nothing new to review.')
+        : 'Could not check your bank alerts: ${r.error}',
   );
 }
 
@@ -1086,10 +1178,10 @@ class EventLogPage extends StatelessWidget {
     final diag = Diag.instance;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Event log'),
+        title: Text(tr('Help and troubleshooting')),
         actions: [
           IconButton(
-            tooltip: 'Copy',
+            tooltip: tr('Copy'),
             icon: const Icon(Icons.copy),
             onPressed: () async {
               await Clipboard.setData(ClipboardData(text: diag.dump()));

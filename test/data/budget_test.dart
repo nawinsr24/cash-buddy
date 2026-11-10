@@ -265,4 +265,67 @@ void main() {
     expect(y[11].future, isTrue);
     expect(y[11].state, isNull);
   });
+
+  group('budget by category', () {
+    test(
+      'total is the sum of the categories and repeats every month',
+      () async {
+        final e = await newEnv();
+        expect(await e.repo.budgetMode(), 'overall');
+        await e.repo.saveCategoryBudget({
+          'cat_food': 800000,
+          'cat_transport': 200000,
+          'cat_shopping': 0,
+        });
+        expect(await e.repo.budgetMode(), 'category');
+        expect(await e.repo.budgetFor(2026, 11), 1000000);
+        expect(await e.repo.budgetFor(2026, 12), 1000000);
+        final st = await e.repo.budgetStatus(2026, 11);
+        expect(st!.budget, 1000000);
+        expect(st.monthOnly, isFalse);
+      },
+    );
+
+    test('only this month: other months keep the repeating amounts', () async {
+      final e = await newEnv();
+      await e.repo.saveCategoryBudget({'cat_food': 800000});
+      await e.repo.saveCategoryBudget({
+        'cat_food': 500000,
+        'cat_transport': 100000,
+      }, month: DateTime(2026, 11, 1));
+      expect(await e.repo.budgetFor(2026, 11), 600000);
+      expect(await e.repo.budgetFor(2026, 12), 800000);
+      expect((await e.repo.budgetStatus(2026, 11))!.monthOnly, isTrue);
+      expect((await e.repo.budgetStatus(2026, 12))!.monthOnly, isFalse);
+    });
+
+    test(
+      'switching to overall keeps the current total as the amount',
+      () async {
+        final e = await newEnv();
+        await e.repo.saveCategoryBudget({
+          'cat_food': 800000,
+          'cat_transport': 200000,
+        });
+        await e.repo.setBudgetMode('overall');
+        expect(await e.repo.budgetMode(), 'overall');
+        expect(await e.repo.budgetFor(2026, 11), 1000000);
+      },
+    );
+
+    test('an old overall budget stays overall and unchanged', () async {
+      final e = await newEnv();
+      await e.repo.setBudget(3500000);
+      expect(await e.repo.budgetMode(), 'overall');
+      expect(await e.repo.budgetFor(2026, 11), 3500000);
+    });
+
+    test('needs at least one amount', () async {
+      final e = await newEnv();
+      expect(
+        () => e.repo.saveCategoryBudget({'cat_food': 0}),
+        throwsA(isA<ValidationException>()),
+      );
+    });
+  });
 }

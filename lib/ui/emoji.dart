@@ -145,6 +145,7 @@ const _exact = <String, String>{
   'other hobbies': '🎯',
   // home
   'sent home': '🏡',
+  'family support': '🏡',
   'parents': '👪',
   'family': '👨‍👩‍👧',
   // work
@@ -220,6 +221,7 @@ const _emojiTable = <String, String>{
   'tour': '🧳',
   // home & family
   'sent home': '🏡',
+  'family support': '🏡',
   'parent': '👪',
   'family': '👨‍👩‍👧',
   // original set

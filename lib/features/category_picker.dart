@@ -5,6 +5,7 @@ import '../ui/emoji.dart';
 import '../ui/motion.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
+import '../l10n/l10n.dart';
 
 /// Returned by [pickCategory] when the user chooses "no category".
 const kNoCategory = '_none';
@@ -169,7 +170,7 @@ class _PickerBodyState extends State<_PickerBody> {
                 Reveal(
                   child: CategoryTile(
                     emoji: '🏷️',
-                    label: 'Uncategorised',
+                    label: tr('No category'),
                     color: context.cash.textMuted,
                     selected: widget.selectedId == null,
                     onTap: () => Navigator.pop(context, kNoCategory),
@@ -351,7 +352,7 @@ class CategoryField extends StatelessWidget {
                   ),
                   Text(
                     sel == null
-                        ? 'Uncategorised'
+                        ? 'No category'
                         : (parent != null
                               ? '${parent.name} › ${sel.name}'
                               : sel.name),

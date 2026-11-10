@@ -95,8 +95,8 @@ void main() {
       expect(emojiForCategory('Tours & Trips'), '🧳');
       expect(emojiForCategory('Stay', 'Tours & Trips'), '🏨');
       expect(emojiForCategory('Food on Trip', 'Tours & Trips'), '🍜');
-      expect(emojiForCategory('Sent Home'), '🏡');
-      expect(emojiForCategory('Parents', 'Sent Home'), '👪');
+      expect(emojiForCategory('Family Support'), '🏡');
+      expect(emojiForCategory('Parents', 'Family Support'), '👪');
       // older ones still work
       expect(emojiForCategory('Groceries', 'Food'), '🛒');
       expect(emojiForCategory('Movies', 'Entertainment'), '🎬');
