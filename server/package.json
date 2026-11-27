@@ -1,0 +1,13 @@
+{
+  "name": "cash-buddy-server",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --local",
+    "keys": "node scripts/keys.js",
+    "test": "sh scripts/live_test.sh"
+  },
+  "devDependencies": {
+    "wrangler": "^4.169.0"
+  }
+}

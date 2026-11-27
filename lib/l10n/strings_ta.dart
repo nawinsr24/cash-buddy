@@ -280,4 +280,7 @@ const Map<String, String> stringsTa = {
   'Schedule': 'அட்டவணை',
   'Press and hold a payment to remove it.':
       'கட்டணத்தை நீக்க அழுத்திப் பிடிக்கவும்.',
+  'Access has been turned off': 'உங்கள் அணுகல் நிறுத்தப்பட்டுள்ளது',
+  'Your data is still on this phone.': 'உங்கள் தரவு இந்தப் போனிலேயே உள்ளது.',
+  'Check again': 'மீண்டும் சரிபார்',
 };

@@ -1,0 +1,11 @@
+name = "cash-buddy"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+
+# Secrets SIGNING_KEY and ADMIN_TOKEN are set with `wrangler secret put`
+# (locally in .dev.vars, which is never committed).
+
+[[d1_databases]]
+binding = "DB"
+database_name = "cash-buddy"
+database_id = "00000000-0000-0000-0000-000000000000" # replaced at go-live

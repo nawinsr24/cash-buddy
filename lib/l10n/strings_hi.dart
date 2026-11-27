@@ -276,4 +276,7 @@ const Map<String, String> stringsHi = {
   'Interest paid': 'चुकाया ब्याज',
   'Schedule': 'किस्त तालिका',
   'Press and hold a payment to remove it.': 'भुगतान हटाने के लिए दबाकर रखें।',
+  'Access has been turned off': 'आपकी पहुँच बंद कर दी गई है',
+  'Your data is still on this phone.': 'आपका डेटा इस फ़ोन में सुरक्षित है।',
+  'Check again': 'फिर जाँचें',
 };
