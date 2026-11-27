@@ -9,6 +9,7 @@ import 'package:crypto/crypto.dart';
 
 import '../../data/db_key.dart';
 import '../../data/repo.dart';
+import '../../platform/diag.dart';
 import 'group_store.dart';
 import 'http_post_box.dart';
 import 'note.dart';
@@ -55,7 +56,10 @@ class GroupService {
 
   Future<String> _session() async {
     final s = await repo.getSetting('accountSession') ?? '';
-    if (s.isEmpty) throw GroupProblem('Sign in first.');
+    if (s.isEmpty) {
+      _log('not signed in on this phone');
+      throw GroupProblem('Sign in first.');
+    }
     return s;
   }
 
@@ -107,7 +111,9 @@ class GroupService {
       key: base64Url.decode(base64Url.normalize(key)),
       send: send,
     );
+    _log('$how: asking the server');
     await _guard(() => box.call(how, body: {'join': _joinToken(key)}));
+    _log('$how: accepted');
     await secrets.write('group_key', key);
     _groupId = id;
     final replica = _replica = Replica(Disk(member));
@@ -128,14 +134,34 @@ class GroupService {
     final box = await _box();
     final replica = _replica!;
     Future<void> save() => _store.save(_groupId!, replica.disk);
+    final toSend = replica.disk.outbox.length;
+    final had = replica.disk.notes.length;
     await _guard(() => replica.sync(box, step: save));
     await save();
+    final me = replica.disk.member;
+    final entries = replica.entries.values;
+    _log(
+      'sync ok: sent $toSend, received ${replica.disk.notes.length - had}, '
+      'waiting to send ${replica.disk.outbox.length}, '
+      'people ${ofKind(replica, 'member').length}, '
+      'spends from partner '
+      '${entries.where((e) => e.data['kind'] == 'expense' && e.data['paidBy'] != me).length}',
+    );
+  }
+
+  /// Help and troubleshooting shows these. Counts and error codes only: never
+  /// amounts, notes, names or codes. Repeats are logged once.
+  static void _log(String line) {
+    final text = 'home $line';
+    final last = Diag.instance.lines.lastOrNull ?? '';
+    if (!last.endsWith(text)) Diag.instance.log(text);
   }
 
   /// Tells the server where to nudge this phone.
   Future<void> registerPush(String token) async {
     final box = await _box();
     await _guard(() => box.call('push', body: {'token': token}));
+    _log('push address registered');
   }
 
   /// Makes a change and saves it; it is sent at the next [sync].
@@ -160,6 +186,7 @@ class GroupService {
     try {
       await work();
     } on GroupServerException catch (e) {
+      _log('server refused, code ${e.status}');
       throw GroupProblem(switch (e.status) {
         401 => 'Sign in again.',
         403 => 'This invite code is not valid.',
@@ -169,7 +196,8 @@ class GroupService {
       });
     } on GroupProblem {
       rethrow;
-    } catch (_) {
+    } catch (e) {
+      _log('failed: ${e.runtimeType}');
       throw GroupProblem('The server could not be reached. Try again later.');
     }
   }

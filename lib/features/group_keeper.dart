@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/home_repo.dart';
 import '../data/repo.dart';
 import '../sync/group/group_service.dart';
+import '../platform/diag.dart';
 import '../platform/push.dart';
 import '../providers.dart';
 import 'group.dart';
@@ -100,6 +101,7 @@ class _GroupKeeperState extends ConsumerState<GroupKeeper>
       if (await group.open() == null) return;
       final push = ref.read(pushProvider);
       final token = await push.token();
+      if (token == null) Diag.instance.log('home push not available');
       if (token != null) {
         await group.registerPush(token);
         _nudges ??= push.nudges.listen((_) => _update());
@@ -108,8 +110,11 @@ class _GroupKeeperState extends ConsumerState<GroupKeeper>
       await updateGroup(group, repo);
       if (!mounted) return;
       ref.invalidate(budgetStatusProvider);
-    } catch (_) {
+    } catch (e) {
       // offline or signed out: tried again next time
+      Diag.instance.log(
+        'home update skipped: ${e is GroupProblem ? e.message : e.runtimeType}',
+      );
     } finally {
       _busy = false;
     }

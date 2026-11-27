@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 
 import '../sync/drive_remote.dart';
 import 'access.dart';
+import 'diag.dart';
 
 /// Raised with a message fit to show.
 class SignInProblem implements Exception {
@@ -79,6 +80,7 @@ class Account {
     } catch (_) {
       throw SignInProblem('The server could not be reached. Try again later.');
     }
+    Diag.instance.log('home sign-in: server code $status');
     if (status != 200) {
       throw SignInProblem('The server did not accept the sign-in.');
     }

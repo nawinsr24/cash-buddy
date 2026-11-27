@@ -5,6 +5,7 @@ import 'package:cash_buddy/data/home_repo.dart';
 import 'package:cash_buddy/domain/dates.dart';
 import 'package:cash_buddy/features/group_keeper.dart' show updateGroup;
 import 'package:cash_buddy/platform/access.dart';
+import 'package:cash_buddy/platform/diag.dart';
 import 'package:cash_buddy/sync/group/group_service.dart';
 import 'package:cash_buddy/sync/group/http_post_box.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -122,6 +123,10 @@ void main() {
     }
     await updateGroup(b, envB.repo);
     expect((await envB.repo.homeSummary(month))!.sharedTotal, 1507);
+    final log = Diag.instance.dump();
+    expect(log, contains('home sync ok'));
+    expect(log, contains('home join: accepted'));
+    expect(log, isNot(contains('Priya')));
     expect((await envA.repo.homeSummary(month))!.sharedTotal, 1507);
   }, skip: url == null ? 'needs the local server' : false);
 
@@ -135,6 +140,8 @@ void main() {
     );
     await expectLater(group.create('N'), throwsA(isA<GroupProblem>()));
     expect(await group.open(), isNull);
+    expect(Diag.instance.dump(), contains('home not signed in'));
+    expect(Diag.instance.dump(), isNot(contains('N@')));
     expect(const AccessConfig('', '').enabled, isFalse);
   });
 }
