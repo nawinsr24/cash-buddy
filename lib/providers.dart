@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'data/db.dart';
 import 'platform/features.dart';
 import 'data/budget_repo.dart';
+import 'data/home_repo.dart';
 import 'data/card_repo.dart';
 import 'domain/card.dart';
 import 'data/insights_repo.dart';
@@ -337,6 +338,19 @@ final budgetStatusProvider = FutureProvider.autoDispose<BudgetStatus?>((ref) {
     ref,
     () => ref.watch(repoProvider).budgetStatus(now.year, now.month),
   );
+});
+
+/// Null when home sharing is off. This month, for the summary card.
+final homeMonthProvider = FutureProvider.autoDispose<HomeSummary?>((ref) {
+  final repo = ref.watch(repoProvider);
+  return _tick(ref, () => repo.homeSummary(DateRange.thisMonth(repo.now())));
+});
+
+/// The period chosen on the dashboard, for the home category chart.
+final homePeriodProvider = FutureProvider.autoDispose<HomeSummary?>((ref) {
+  final repo = ref.watch(repoProvider);
+  final range = ref.watch(periodProvider).resolve(repo.now());
+  return _tick(ref, () => repo.homeSummary(range));
 });
 
 final budgetDailyProvider = FutureProvider.autoDispose<List<int>>((ref) {

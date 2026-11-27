@@ -1,4 +1,4 @@
-import 'package:cash_buddy/data/budget_repo.dart';
+import 'package:cash_buddy/data/home_repo.dart';
 import 'package:cash_buddy/data/db_key.dart';
 import 'package:cash_buddy/features/account_tile.dart';
 import 'package:cash_buddy/features/group.dart';
@@ -12,7 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../data/helpers.dart';
-import 'app_flow_test.dart' show settle, tapText;
+import 'app_flow_test.dart' show tapText;
 import 'cards_test.dart' show wait;
 
 /// A server that accepts everything and has nothing waiting.
@@ -30,9 +30,7 @@ Future<(int, String)> _server(
 );
 
 void main() {
-  testWidgets('create a group, set its budget, add and delete a spend', (
-    tester,
-  ) async {
+  testWidgets('starting home sharing', (tester) async {
     tester.view.physicalSize = const Size(360, 700);
     tester.view.devicePixelRatio = 1;
     tester.platformDispatcher.textScaleFactorTestValue = 1.3;
@@ -42,7 +40,6 @@ void main() {
     late GroupService service;
     await tester.runAsync(() async {
       env = await newEnv(opening: 1000000);
-      await env.repo.setBudget(3000000);
       await env.repo.setSetting('accountEmail', 'a@example.com');
       await env.repo.setSetting('accountSession', '{}');
     });
@@ -72,37 +69,13 @@ void main() {
     );
     await wait(tester);
 
-    await tapText(tester, 'Create a group');
+    await tapText(tester, 'Start home sharing');
     await tester.enterText(find.byType(TextField), 'Naveen');
     await tapText(tester, 'OK');
     await wait(tester);
-
-    await tapText(tester, 'Tap to set a group budget');
-    await tester.enterText(find.byType(TextField), '20000');
-    await tapText(tester, 'OK');
-    await wait(tester);
-    expect(find.textContaining('left of'), findsOneWidget);
-
-    await tapText(tester, 'Group spend');
-    await tester.enterText(find.byType(TextField).first, '1500');
-    await tester.enterText(find.byType(TextField).at(1), 'Groceries');
-    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Save'));
-    await settle(tester);
-    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
-    await wait(tester);
-    expect(find.text('Groceries'), findsOneWidget);
-
-    // my share counts in my budget; my balance does not move
-    var budget = await tester.runAsync(() => env.repo.budgetStatus(2026, 11));
-    expect(budget!.spent, 150000);
-    expect(await tester.runAsync(() => env.repo.totalBalance()), 1000000);
-
-    await tapText(tester, 'Groceries');
-    await tapText(tester, 'Delete');
-    await wait(tester);
-    expect(find.text('Deleted'), findsOneWidget);
-    budget = await tester.runAsync(() => env.repo.budgetStatus(2026, 11));
-    expect(budget!.spent, 0);
+    expect(find.text('Naveen'), findsOneWidget);
+    expect(find.text('Invite your partner'), findsOneWidget);
+    expect(await tester.runAsync(() => env.repo.homeMember()), isNotNull);
     expect(tester.takeException(), isNull);
   });
 
@@ -112,6 +85,6 @@ void main() {
         child: MaterialApp(home: Scaffold(body: GroupCard())),
       ),
     );
-    expect(find.text('Shared group'), findsNothing);
+    expect(find.text('Home sharing'), findsNothing);
   });
 }

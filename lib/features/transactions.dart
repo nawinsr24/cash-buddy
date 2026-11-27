@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../l10n/l10n.dart';
 import '../data/db.dart';
+import '../data/home_repo.dart';
 import '../data/repo.dart';
 import '../domain/dates.dart';
 import '../domain/money.dart';
@@ -433,6 +434,7 @@ class _TxnTile extends ConsumerWidget {
       else if (showAccount && account != null)
         account!.name,
       if (txn.source == 'sms') 'SMS',
+      if (txn.home == true) tr('Home'),
       if (ref.watch(splitExpensesProvider).value?.contains(txn.id) ?? false)
         tr('Split'),
     ].join(' · ');
@@ -806,10 +808,31 @@ class _TxnFormState extends ConsumerState<_TxnForm> {
   bool splitting = false;
   final splitDraft = SplitDraft();
 
+  // Mine or Home, offered only while home sharing is on.
+  bool inHome = false;
+  late bool home = widget.edit?.home ?? false;
+  Set<String> homeCats = const {};
+
+  Future<void> _loadHome() async {
+    final repo = ref.read(repoProvider);
+    if (await repo.homeMember() == null) return;
+    final cats = await repo.homeCategories();
+    if (!mounted) return;
+    setState(() {
+      inHome = true;
+      homeCats = cats;
+      if (widget.edit == null) home = cats.contains(categoryId ?? '');
+    });
+  }
+
+  bool get _canMarkHome =>
+      inHome && type == 'debit' && !splitting && widget.sms == null;
+
   @override
   void initState() {
     super.initState();
     _loadSplit();
+    _loadHome();
   }
 
   /// An existing split opens with its people, and the amount shown is the
@@ -902,7 +925,9 @@ class _TxnFormState extends ConsumerState<_TxnForm> {
           merchant: _merchant.text.trim().isEmpty ? '' : _merchant.text.trim(),
         );
       } else if (widget.edit == null) {
+        if (_canMarkHome) await repo.rememberHomeCategory(categoryId, home);
         await repo.addTransaction(
+          home: _canMarkHome && home,
           type: type,
           amountMinor: amt,
           accountId: accountId,
@@ -916,6 +941,7 @@ class _TxnFormState extends ConsumerState<_TxnForm> {
               : _merchant.text.trim(),
         );
       } else {
+        if (_canMarkHome) await repo.setHome(widget.edit!.id, home);
         await repo.updateTransaction(
           widget.edit!.id,
           type: type,
@@ -1043,8 +1069,36 @@ class _TxnFormState extends ConsumerState<_TxnForm> {
               CategoryField(
                 cats: cats,
                 categoryId: categoryId,
-                onChanged: (v) => setState(() => categoryId = v),
+                onChanged: (v) => setState(() {
+                  categoryId = v;
+                  if (widget.edit == null) home = homeCats.contains(v ?? '');
+                }),
               ),
+            ],
+            if (_canMarkHome) ...[
+              const SizedBox(height: Sp.x4),
+              SegmentedButton<bool>(
+                showSelectedIcon: false,
+                segments: [
+                  ButtonSegment(
+                    value: false,
+                    icon: const Icon(Icons.person_outline),
+                    label: Text(tr('Mine')),
+                  ),
+                  ButtonSegment(
+                    value: true,
+                    icon: const Icon(Icons.home_outlined),
+                    label: Text(tr('Home')),
+                  ),
+                ],
+                selected: {home},
+                onSelectionChanged: (s) => setState(() => home = s.first),
+              ),
+              if (home)
+                Padding(
+                  padding: const EdgeInsets.only(top: Sp.x2),
+                  child: Text(tr('Your partner will see this.')),
+                ),
             ],
             if (split || (cards.isNotEmpty && type != 'transfer')) ...[
               const SizedBox(height: Sp.x4),

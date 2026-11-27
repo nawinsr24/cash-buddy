@@ -1,4 +1,4 @@
-import 'group_share.dart';
+import 'home_repo.dart';
 
 import 'dart:convert';
 
@@ -249,6 +249,7 @@ extension BudgetRepo on Repo {
 
   Future<Map<String, int>> _spentByMainCategory(DateRange r) async {
     final waits = await _cardsWaitForBill();
+    final mine = await mineOnly();
     final rows = await db
         .customSelect(
           '''SELECT COALESCE(p.id, c.id, '_none') AS cid, SUM(t.amount_minor) AS s
@@ -258,6 +259,7 @@ extension BudgetRepo on Repo {
              WHERE t.type='debit' AND t.source NOT IN ('debt','invest')
                AND t.deleted_at IS NULL AND t.date BETWEEN ? AND ?
                ${waits ? "AND t.account_id NOT IN (SELECT id FROM accounts WHERE kind = 'card')" : ''}
+               $mine
              GROUP BY COALESCE(p.id, c.id, '_none')''',
           variables: [Variable(r.startStr), Variable(r.endStr)],
           readsFrom: {db.transactions, db.categories, db.accounts},
@@ -279,12 +281,6 @@ extension BudgetRepo on Repo {
       final v = pay.read<int>('s');
       if (v > 0) out['_cardbill'] = v;
     }
-    // only my share of the shared group counts against my own budget
-    final group = (await myGroupShare(
-      r.startStr,
-      r.endStr,
-    )).values.fold<int>(0, (a, b) => a + b);
-    if (group > 0) out['_group'] = group;
     return out;
   }
 
@@ -398,7 +394,7 @@ extension BudgetRepo on Repo {
     final waits = await _cardsWaitForBill();
     final rows = await db
         .customSelect(
-          "SELECT date AS d, SUM(amount_minor) AS s FROM transactions WHERE type='debit' AND source NOT IN ('debt','invest') AND deleted_at IS NULL AND date BETWEEN ? AND ? ${waits ? "AND account_id NOT IN (SELECT id FROM accounts WHERE kind = 'card')" : ''} GROUP BY date",
+          "SELECT date AS d, SUM(amount_minor) AS s FROM transactions WHERE type='debit' AND source NOT IN ('debt','invest') AND deleted_at IS NULL AND date BETWEEN ? AND ? ${waits ? "AND account_id NOT IN (SELECT id FROM accounts WHERE kind = 'card')" : ''} ${await mineOnly('transactions')} GROUP BY date",
           variables: [Variable(r.startStr), Variable(r.endStr)],
           readsFrom: {db.transactions, db.accounts},
         )
@@ -416,9 +412,6 @@ extension BudgetRepo on Repo {
         final d = x.read<String>('d');
         byDay[d] = (byDay[d] ?? 0) + x.read<int>('s');
       }
-    }
-    for (final e in (await myGroupShare(r.startStr, r.endStr)).entries) {
-      byDay[e.key] = (byDay[e.key] ?? 0) + e.value;
     }
     var run = 0;
     final out = <int>[];

@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:drift/drift.dart' show TableUpdateQuery;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/home_repo.dart';
 import '../platform/push.dart';
 import '../providers.dart';
 import 'group.dart';
@@ -26,18 +28,30 @@ class _GroupKeeperState extends ConsumerState<GroupKeeper>
     with WidgetsBindingObserver {
   StreamSubscription<void>? _nudges;
   var _busy = false;
+  StreamSubscription<void>? _spends;
+  Timer? _later;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     unawaited(_update());
+    final db = ref.read(repoProvider).db;
+    _spends = db.tableUpdates(TableUpdateQuery.onTable(db.transactions)).listen(
+      (_) {
+        if (ref.read(groupServiceProvider) == null) return;
+        _later?.cancel();
+        _later = Timer(const Duration(seconds: 3), _update);
+      },
+    );
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _nudges?.cancel();
+    _spends?.cancel();
+    _later?.cancel();
     super.dispose();
   }
 
@@ -58,6 +72,8 @@ class _GroupKeeperState extends ConsumerState<GroupKeeper>
         await group.registerPush(token);
         _nudges ??= push.nudges.listen((_) => _update());
       }
+      final repo = ref.read(repoProvider);
+      await group.change(repo.publishHome);
       await group.sync();
       if (!mounted) return;
       ref.invalidate(budgetStatusProvider);

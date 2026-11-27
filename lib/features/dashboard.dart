@@ -15,6 +15,7 @@ import '../ui/motion.dart';
 import '../ui/theme.dart';
 import '../ui/emoji.dart';
 import 'budget.dart';
+import 'home_share.dart';
 import 'card_warning.dart';
 import 'category_insight_page.dart';
 import 'performance_sheet.dart';
@@ -41,6 +42,8 @@ class DashboardPage extends ConsumerWidget {
     final settings = ref.watch(settingsProvider).value;
     final pending = ref.watch(pendingSmsProvider).value?.length ?? 0;
     final invest = ref.watch(investSummariesProvider).value ?? const [];
+    final home = ref.watch(homeMonthProvider).value;
+    final homePeriod = ref.watch(homePeriodProvider).value;
     return Scaffold(
       appBar: AppBar(
         title: const FittedBox(
@@ -109,7 +112,8 @@ class DashboardPage extends ConsumerWidget {
               trend: _trend(d),
             ),
             const SizedBox(height: Sp.x3),
-            const BudgetCard(),
+            const HomeInviteCard(),
+            if (home == null) const BudgetCard() else HomeMonthCard(home),
             const CardWarningLine(),
             const SizedBox(height: Sp.x3),
             const PlusScoreCard(),
@@ -126,14 +130,29 @@ class DashboardPage extends ConsumerWidget {
             ],
             const SectionTitle('Insights'),
             const InsightsStrip(),
-            const SectionTitle('Where your money went'),
+            SectionTitle(
+              home == null ? 'Where your money went' : 'My spending',
+            ),
             MoneyWent(
               main: d.spendingByCategory,
               subs: d.spendingBySub,
-              total: d.spending,
+              total: home == null
+                  ? d.spending
+                  : d.spendingByCategory.fold(0, (s, c) => s + c.totalMinor),
               range: d.range,
               emptyText: 'No spending in this period',
             ),
+            if (homePeriod != null) ...[
+              const SectionTitle('Home spending'),
+              MoneyWent(
+                main: homePeriod.main,
+                subs: homePeriod.subs,
+                total: homePeriod.homeTotal,
+                range: d.range,
+                emptyText: 'No home spending in this period',
+                tappable: false,
+              ),
+            ],
           ],
         ),
       ),
@@ -1430,8 +1449,12 @@ class MoneyWent extends StatefulWidget {
   final int total;
   final DateRange range;
   final String emptyText;
+
+  /// Whether a slice opens its detail page (only my own entries have one).
+  final bool tappable;
   const MoneyWent({
     super.key,
+    this.tappable = true,
     required this.main,
     required this.subs,
     required this.total,
@@ -1484,13 +1507,16 @@ class _MoneyWentState extends State<MoneyWent> {
             slices: _sub ? widget.subs : widget.main,
             total: widget.total,
             emptyText: widget.emptyText,
-            onTapSlice: (s) => pushReveal(
-              context,
-              CategoryInsightPage(
-                categoryId: s.categoryId,
-                range: widget.range,
-              ),
-            ),
+            onTapSlice: (s) {
+              if (!widget.tappable) return;
+              pushReveal(
+                context,
+                CategoryInsightPage(
+                  categoryId: s.categoryId,
+                  range: widget.range,
+                ),
+              );
+            },
           ),
         ),
       ],

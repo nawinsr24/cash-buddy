@@ -1629,6 +1629,18 @@ class $TransactionsTable extends Transactions
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _homeMeta = const VerificationMeta('home');
+  @override
+  late final GeneratedColumn<bool> home = GeneratedColumn<bool>(
+    'home',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("home" IN (0, 1))',
+    ),
+  );
   static const VerificationMeta _hlcMeta = const VerificationMeta('hlc');
   @override
   late final GeneratedColumn<String> hlc = GeneratedColumn<String>(
@@ -1663,6 +1675,7 @@ class $TransactionsTable extends Transactions
     merchant,
     source,
     sourceRef,
+    home,
     hlc,
     deletedAt,
   ];
@@ -1766,6 +1779,12 @@ class $TransactionsTable extends Transactions
         sourceRef.isAcceptableOrUnknown(data['source_ref']!, _sourceRefMeta),
       );
     }
+    if (data.containsKey('home')) {
+      context.handle(
+        _homeMeta,
+        home.isAcceptableOrUnknown(data['home']!, _homeMeta),
+      );
+    }
     if (data.containsKey('hlc')) {
       context.handle(
         _hlcMeta,
@@ -1837,6 +1856,10 @@ class $TransactionsTable extends Transactions
         DriftSqlType.string,
         data['${effectivePrefix}source_ref'],
       ),
+      home: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}home'],
+      ),
       hlc: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}hlc'],
@@ -1867,6 +1890,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
   final String? merchant;
   final String source;
   final String? sourceRef;
+  final bool? home;
   final String hlc;
   final String? deletedAt;
   const Transaction({
@@ -1882,6 +1906,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     this.merchant,
     required this.source,
     this.sourceRef,
+    this.home,
     required this.hlc,
     this.deletedAt,
   });
@@ -1909,6 +1934,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     map['source'] = Variable<String>(source);
     if (!nullToAbsent || sourceRef != null) {
       map['source_ref'] = Variable<String>(sourceRef);
+    }
+    if (!nullToAbsent || home != null) {
+      map['home'] = Variable<bool>(home);
     }
     map['hlc'] = Variable<String>(hlc);
     if (!nullToAbsent || deletedAt != null) {
@@ -1941,6 +1969,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       sourceRef: sourceRef == null && nullToAbsent
           ? const Value.absent()
           : Value(sourceRef),
+      home: home == null && nullToAbsent ? const Value.absent() : Value(home),
       hlc: Value(hlc),
       deletedAt: deletedAt == null && nullToAbsent
           ? const Value.absent()
@@ -1966,6 +1995,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       merchant: serializer.fromJson<String?>(json['merchant']),
       source: serializer.fromJson<String>(json['source']),
       sourceRef: serializer.fromJson<String?>(json['sourceRef']),
+      home: serializer.fromJson<bool?>(json['home']),
       hlc: serializer.fromJson<String>(json['hlc']),
       deletedAt: serializer.fromJson<String?>(json['deletedAt']),
     );
@@ -1986,6 +2016,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       'merchant': serializer.toJson<String?>(merchant),
       'source': serializer.toJson<String>(source),
       'sourceRef': serializer.toJson<String?>(sourceRef),
+      'home': serializer.toJson<bool?>(home),
       'hlc': serializer.toJson<String>(hlc),
       'deletedAt': serializer.toJson<String?>(deletedAt),
     };
@@ -2004,6 +2035,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     Value<String?> merchant = const Value.absent(),
     String? source,
     Value<String?> sourceRef = const Value.absent(),
+    Value<bool?> home = const Value.absent(),
     String? hlc,
     Value<String?> deletedAt = const Value.absent(),
   }) => Transaction(
@@ -2021,6 +2053,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     merchant: merchant.present ? merchant.value : this.merchant,
     source: source ?? this.source,
     sourceRef: sourceRef.present ? sourceRef.value : this.sourceRef,
+    home: home.present ? home.value : this.home,
     hlc: hlc ?? this.hlc,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
   );
@@ -2046,6 +2079,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       merchant: data.merchant.present ? data.merchant.value : this.merchant,
       source: data.source.present ? data.source.value : this.source,
       sourceRef: data.sourceRef.present ? data.sourceRef.value : this.sourceRef,
+      home: data.home.present ? data.home.value : this.home,
       hlc: data.hlc.present ? data.hlc.value : this.hlc,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
     );
@@ -2066,6 +2100,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           ..write('merchant: $merchant, ')
           ..write('source: $source, ')
           ..write('sourceRef: $sourceRef, ')
+          ..write('home: $home, ')
           ..write('hlc: $hlc, ')
           ..write('deletedAt: $deletedAt')
           ..write(')'))
@@ -2086,6 +2121,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     merchant,
     source,
     sourceRef,
+    home,
     hlc,
     deletedAt,
   );
@@ -2105,6 +2141,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           other.merchant == this.merchant &&
           other.source == this.source &&
           other.sourceRef == this.sourceRef &&
+          other.home == this.home &&
           other.hlc == this.hlc &&
           other.deletedAt == this.deletedAt);
 }
@@ -2122,6 +2159,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
   final Value<String?> merchant;
   final Value<String> source;
   final Value<String?> sourceRef;
+  final Value<bool?> home;
   final Value<String> hlc;
   final Value<String?> deletedAt;
   final Value<int> rowid;
@@ -2138,6 +2176,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     this.merchant = const Value.absent(),
     this.source = const Value.absent(),
     this.sourceRef = const Value.absent(),
+    this.home = const Value.absent(),
     this.hlc = const Value.absent(),
     this.deletedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -2155,6 +2194,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     this.merchant = const Value.absent(),
     this.source = const Value.absent(),
     this.sourceRef = const Value.absent(),
+    this.home = const Value.absent(),
     required String hlc,
     this.deletedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -2177,6 +2217,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     Expression<String>? merchant,
     Expression<String>? source,
     Expression<String>? sourceRef,
+    Expression<bool>? home,
     Expression<String>? hlc,
     Expression<String>? deletedAt,
     Expression<int>? rowid,
@@ -2194,6 +2235,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       if (merchant != null) 'merchant': merchant,
       if (source != null) 'source': source,
       if (sourceRef != null) 'source_ref': sourceRef,
+      if (home != null) 'home': home,
       if (hlc != null) 'hlc': hlc,
       if (deletedAt != null) 'deleted_at': deletedAt,
       if (rowid != null) 'rowid': rowid,
@@ -2213,6 +2255,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     Value<String?>? merchant,
     Value<String>? source,
     Value<String?>? sourceRef,
+    Value<bool?>? home,
     Value<String>? hlc,
     Value<String?>? deletedAt,
     Value<int>? rowid,
@@ -2230,6 +2273,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       merchant: merchant ?? this.merchant,
       source: source ?? this.source,
       sourceRef: sourceRef ?? this.sourceRef,
+      home: home ?? this.home,
       hlc: hlc ?? this.hlc,
       deletedAt: deletedAt ?? this.deletedAt,
       rowid: rowid ?? this.rowid,
@@ -2275,6 +2319,9 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     if (sourceRef.present) {
       map['source_ref'] = Variable<String>(sourceRef.value);
     }
+    if (home.present) {
+      map['home'] = Variable<bool>(home.value);
+    }
     if (hlc.present) {
       map['hlc'] = Variable<String>(hlc.value);
     }
@@ -2302,6 +2349,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
           ..write('merchant: $merchant, ')
           ..write('source: $source, ')
           ..write('sourceRef: $sourceRef, ')
+          ..write('home: $home, ')
           ..write('hlc: $hlc, ')
           ..write('deletedAt: $deletedAt, ')
           ..write('rowid: $rowid')
@@ -8804,6 +8852,7 @@ typedef $$TransactionsTableCreateCompanionBuilder =
       Value<String?> merchant,
       Value<String> source,
       Value<String?> sourceRef,
+      Value<bool?> home,
       required String hlc,
       Value<String?> deletedAt,
       Value<int> rowid,
@@ -8822,6 +8871,7 @@ typedef $$TransactionsTableUpdateCompanionBuilder =
       Value<String?> merchant,
       Value<String> source,
       Value<String?> sourceRef,
+      Value<bool?> home,
       Value<String> hlc,
       Value<String?> deletedAt,
       Value<int> rowid,
@@ -8893,6 +8943,11 @@ class $$TransactionsTableFilterComposer
 
   ColumnFilters<String> get sourceRef => $composableBuilder(
     column: $table.sourceRef,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get home => $composableBuilder(
+    column: $table.home,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -8976,6 +9031,11 @@ class $$TransactionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get home => $composableBuilder(
+    column: $table.home,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get hlc => $composableBuilder(
     column: $table.hlc,
     builder: (column) => ColumnOrderings(column),
@@ -9040,6 +9100,9 @@ class $$TransactionsTableAnnotationComposer
   GeneratedColumn<String> get sourceRef =>
       $composableBuilder(column: $table.sourceRef, builder: (column) => column);
 
+  GeneratedColumn<bool> get home =>
+      $composableBuilder(column: $table.home, builder: (column) => column);
+
   GeneratedColumn<String> get hlc =>
       $composableBuilder(column: $table.hlc, builder: (column) => column);
 
@@ -9090,6 +9153,7 @@ class $$TransactionsTableTableManager
                 Value<String?> merchant = const Value.absent(),
                 Value<String> source = const Value.absent(),
                 Value<String?> sourceRef = const Value.absent(),
+                Value<bool?> home = const Value.absent(),
                 Value<String> hlc = const Value.absent(),
                 Value<String?> deletedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -9106,6 +9170,7 @@ class $$TransactionsTableTableManager
                 merchant: merchant,
                 source: source,
                 sourceRef: sourceRef,
+                home: home,
                 hlc: hlc,
                 deletedAt: deletedAt,
                 rowid: rowid,
@@ -9124,6 +9189,7 @@ class $$TransactionsTableTableManager
                 Value<String?> merchant = const Value.absent(),
                 Value<String> source = const Value.absent(),
                 Value<String?> sourceRef = const Value.absent(),
+                Value<bool?> home = const Value.absent(),
                 required String hlc,
                 Value<String?> deletedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -9140,6 +9206,7 @@ class $$TransactionsTableTableManager
                 merchant: merchant,
                 source: source,
                 sourceRef: sourceRef,
+                home: home,
                 hlc: hlc,
                 deletedAt: deletedAt,
                 rowid: rowid,

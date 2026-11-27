@@ -63,6 +63,8 @@ class Transactions extends Table {
   // manual | sms | debt (principal movement) | interest (interest paid/received)
   TextColumn get source => text().withDefault(const Constant('manual'))();
   TextColumn get sourceRef => text().nullable()();
+  // Marked Home: shared with my partner and counted in the home budget.
+  BoolColumn get home => boolean().nullable()(); // null = mine
   TextColumn get hlc => text()();
   TextColumn get deletedAt => text().nullable()();
   @override
@@ -262,7 +264,7 @@ class AppDatabase extends _$AppDatabase {
   static AppDatabase open() => AppDatabase(openAppDatabase());
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -325,6 +327,9 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 11) {
         await m.createTable(groupNotes);
+      }
+      if (from < 12) {
+        await m.addColumn(transactions, transactions.home);
       }
       if (from < 3) {
         // Chit funds became custom monthly plans: instalment = monthly amount,

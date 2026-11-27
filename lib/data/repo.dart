@@ -8,6 +8,7 @@ import '../domain/interest.dart';
 import '../domain/money.dart';
 import '../domain/sms_parser.dart';
 import 'db.dart';
+import 'home_repo.dart';
 
 class OverpaymentException implements Exception {
   final int excessMinor;
@@ -937,6 +938,7 @@ class Repo {
     String source = 'manual',
     String? sourceRef,
     String? id,
+    bool? home,
   }) async {
     final acc = accountId ?? await defaultAccountId();
     _validateTxn(type, amountMinor, toAccountId, acc);
@@ -956,6 +958,7 @@ class Repo {
         merchant: Value(merchant),
         source: Value(source),
         sourceRef: Value(sourceRef),
+        home: Value(home),
       ),
     );
     return tid;
@@ -1024,6 +1027,7 @@ class Repo {
         merchant: Value(merchant ?? t.merchant),
         source: Value(t.source),
         sourceRef: Value(t.sourceRef),
+        home: Value(t.home),
         hlc: Value(clock.next()),
       ),
     );
@@ -1843,6 +1847,7 @@ class Repo {
     DateRange r, {
     bool sub = false,
   }) async {
+    final mine = type == 'debit' ? await mineOnly() : '';
     final rows = await db
         .customSelect(
           '''
@@ -1851,7 +1856,7 @@ class Repo {
       FROM transactions t
       LEFT JOIN categories c ON c.id = t.category_id
       LEFT JOIN categories p ON p.id = c.parent_id
-      WHERE t.type = ? AND t.source NOT IN ('debt','invest') AND t.deleted_at IS NULL AND t.date BETWEEN ? AND ?
+      WHERE t.type = ? AND t.source NOT IN ('debt','invest') AND t.deleted_at IS NULL AND t.date BETWEEN ? AND ? $mine
       GROUP BY ${sub ? "COALESCE(c.id, '_none')" : "COALESCE(p.id, c.id, '_none')"} ORDER BY s DESC''',
           variables: [Variable(type), Variable(r.startStr), Variable(r.endStr)],
           readsFrom: {db.transactions, db.categories},

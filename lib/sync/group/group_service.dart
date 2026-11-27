@@ -1,6 +1,7 @@
 /// Creating, joining and using the one shared group.
 library;
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
@@ -138,10 +139,10 @@ class GroupService {
   }
 
   /// Makes a change and saves it; it is sent at the next [sync].
-  Future<void> change(void Function(Replica group) edit) async {
+  Future<void> change(FutureOr<void> Function(Replica group) edit) async {
     final replica = await open();
     if (replica == null) throw GroupProblem('You are not in a group.');
-    edit(replica);
+    await edit(replica);
     await _store.save(_groupId!, replica.disk);
   }
 
