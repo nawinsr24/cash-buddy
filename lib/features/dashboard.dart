@@ -15,6 +15,7 @@ import '../ui/motion.dart';
 import '../ui/theme.dart';
 import '../ui/emoji.dart';
 import 'budget.dart';
+import 'safe_today.dart';
 import 'card_warning.dart';
 import 'category_insight_page.dart';
 import 'performance_sheet.dart';
@@ -103,6 +104,7 @@ class DashboardPage extends ConsumerWidget {
             const SizedBox(height: Sp.x3),
             if ((settings?.smsEnabled ?? false) && pending > 0)
               _SmsBanner(count: pending, onTap: onOpenInbox),
+            const SafeTodayCard(),
             _BalanceCard(
               total: d.totalBalance,
               split: settings?.split ?? false,

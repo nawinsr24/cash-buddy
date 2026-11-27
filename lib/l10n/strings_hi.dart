@@ -276,4 +276,12 @@ const Map<String, String> stringsHi = {
   'Interest paid': 'चुकाया ब्याज',
   'Schedule': 'किस्त तालिका',
   'Press and hold a payment to remove it.': 'भुगतान हटाने के लिए दबाकर रखें।',
+  'Safe to spend today': 'आज बेफिक्र खर्च',
+  'Nothing left for today.': 'आज के लिए कुछ नहीं बचा।',
+  'How this is worked out': 'यह कैसे निकाला गया',
+  'Budget left this morning': 'आज सुबह बचा बजट',
+  'still due': 'बाकी',
+  'Days left, with today': 'आज समेत बाकी दिन',
+  'For each day': 'हर दिन के लिए',
+  'Already spent today': 'आज का खर्च',
 };
