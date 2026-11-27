@@ -966,7 +966,7 @@ class Repo {
 
   /// Ledger rows written by debts; 'split' is a written-off share.
   bool _managedByDebt(Transaction t) =>
-      const {'debt', 'interest', 'split'}.contains(t.source);
+      const {'debt', 'interest', 'split', 'emi'}.contains(t.source);
 
   Future<void> updateTransaction(
     String id, {
@@ -1465,13 +1465,22 @@ class Repo {
       throw ValidationException('Delete the whole debt instead');
     }
     await db.transaction(() async {
-      await db
-          .into(db.debtEvents)
-          .insertOnConflictUpdate(
-            e
-                .toCompanion(true)
-                .copyWith(deletedAt: Value(_nowIso), hlc: Value(clock.next())),
-          );
+      final parts = {
+        for (final s in ['i', 'f', 't']) '${e.id}_$s',
+      };
+      for (final x in await _events(e.debtId)) {
+        if (x.id != e.id && !parts.contains(x.id)) continue;
+        await db
+            .into(db.debtEvents)
+            .insertOnConflictUpdate(
+              x
+                  .toCompanion(true)
+                  .copyWith(
+                    deletedAt: Value(_nowIso),
+                    hlc: Value(clock.next()),
+                  ),
+            );
+      }
       await reconcileDebt(e.debtId);
     });
   }
@@ -1601,7 +1610,18 @@ class Repo {
     // 3) ledger legs: at most one row per (event, leg), keyed by source_ref
     final isRec = debt.direction == 'receivable';
     // Chosen per loan: the principal may be left out of the balance entirely.
+    final isLoan = debt.loanKind != null;
     final principalLegs = debt.affectsBalance;
+    String? emiCategory;
+    if (isLoan) {
+      final name = debt.loanKind == 'car' ? 'Vehicle EMI' : 'Loan EMI';
+      emiCategory =
+          (await (db.select(db.categories)
+                    ..where((c) => c.name.equals(name) & c.deletedAt.isNull())
+                    ..limit(1))
+                  .getSingleOrNull())
+              ?.id;
+    }
     final legs = <String, _Leg>{};
     String? splitCategory;
     String? payBackTo;
@@ -1618,7 +1638,28 @@ class Repo {
     }
     if (debtLive) {
       for (final e in live) {
-        if (e.type == 'issue') {
+        if (e.type == 'interest_paid' || e.type == 'fee') {
+          legs['ev:${e.id}:i'] = _Leg(
+            'debit',
+            e.amountMinor,
+            e.date,
+            'interest',
+            'cat_interest_paid',
+          );
+        } else if (isLoan && e.type == 'repayment') {
+          final a = state.allocations[e.id];
+          if (a == null || a.principalMinor <= 0) continue;
+          // 'emi' counts as spending, 'debt' does not. Extra payments and
+          // closing the loan are never counted as monthly spending.
+          final counts = e.note == 'emi' && (debt.emiInBudget ?? true);
+          legs['ev:${e.id}:p'] = _Leg(
+            'debit',
+            a.principalMinor,
+            e.date,
+            counts ? 'emi' : 'debt',
+            counts ? emiCategory : null,
+          );
+        } else if (e.type == 'issue') {
           if (!principalLegs) continue;
           legs['ev:${e.id}:p'] = _Leg(
             isRec ? 'debit' : 'credit',
@@ -1679,7 +1720,7 @@ class Repo {
         await (db.select(db.transactions)..where(
               (t) =>
                   t.sourceRef.isIn(refs) &
-                  t.source.isIn(const ['debt', 'interest', 'split']),
+                  t.source.isIn(const ['debt', 'interest', 'split', 'emi']),
             ))
             .get();
     final byRef = {for (final t in existingLegs) t.sourceRef!: t};
@@ -1709,7 +1750,13 @@ class Repo {
           categoryId: Value(l.categoryId),
           merchant: Value(debt.counterparty),
           note: Value(
-            l.source == 'split'
+            isLoan
+                ? (entry.key.endsWith('_f:i')
+                      ? 'Loan charges: ${debt.counterparty}'
+                      : entry.key.endsWith(':i')
+                      ? 'Loan interest: ${debt.counterparty}'
+                      : 'Loan payment: ${debt.counterparty}')
+                : l.source == 'split'
                 ? 'Written off: ${debt.counterparty}'
                 : debt.splitId != null
                 ? 'Split: ${debt.counterparty}'

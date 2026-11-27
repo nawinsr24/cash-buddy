@@ -409,6 +409,7 @@ class _TxnTile extends ConsumerWidget {
         txn.source == 'debt' ||
         txn.source == 'interest' ||
         txn.source == 'split' ||
+        txn.source == 'emi' ||
         txn.source == 'invest';
     final color = isTransfer
         ? context.scheme.primary

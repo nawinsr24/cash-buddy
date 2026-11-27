@@ -88,6 +88,12 @@ class Debts extends Table {
   TextColumn get note => text().withDefault(const Constant(''))();
   // Split expense: the transaction holding my own share. Null for a loan.
   TextColumn get splitId => text().nullable()();
+  // EMI loans (loanKind != null); the yearly rate is in thousandths of a %.
+  TextColumn get loanKind => text().nullable()(); // personal | car | home
+  IntColumn get annualRate => integer().nullable()();
+  IntColumn get emiMinor => integer().nullable()();
+  IntColumn get emiDay => integer().nullable()();
+  BoolColumn get emiInBudget => boolean().nullable()(); // null = yes
   TextColumn get hlc => text()();
   TextColumn get deletedAt => text().nullable()();
   @override
@@ -245,7 +251,7 @@ class AppDatabase extends _$AppDatabase {
   static AppDatabase open() => AppDatabase(openAppDatabase());
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -298,6 +304,13 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 9) {
         await m.addColumn(debts, debts.splitId);
+      }
+      if (from < 10) {
+        await m.addColumn(debts, debts.loanKind);
+        await m.addColumn(debts, debts.annualRate);
+        await m.addColumn(debts, debts.emiMinor);
+        await m.addColumn(debts, debts.emiDay);
+        await m.addColumn(debts, debts.emiInBudget);
       }
       if (from < 3) {
         // Chit funds became custom monthly plans: instalment = monthly amount,

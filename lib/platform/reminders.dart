@@ -1,6 +1,7 @@
 import 'package:intl/intl.dart';
 
 import '../data/card_repo.dart';
+import '../data/loan_repo.dart';
 import '../data/repo.dart';
 import '../domain/money.dart';
 import 'notifications.dart';
@@ -28,6 +29,25 @@ Future<void> refreshCardReminders(Repo repo) async {
       );
     }
     slot++;
+  }
+  // Cancelling above cleared the loan slots as well.
+  await refreshEmiReminders(repo);
+}
+
+/// A reminder the day before each EMI. Slots 60-89; call after the card
+/// reminders, which clear every slot first.
+Future<void> refreshEmiReminders(Repo repo) async {
+  var slot = 60;
+  for (final l in await repo.loanStatuses()) {
+    if (l.owed <= 0 || slot >= 90) continue;
+    final due = l.nextDue(repo.today);
+    await Notifications.instance.scheduleCardDue(
+      slot++,
+      '${l.debt.counterparty}: EMI of ${Money.format(l.emi)} is due on '
+      '${DateFormat('d MMM').format(due)}.',
+      due.subtract(const Duration(days: 1)),
+      title: 'Loan EMI',
+    );
   }
 }
 

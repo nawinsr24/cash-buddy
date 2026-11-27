@@ -156,14 +156,19 @@ class Notifications {
   static const _cardBase = 8100;
 
   /// A one-off reminder about a credit card bill at [at] (local time).
-  Future<void> scheduleCardDue(int slot, String body, DateTime at) async {
+  Future<void> scheduleCardDue(
+    int slot,
+    String body,
+    DateTime at, {
+    String title = 'Credit card bill',
+  }) async {
     if (!_ready) return;
     try {
       final when = tz.TZDateTime(tz.local, at.year, at.month, at.day, 9, 0);
       if (!when.isAfter(tz.TZDateTime.now(tz.local))) return;
       Future<void> go(AndroidScheduleMode mode) => _plugin.zonedSchedule(
         id: _cardBase + slot,
-        title: 'Credit card bill',
+        title: title,
         body: body,
         scheduledDate: when,
         payload: 'home',
@@ -192,7 +197,7 @@ class Notifications {
   /// Clears every scheduled card reminder (they are re-made from the cards).
   Future<void> cancelCardDue() async {
     if (!_ready) return;
-    for (var i = 0; i < 60; i++) {
+    for (var i = 0; i < 90; i++) {
       try {
         await _plugin.cancel(id: _cardBase + i);
       } catch (_) {}

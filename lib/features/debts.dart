@@ -13,6 +13,7 @@ import '../ui/art.dart';
 import '../ui/motion.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
+import 'loans.dart';
 import 'cards.dart';
 
 class DebtsPage extends ConsumerStatefulWidget {
@@ -94,14 +95,29 @@ class _DebtList extends ConsumerWidget {
       loading: () => const Center(child: CircularProgressIndicator.adaptive()),
       error: (e, _) => ErrorState(e),
       data: (items) {
+        final addLoan = OutlinedButton.icon(
+          icon: const Icon(Icons.account_balance_outlined),
+          label: Text(tr('Add EMI loan')),
+          onPressed: () => showSheet(context, (_) => const AddLoanSheet()),
+        );
         if (items.isEmpty) {
-          return EmptyState(
+          final empty = EmptyState(
             art: Art.handshake,
             icon: rec ? Icons.call_received : Icons.call_made,
             title: rec ? 'Nobody owes you money' : 'You owe nobody',
             body: rec
                 ? 'Track money you lent, with or without interest.'
                 : 'Track money you borrowed and what you still owe.',
+          );
+          if (rec) return empty;
+          return Column(
+            children: [
+              Expanded(child: empty),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 96),
+                child: addLoan,
+              ),
+            ],
           );
         }
         final open = items.where((s) => !s.settled).toList();
@@ -134,6 +150,7 @@ class _DebtList extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: Sp.x3),
+            if (!rec) ...[addLoan, const SizedBox(height: Sp.x3)],
             for (final (i, s) in open.indexed)
               Reveal(index: i + 1, child: _DebtTile(s, color)),
             if (settled.isNotEmpty) ...[
@@ -165,9 +182,13 @@ class _DebtTile extends StatelessWidget {
       child: Card(
         child: InkWell(
           borderRadius: BorderRadius.circular(Sp.rCard),
-          onTap: () =>
-              Navigator.of(context)
-                  .push(softRoute(DebtDetailPage(debtId: d.id))),
+          onTap: () => Navigator.of(context).push(
+            softRoute(
+              d.loanKind == null
+                  ? DebtDetailPage(debtId: d.id)
+                  : LoanPage(debtId: d.id),
+            ),
+          ),
           child: Padding(
             padding: const EdgeInsets.all(Sp.x4),
             child: Column(
@@ -203,6 +224,14 @@ class _DebtTile extends StatelessWidget {
                 Wrap(
                   spacing: Sp.x3,
                   children: [
+                    if (d.loanKind != null)
+                      Text(
+                        '${tr('EMI')} ${Money.format(d.emiMinor ?? 0)}',
+                        style: context.text.bodySmall?.copyWith(
+                          color: color,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     if (d.splitId != null)
                       Text(
                         tr('Split expense'),

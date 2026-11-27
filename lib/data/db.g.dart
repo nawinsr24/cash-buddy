@@ -2475,6 +2475,62 @@ class $DebtsTable extends Debts with TableInfo<$DebtsTable, Debt> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _loanKindMeta = const VerificationMeta(
+    'loanKind',
+  );
+  @override
+  late final GeneratedColumn<String> loanKind = GeneratedColumn<String>(
+    'loan_kind',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _annualRateMeta = const VerificationMeta(
+    'annualRate',
+  );
+  @override
+  late final GeneratedColumn<int> annualRate = GeneratedColumn<int>(
+    'annual_rate',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _emiMinorMeta = const VerificationMeta(
+    'emiMinor',
+  );
+  @override
+  late final GeneratedColumn<int> emiMinor = GeneratedColumn<int>(
+    'emi_minor',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _emiDayMeta = const VerificationMeta('emiDay');
+  @override
+  late final GeneratedColumn<int> emiDay = GeneratedColumn<int>(
+    'emi_day',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _emiInBudgetMeta = const VerificationMeta(
+    'emiInBudget',
+  );
+  @override
+  late final GeneratedColumn<bool> emiInBudget = GeneratedColumn<bool>(
+    'emi_in_budget',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("emi_in_budget" IN (0, 1))',
+    ),
+  );
   static const VerificationMeta _hlcMeta = const VerificationMeta('hlc');
   @override
   late final GeneratedColumn<String> hlc = GeneratedColumn<String>(
@@ -2511,6 +2567,11 @@ class $DebtsTable extends Debts with TableInfo<$DebtsTable, Debt> {
     affectsBalance,
     note,
     splitId,
+    loanKind,
+    annualRate,
+    emiMinor,
+    emiDay,
+    emiInBudget,
     hlc,
     deletedAt,
   ];
@@ -2634,6 +2695,39 @@ class $DebtsTable extends Debts with TableInfo<$DebtsTable, Debt> {
         splitId.isAcceptableOrUnknown(data['split_id']!, _splitIdMeta),
       );
     }
+    if (data.containsKey('loan_kind')) {
+      context.handle(
+        _loanKindMeta,
+        loanKind.isAcceptableOrUnknown(data['loan_kind']!, _loanKindMeta),
+      );
+    }
+    if (data.containsKey('annual_rate')) {
+      context.handle(
+        _annualRateMeta,
+        annualRate.isAcceptableOrUnknown(data['annual_rate']!, _annualRateMeta),
+      );
+    }
+    if (data.containsKey('emi_minor')) {
+      context.handle(
+        _emiMinorMeta,
+        emiMinor.isAcceptableOrUnknown(data['emi_minor']!, _emiMinorMeta),
+      );
+    }
+    if (data.containsKey('emi_day')) {
+      context.handle(
+        _emiDayMeta,
+        emiDay.isAcceptableOrUnknown(data['emi_day']!, _emiDayMeta),
+      );
+    }
+    if (data.containsKey('emi_in_budget')) {
+      context.handle(
+        _emiInBudgetMeta,
+        emiInBudget.isAcceptableOrUnknown(
+          data['emi_in_budget']!,
+          _emiInBudgetMeta,
+        ),
+      );
+    }
     if (data.containsKey('hlc')) {
       context.handle(
         _hlcMeta,
@@ -2713,6 +2807,26 @@ class $DebtsTable extends Debts with TableInfo<$DebtsTable, Debt> {
         DriftSqlType.string,
         data['${effectivePrefix}split_id'],
       ),
+      loanKind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}loan_kind'],
+      ),
+      annualRate: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}annual_rate'],
+      ),
+      emiMinor: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}emi_minor'],
+      ),
+      emiDay: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}emi_day'],
+      ),
+      emiInBudget: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}emi_in_budget'],
+      ),
       hlc: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}hlc'],
@@ -2745,6 +2859,11 @@ class Debt extends DataClass implements Insertable<Debt> {
   final bool affectsBalance;
   final String note;
   final String? splitId;
+  final String? loanKind;
+  final int? annualRate;
+  final int? emiMinor;
+  final int? emiDay;
+  final bool? emiInBudget;
   final String hlc;
   final String? deletedAt;
   const Debt({
@@ -2762,6 +2881,11 @@ class Debt extends DataClass implements Insertable<Debt> {
     required this.affectsBalance,
     required this.note,
     this.splitId,
+    this.loanKind,
+    this.annualRate,
+    this.emiMinor,
+    this.emiDay,
+    this.emiInBudget,
     required this.hlc,
     this.deletedAt,
   });
@@ -2785,6 +2909,21 @@ class Debt extends DataClass implements Insertable<Debt> {
     map['note'] = Variable<String>(note);
     if (!nullToAbsent || splitId != null) {
       map['split_id'] = Variable<String>(splitId);
+    }
+    if (!nullToAbsent || loanKind != null) {
+      map['loan_kind'] = Variable<String>(loanKind);
+    }
+    if (!nullToAbsent || annualRate != null) {
+      map['annual_rate'] = Variable<int>(annualRate);
+    }
+    if (!nullToAbsent || emiMinor != null) {
+      map['emi_minor'] = Variable<int>(emiMinor);
+    }
+    if (!nullToAbsent || emiDay != null) {
+      map['emi_day'] = Variable<int>(emiDay);
+    }
+    if (!nullToAbsent || emiInBudget != null) {
+      map['emi_in_budget'] = Variable<bool>(emiInBudget);
     }
     map['hlc'] = Variable<String>(hlc);
     if (!nullToAbsent || deletedAt != null) {
@@ -2813,6 +2952,21 @@ class Debt extends DataClass implements Insertable<Debt> {
       splitId: splitId == null && nullToAbsent
           ? const Value.absent()
           : Value(splitId),
+      loanKind: loanKind == null && nullToAbsent
+          ? const Value.absent()
+          : Value(loanKind),
+      annualRate: annualRate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(annualRate),
+      emiMinor: emiMinor == null && nullToAbsent
+          ? const Value.absent()
+          : Value(emiMinor),
+      emiDay: emiDay == null && nullToAbsent
+          ? const Value.absent()
+          : Value(emiDay),
+      emiInBudget: emiInBudget == null && nullToAbsent
+          ? const Value.absent()
+          : Value(emiInBudget),
       hlc: Value(hlc),
       deletedAt: deletedAt == null && nullToAbsent
           ? const Value.absent()
@@ -2840,6 +2994,11 @@ class Debt extends DataClass implements Insertable<Debt> {
       affectsBalance: serializer.fromJson<bool>(json['affectsBalance']),
       note: serializer.fromJson<String>(json['note']),
       splitId: serializer.fromJson<String?>(json['splitId']),
+      loanKind: serializer.fromJson<String?>(json['loanKind']),
+      annualRate: serializer.fromJson<int?>(json['annualRate']),
+      emiMinor: serializer.fromJson<int?>(json['emiMinor']),
+      emiDay: serializer.fromJson<int?>(json['emiDay']),
+      emiInBudget: serializer.fromJson<bool?>(json['emiInBudget']),
       hlc: serializer.fromJson<String>(json['hlc']),
       deletedAt: serializer.fromJson<String?>(json['deletedAt']),
     );
@@ -2862,6 +3021,11 @@ class Debt extends DataClass implements Insertable<Debt> {
       'affectsBalance': serializer.toJson<bool>(affectsBalance),
       'note': serializer.toJson<String>(note),
       'splitId': serializer.toJson<String?>(splitId),
+      'loanKind': serializer.toJson<String?>(loanKind),
+      'annualRate': serializer.toJson<int?>(annualRate),
+      'emiMinor': serializer.toJson<int?>(emiMinor),
+      'emiDay': serializer.toJson<int?>(emiDay),
+      'emiInBudget': serializer.toJson<bool?>(emiInBudget),
       'hlc': serializer.toJson<String>(hlc),
       'deletedAt': serializer.toJson<String?>(deletedAt),
     };
@@ -2882,6 +3046,11 @@ class Debt extends DataClass implements Insertable<Debt> {
     bool? affectsBalance,
     String? note,
     Value<String?> splitId = const Value.absent(),
+    Value<String?> loanKind = const Value.absent(),
+    Value<int?> annualRate = const Value.absent(),
+    Value<int?> emiMinor = const Value.absent(),
+    Value<int?> emiDay = const Value.absent(),
+    Value<bool?> emiInBudget = const Value.absent(),
     String? hlc,
     Value<String?> deletedAt = const Value.absent(),
   }) => Debt(
@@ -2899,6 +3068,11 @@ class Debt extends DataClass implements Insertable<Debt> {
     affectsBalance: affectsBalance ?? this.affectsBalance,
     note: note ?? this.note,
     splitId: splitId.present ? splitId.value : this.splitId,
+    loanKind: loanKind.present ? loanKind.value : this.loanKind,
+    annualRate: annualRate.present ? annualRate.value : this.annualRate,
+    emiMinor: emiMinor.present ? emiMinor.value : this.emiMinor,
+    emiDay: emiDay.present ? emiDay.value : this.emiDay,
+    emiInBudget: emiInBudget.present ? emiInBudget.value : this.emiInBudget,
     hlc: hlc ?? this.hlc,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
   );
@@ -2930,6 +3104,15 @@ class Debt extends DataClass implements Insertable<Debt> {
           : this.affectsBalance,
       note: data.note.present ? data.note.value : this.note,
       splitId: data.splitId.present ? data.splitId.value : this.splitId,
+      loanKind: data.loanKind.present ? data.loanKind.value : this.loanKind,
+      annualRate: data.annualRate.present
+          ? data.annualRate.value
+          : this.annualRate,
+      emiMinor: data.emiMinor.present ? data.emiMinor.value : this.emiMinor,
+      emiDay: data.emiDay.present ? data.emiDay.value : this.emiDay,
+      emiInBudget: data.emiInBudget.present
+          ? data.emiInBudget.value
+          : this.emiInBudget,
       hlc: data.hlc.present ? data.hlc.value : this.hlc,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
     );
@@ -2952,6 +3135,11 @@ class Debt extends DataClass implements Insertable<Debt> {
           ..write('affectsBalance: $affectsBalance, ')
           ..write('note: $note, ')
           ..write('splitId: $splitId, ')
+          ..write('loanKind: $loanKind, ')
+          ..write('annualRate: $annualRate, ')
+          ..write('emiMinor: $emiMinor, ')
+          ..write('emiDay: $emiDay, ')
+          ..write('emiInBudget: $emiInBudget, ')
           ..write('hlc: $hlc, ')
           ..write('deletedAt: $deletedAt')
           ..write(')'))
@@ -2959,7 +3147,7 @@ class Debt extends DataClass implements Insertable<Debt> {
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     direction,
     counterparty,
@@ -2974,9 +3162,14 @@ class Debt extends DataClass implements Insertable<Debt> {
     affectsBalance,
     note,
     splitId,
+    loanKind,
+    annualRate,
+    emiMinor,
+    emiDay,
+    emiInBudget,
     hlc,
     deletedAt,
-  );
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -2995,6 +3188,11 @@ class Debt extends DataClass implements Insertable<Debt> {
           other.affectsBalance == this.affectsBalance &&
           other.note == this.note &&
           other.splitId == this.splitId &&
+          other.loanKind == this.loanKind &&
+          other.annualRate == this.annualRate &&
+          other.emiMinor == this.emiMinor &&
+          other.emiDay == this.emiDay &&
+          other.emiInBudget == this.emiInBudget &&
           other.hlc == this.hlc &&
           other.deletedAt == this.deletedAt);
 }
@@ -3014,6 +3212,11 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
   final Value<bool> affectsBalance;
   final Value<String> note;
   final Value<String?> splitId;
+  final Value<String?> loanKind;
+  final Value<int?> annualRate;
+  final Value<int?> emiMinor;
+  final Value<int?> emiDay;
+  final Value<bool?> emiInBudget;
   final Value<String> hlc;
   final Value<String?> deletedAt;
   final Value<int> rowid;
@@ -3032,6 +3235,11 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
     this.affectsBalance = const Value.absent(),
     this.note = const Value.absent(),
     this.splitId = const Value.absent(),
+    this.loanKind = const Value.absent(),
+    this.annualRate = const Value.absent(),
+    this.emiMinor = const Value.absent(),
+    this.emiDay = const Value.absent(),
+    this.emiInBudget = const Value.absent(),
     this.hlc = const Value.absent(),
     this.deletedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -3051,6 +3259,11 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
     this.affectsBalance = const Value.absent(),
     this.note = const Value.absent(),
     this.splitId = const Value.absent(),
+    this.loanKind = const Value.absent(),
+    this.annualRate = const Value.absent(),
+    this.emiMinor = const Value.absent(),
+    this.emiDay = const Value.absent(),
+    this.emiInBudget = const Value.absent(),
     required String hlc,
     this.deletedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -3076,6 +3289,11 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
     Expression<bool>? affectsBalance,
     Expression<String>? note,
     Expression<String>? splitId,
+    Expression<String>? loanKind,
+    Expression<int>? annualRate,
+    Expression<int>? emiMinor,
+    Expression<int>? emiDay,
+    Expression<bool>? emiInBudget,
     Expression<String>? hlc,
     Expression<String>? deletedAt,
     Expression<int>? rowid,
@@ -3095,6 +3313,11 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
       if (affectsBalance != null) 'affects_balance': affectsBalance,
       if (note != null) 'note': note,
       if (splitId != null) 'split_id': splitId,
+      if (loanKind != null) 'loan_kind': loanKind,
+      if (annualRate != null) 'annual_rate': annualRate,
+      if (emiMinor != null) 'emi_minor': emiMinor,
+      if (emiDay != null) 'emi_day': emiDay,
+      if (emiInBudget != null) 'emi_in_budget': emiInBudget,
       if (hlc != null) 'hlc': hlc,
       if (deletedAt != null) 'deleted_at': deletedAt,
       if (rowid != null) 'rowid': rowid,
@@ -3116,6 +3339,11 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
     Value<bool>? affectsBalance,
     Value<String>? note,
     Value<String?>? splitId,
+    Value<String?>? loanKind,
+    Value<int?>? annualRate,
+    Value<int?>? emiMinor,
+    Value<int?>? emiDay,
+    Value<bool?>? emiInBudget,
     Value<String>? hlc,
     Value<String?>? deletedAt,
     Value<int>? rowid,
@@ -3135,6 +3363,11 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
       affectsBalance: affectsBalance ?? this.affectsBalance,
       note: note ?? this.note,
       splitId: splitId ?? this.splitId,
+      loanKind: loanKind ?? this.loanKind,
+      annualRate: annualRate ?? this.annualRate,
+      emiMinor: emiMinor ?? this.emiMinor,
+      emiDay: emiDay ?? this.emiDay,
+      emiInBudget: emiInBudget ?? this.emiInBudget,
       hlc: hlc ?? this.hlc,
       deletedAt: deletedAt ?? this.deletedAt,
       rowid: rowid ?? this.rowid,
@@ -3186,6 +3419,21 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
     if (splitId.present) {
       map['split_id'] = Variable<String>(splitId.value);
     }
+    if (loanKind.present) {
+      map['loan_kind'] = Variable<String>(loanKind.value);
+    }
+    if (annualRate.present) {
+      map['annual_rate'] = Variable<int>(annualRate.value);
+    }
+    if (emiMinor.present) {
+      map['emi_minor'] = Variable<int>(emiMinor.value);
+    }
+    if (emiDay.present) {
+      map['emi_day'] = Variable<int>(emiDay.value);
+    }
+    if (emiInBudget.present) {
+      map['emi_in_budget'] = Variable<bool>(emiInBudget.value);
+    }
     if (hlc.present) {
       map['hlc'] = Variable<String>(hlc.value);
     }
@@ -3215,6 +3463,11 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
           ..write('affectsBalance: $affectsBalance, ')
           ..write('note: $note, ')
           ..write('splitId: $splitId, ')
+          ..write('loanKind: $loanKind, ')
+          ..write('annualRate: $annualRate, ')
+          ..write('emiMinor: $emiMinor, ')
+          ..write('emiDay: $emiDay, ')
+          ..write('emiInBudget: $emiInBudget, ')
           ..write('hlc: $hlc, ')
           ..write('deletedAt: $deletedAt, ')
           ..write('rowid: $rowid')
@@ -8679,6 +8932,11 @@ typedef $$DebtsTableCreateCompanionBuilder = DebtsCompanion Function({
   Value<bool> affectsBalance,
   Value<String> note,
   Value<String?> splitId,
+  Value<String?> loanKind,
+  Value<int?> annualRate,
+  Value<int?> emiMinor,
+  Value<int?> emiDay,
+  Value<bool?> emiInBudget,
   required String hlc,
   Value<String?> deletedAt,
   Value<int> rowid,
@@ -8698,6 +8956,11 @@ typedef $$DebtsTableUpdateCompanionBuilder = DebtsCompanion Function({
   Value<bool> affectsBalance,
   Value<String> note,
   Value<String?> splitId,
+  Value<String?> loanKind,
+  Value<int?> annualRate,
+  Value<int?> emiMinor,
+  Value<int?> emiDay,
+  Value<bool?> emiInBudget,
   Value<String> hlc,
   Value<String?> deletedAt,
   Value<int> rowid,
@@ -8778,6 +9041,31 @@ class $$DebtsTableFilterComposer extends Composer<_$AppDatabase, $DebtsTable> {
 
   ColumnFilters<String> get splitId => $composableBuilder(
     column: $table.splitId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get loanKind => $composableBuilder(
+    column: $table.loanKind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get annualRate => $composableBuilder(
+    column: $table.annualRate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get emiMinor => $composableBuilder(
+    column: $table.emiMinor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get emiDay => $composableBuilder(
+    column: $table.emiDay,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get emiInBudget => $composableBuilder(
+    column: $table.emiInBudget,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -8871,6 +9159,31 @@ class $$DebtsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get loanKind => $composableBuilder(
+    column: $table.loanKind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get annualRate => $composableBuilder(
+    column: $table.annualRate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get emiMinor => $composableBuilder(
+    column: $table.emiMinor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get emiDay => $composableBuilder(
+    column: $table.emiDay,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get emiInBudget => $composableBuilder(
+    column: $table.emiInBudget,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get hlc => $composableBuilder(
     column: $table.hlc,
     builder: (column) => ColumnOrderings(column),
@@ -8945,6 +9258,25 @@ class $$DebtsTableAnnotationComposer
   GeneratedColumn<String> get splitId =>
       $composableBuilder(column: $table.splitId, builder: (column) => column);
 
+  GeneratedColumn<String> get loanKind =>
+      $composableBuilder(column: $table.loanKind, builder: (column) => column);
+
+  GeneratedColumn<int> get annualRate => $composableBuilder(
+    column: $table.annualRate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get emiMinor =>
+      $composableBuilder(column: $table.emiMinor, builder: (column) => column);
+
+  GeneratedColumn<int> get emiDay =>
+      $composableBuilder(column: $table.emiDay, builder: (column) => column);
+
+  GeneratedColumn<bool> get emiInBudget => $composableBuilder(
+    column: $table.emiInBudget,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get hlc =>
       $composableBuilder(column: $table.hlc, builder: (column) => column);
 
@@ -8994,6 +9326,11 @@ class $$DebtsTableTableManager
                 Value<bool> affectsBalance = const Value.absent(),
                 Value<String> note = const Value.absent(),
                 Value<String?> splitId = const Value.absent(),
+                Value<String?> loanKind = const Value.absent(),
+                Value<int?> annualRate = const Value.absent(),
+                Value<int?> emiMinor = const Value.absent(),
+                Value<int?> emiDay = const Value.absent(),
+                Value<bool?> emiInBudget = const Value.absent(),
                 Value<String> hlc = const Value.absent(),
                 Value<String?> deletedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -9012,6 +9349,11 @@ class $$DebtsTableTableManager
                 affectsBalance: affectsBalance,
                 note: note,
                 splitId: splitId,
+                loanKind: loanKind,
+                annualRate: annualRate,
+                emiMinor: emiMinor,
+                emiDay: emiDay,
+                emiInBudget: emiInBudget,
                 hlc: hlc,
                 deletedAt: deletedAt,
                 rowid: rowid,
@@ -9032,6 +9374,11 @@ class $$DebtsTableTableManager
                 Value<bool> affectsBalance = const Value.absent(),
                 Value<String> note = const Value.absent(),
                 Value<String?> splitId = const Value.absent(),
+                Value<String?> loanKind = const Value.absent(),
+                Value<int?> annualRate = const Value.absent(),
+                Value<int?> emiMinor = const Value.absent(),
+                Value<int?> emiDay = const Value.absent(),
+                Value<bool?> emiInBudget = const Value.absent(),
                 required String hlc,
                 Value<String?> deletedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -9050,6 +9397,11 @@ class $$DebtsTableTableManager
                 affectsBalance: affectsBalance,
                 note: note,
                 splitId: splitId,
+                loanKind: loanKind,
+                annualRate: annualRate,
+                emiMinor: emiMinor,
+                emiDay: emiDay,
+                emiInBudget: emiInBudget,
                 hlc: hlc,
                 deletedAt: deletedAt,
                 rowid: rowid,
