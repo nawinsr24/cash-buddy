@@ -82,7 +82,7 @@ class SyncEngine {
   /// Format of uploaded segments. Raise it whenever a synced table gains a
   /// field: older apps then ask to be updated instead of silently dropping the
   /// field and uploading the row without it. Older formats are always read; add
-  /// the new field to [_addedLater].
+  /// the new field to [addedLater].
   ///
   /// 2: credit card fields on accounts.
   /// 3: splitId on debts (nullable, so it needs no default below).
@@ -91,7 +91,7 @@ class SyncEngine {
 
   /// Required fields that segments from earlier releases may not have, with
   /// the value they get when this phone has no copy of the row either.
-  static const _addedLater = <String, Map<String, Object>>{
+  static const addedLater = <String, Map<String, Object>>{
     'accounts': {'interestBps': 0, 'ratePeriod': 'month', 'graceDays': 0},
     'debts': {'affectsBalance': true},
     'investments': {'recurring': false, 'everyN': 1},
@@ -337,7 +337,7 @@ class SyncEngine {
     }
     // A field the sender does not know about keeps this phone's value. A field
     // sent as null is a real null and still overwrites.
-    json = {...?(local ?? _addedLater[table]), ...json};
+    json = {...?(local ?? addedLater[table]), ...json};
     switch (table) {
       case 'accounts':
         await db
