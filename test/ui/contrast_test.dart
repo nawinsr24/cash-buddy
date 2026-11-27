@@ -82,7 +82,8 @@ void main() {
         await tapText(tester, 'Home', last: true);
         await tester.pump(const Duration(seconds: 1));
         // Budget page
-        await tapText(tester, 'BUDGET');
+        await tester.tap(find.byKey(const ValueKey('my-budget')));
+        await settle(tester);
         await tester.pump(const Duration(seconds: 2));
         await expectLater(
           tester,

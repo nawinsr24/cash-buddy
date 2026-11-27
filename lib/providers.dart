@@ -340,6 +340,12 @@ final budgetStatusProvider = FutureProvider.autoDispose<BudgetStatus?>((ref) {
   );
 });
 
+/// Whether home sharing is set up; the Mine/Home choices appear only then.
+final homeOnProvider = FutureProvider.autoDispose<bool>((ref) {
+  final repo = ref.watch(repoProvider);
+  return _tick(ref, () async => await repo.homeMember() != null);
+});
+
 /// Null when home sharing is off. This month, for the summary card.
 final homeMonthProvider = FutureProvider.autoDispose<HomeSummary?>((ref) {
   final repo = ref.watch(repoProvider);

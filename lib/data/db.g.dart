@@ -2579,6 +2579,18 @@ class $DebtsTable extends Debts with TableInfo<$DebtsTable, Debt> {
       'CHECK ("emi_in_budget" IN (0, 1))',
     ),
   );
+  static const VerificationMeta _homeMeta = const VerificationMeta('home');
+  @override
+  late final GeneratedColumn<bool> home = GeneratedColumn<bool>(
+    'home',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("home" IN (0, 1))',
+    ),
+  );
   static const VerificationMeta _hlcMeta = const VerificationMeta('hlc');
   @override
   late final GeneratedColumn<String> hlc = GeneratedColumn<String>(
@@ -2620,6 +2632,7 @@ class $DebtsTable extends Debts with TableInfo<$DebtsTable, Debt> {
     emiMinor,
     emiDay,
     emiInBudget,
+    home,
     hlc,
     deletedAt,
   ];
@@ -2776,6 +2789,12 @@ class $DebtsTable extends Debts with TableInfo<$DebtsTable, Debt> {
         ),
       );
     }
+    if (data.containsKey('home')) {
+      context.handle(
+        _homeMeta,
+        home.isAcceptableOrUnknown(data['home']!, _homeMeta),
+      );
+    }
     if (data.containsKey('hlc')) {
       context.handle(
         _hlcMeta,
@@ -2875,6 +2894,10 @@ class $DebtsTable extends Debts with TableInfo<$DebtsTable, Debt> {
         DriftSqlType.bool,
         data['${effectivePrefix}emi_in_budget'],
       ),
+      home: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}home'],
+      ),
       hlc: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}hlc'],
@@ -2912,6 +2935,7 @@ class Debt extends DataClass implements Insertable<Debt> {
   final int? emiMinor;
   final int? emiDay;
   final bool? emiInBudget;
+  final bool? home;
   final String hlc;
   final String? deletedAt;
   const Debt({
@@ -2934,6 +2958,7 @@ class Debt extends DataClass implements Insertable<Debt> {
     this.emiMinor,
     this.emiDay,
     this.emiInBudget,
+    this.home,
     required this.hlc,
     this.deletedAt,
   });
@@ -2972,6 +2997,9 @@ class Debt extends DataClass implements Insertable<Debt> {
     }
     if (!nullToAbsent || emiInBudget != null) {
       map['emi_in_budget'] = Variable<bool>(emiInBudget);
+    }
+    if (!nullToAbsent || home != null) {
+      map['home'] = Variable<bool>(home);
     }
     map['hlc'] = Variable<String>(hlc);
     if (!nullToAbsent || deletedAt != null) {
@@ -3015,6 +3043,7 @@ class Debt extends DataClass implements Insertable<Debt> {
       emiInBudget: emiInBudget == null && nullToAbsent
           ? const Value.absent()
           : Value(emiInBudget),
+      home: home == null && nullToAbsent ? const Value.absent() : Value(home),
       hlc: Value(hlc),
       deletedAt: deletedAt == null && nullToAbsent
           ? const Value.absent()
@@ -3047,6 +3076,7 @@ class Debt extends DataClass implements Insertable<Debt> {
       emiMinor: serializer.fromJson<int?>(json['emiMinor']),
       emiDay: serializer.fromJson<int?>(json['emiDay']),
       emiInBudget: serializer.fromJson<bool?>(json['emiInBudget']),
+      home: serializer.fromJson<bool?>(json['home']),
       hlc: serializer.fromJson<String>(json['hlc']),
       deletedAt: serializer.fromJson<String?>(json['deletedAt']),
     );
@@ -3074,6 +3104,7 @@ class Debt extends DataClass implements Insertable<Debt> {
       'emiMinor': serializer.toJson<int?>(emiMinor),
       'emiDay': serializer.toJson<int?>(emiDay),
       'emiInBudget': serializer.toJson<bool?>(emiInBudget),
+      'home': serializer.toJson<bool?>(home),
       'hlc': serializer.toJson<String>(hlc),
       'deletedAt': serializer.toJson<String?>(deletedAt),
     };
@@ -3099,6 +3130,7 @@ class Debt extends DataClass implements Insertable<Debt> {
     Value<int?> emiMinor = const Value.absent(),
     Value<int?> emiDay = const Value.absent(),
     Value<bool?> emiInBudget = const Value.absent(),
+    Value<bool?> home = const Value.absent(),
     String? hlc,
     Value<String?> deletedAt = const Value.absent(),
   }) => Debt(
@@ -3121,6 +3153,7 @@ class Debt extends DataClass implements Insertable<Debt> {
     emiMinor: emiMinor.present ? emiMinor.value : this.emiMinor,
     emiDay: emiDay.present ? emiDay.value : this.emiDay,
     emiInBudget: emiInBudget.present ? emiInBudget.value : this.emiInBudget,
+    home: home.present ? home.value : this.home,
     hlc: hlc ?? this.hlc,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
   );
@@ -3161,6 +3194,7 @@ class Debt extends DataClass implements Insertable<Debt> {
       emiInBudget: data.emiInBudget.present
           ? data.emiInBudget.value
           : this.emiInBudget,
+      home: data.home.present ? data.home.value : this.home,
       hlc: data.hlc.present ? data.hlc.value : this.hlc,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
     );
@@ -3188,6 +3222,7 @@ class Debt extends DataClass implements Insertable<Debt> {
           ..write('emiMinor: $emiMinor, ')
           ..write('emiDay: $emiDay, ')
           ..write('emiInBudget: $emiInBudget, ')
+          ..write('home: $home, ')
           ..write('hlc: $hlc, ')
           ..write('deletedAt: $deletedAt')
           ..write(')'))
@@ -3215,6 +3250,7 @@ class Debt extends DataClass implements Insertable<Debt> {
     emiMinor,
     emiDay,
     emiInBudget,
+    home,
     hlc,
     deletedAt,
   ]);
@@ -3241,6 +3277,7 @@ class Debt extends DataClass implements Insertable<Debt> {
           other.emiMinor == this.emiMinor &&
           other.emiDay == this.emiDay &&
           other.emiInBudget == this.emiInBudget &&
+          other.home == this.home &&
           other.hlc == this.hlc &&
           other.deletedAt == this.deletedAt);
 }
@@ -3265,6 +3302,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
   final Value<int?> emiMinor;
   final Value<int?> emiDay;
   final Value<bool?> emiInBudget;
+  final Value<bool?> home;
   final Value<String> hlc;
   final Value<String?> deletedAt;
   final Value<int> rowid;
@@ -3288,6 +3326,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
     this.emiMinor = const Value.absent(),
     this.emiDay = const Value.absent(),
     this.emiInBudget = const Value.absent(),
+    this.home = const Value.absent(),
     this.hlc = const Value.absent(),
     this.deletedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -3312,6 +3351,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
     this.emiMinor = const Value.absent(),
     this.emiDay = const Value.absent(),
     this.emiInBudget = const Value.absent(),
+    this.home = const Value.absent(),
     required String hlc,
     this.deletedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -3342,6 +3382,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
     Expression<int>? emiMinor,
     Expression<int>? emiDay,
     Expression<bool>? emiInBudget,
+    Expression<bool>? home,
     Expression<String>? hlc,
     Expression<String>? deletedAt,
     Expression<int>? rowid,
@@ -3366,6 +3407,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
       if (emiMinor != null) 'emi_minor': emiMinor,
       if (emiDay != null) 'emi_day': emiDay,
       if (emiInBudget != null) 'emi_in_budget': emiInBudget,
+      if (home != null) 'home': home,
       if (hlc != null) 'hlc': hlc,
       if (deletedAt != null) 'deleted_at': deletedAt,
       if (rowid != null) 'rowid': rowid,
@@ -3392,6 +3434,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
     Value<int?>? emiMinor,
     Value<int?>? emiDay,
     Value<bool?>? emiInBudget,
+    Value<bool?>? home,
     Value<String>? hlc,
     Value<String?>? deletedAt,
     Value<int>? rowid,
@@ -3416,6 +3459,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
       emiMinor: emiMinor ?? this.emiMinor,
       emiDay: emiDay ?? this.emiDay,
       emiInBudget: emiInBudget ?? this.emiInBudget,
+      home: home ?? this.home,
       hlc: hlc ?? this.hlc,
       deletedAt: deletedAt ?? this.deletedAt,
       rowid: rowid ?? this.rowid,
@@ -3482,6 +3526,9 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
     if (emiInBudget.present) {
       map['emi_in_budget'] = Variable<bool>(emiInBudget.value);
     }
+    if (home.present) {
+      map['home'] = Variable<bool>(home.value);
+    }
     if (hlc.present) {
       map['hlc'] = Variable<String>(hlc.value);
     }
@@ -3516,6 +3563,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
           ..write('emiMinor: $emiMinor, ')
           ..write('emiDay: $emiDay, ')
           ..write('emiInBudget: $emiInBudget, ')
+          ..write('home: $home, ')
           ..write('hlc: $hlc, ')
           ..write('deletedAt: $deletedAt, ')
           ..write('rowid: $rowid')
@@ -4512,6 +4560,18 @@ class $InvestmentsTable extends Investments
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _homeMeta = const VerificationMeta('home');
+  @override
+  late final GeneratedColumn<bool> home = GeneratedColumn<bool>(
+    'home',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("home" IN (0, 1))',
+    ),
+  );
   static const VerificationMeta _hlcMeta = const VerificationMeta('hlc');
   @override
   late final GeneratedColumn<String> hlc = GeneratedColumn<String>(
@@ -4560,6 +4620,7 @@ class $InvestmentsTable extends Investments
     commissionBps,
     organiser,
     note,
+    home,
     hlc,
     deletedAt,
   ];
@@ -4761,6 +4822,12 @@ class $InvestmentsTable extends Investments
         note.isAcceptableOrUnknown(data['note']!, _noteMeta),
       );
     }
+    if (data.containsKey('home')) {
+      context.handle(
+        _homeMeta,
+        home.isAcceptableOrUnknown(data['home']!, _homeMeta),
+      );
+    }
     if (data.containsKey('hlc')) {
       context.handle(
         _hlcMeta,
@@ -4888,6 +4955,10 @@ class $InvestmentsTable extends Investments
         DriftSqlType.string,
         data['${effectivePrefix}note'],
       )!,
+      home: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}home'],
+      ),
       hlc: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}hlc'],
@@ -4932,6 +5003,7 @@ class Investment extends DataClass implements Insertable<Investment> {
   final int? commissionBps;
   final String? organiser;
   final String note;
+  final bool? home;
   final String hlc;
   final String? deletedAt;
   const Investment({
@@ -4961,6 +5033,7 @@ class Investment extends DataClass implements Insertable<Investment> {
     this.commissionBps,
     this.organiser,
     required this.note,
+    this.home,
     required this.hlc,
     this.deletedAt,
   });
@@ -5033,6 +5106,9 @@ class Investment extends DataClass implements Insertable<Investment> {
       map['organiser'] = Variable<String>(organiser);
     }
     map['note'] = Variable<String>(note);
+    if (!nullToAbsent || home != null) {
+      map['home'] = Variable<bool>(home);
+    }
     map['hlc'] = Variable<String>(hlc);
     if (!nullToAbsent || deletedAt != null) {
       map['deleted_at'] = Variable<String>(deletedAt);
@@ -5108,6 +5184,7 @@ class Investment extends DataClass implements Insertable<Investment> {
           ? const Value.absent()
           : Value(organiser),
       note: Value(note),
+      home: home == null && nullToAbsent ? const Value.absent() : Value(home),
       hlc: Value(hlc),
       deletedAt: deletedAt == null && nullToAbsent
           ? const Value.absent()
@@ -5147,6 +5224,7 @@ class Investment extends DataClass implements Insertable<Investment> {
       commissionBps: serializer.fromJson<int?>(json['commissionBps']),
       organiser: serializer.fromJson<String?>(json['organiser']),
       note: serializer.fromJson<String>(json['note']),
+      home: serializer.fromJson<bool?>(json['home']),
       hlc: serializer.fromJson<String>(json['hlc']),
       deletedAt: serializer.fromJson<String?>(json['deletedAt']),
     );
@@ -5181,6 +5259,7 @@ class Investment extends DataClass implements Insertable<Investment> {
       'commissionBps': serializer.toJson<int?>(commissionBps),
       'organiser': serializer.toJson<String?>(organiser),
       'note': serializer.toJson<String>(note),
+      'home': serializer.toJson<bool?>(home),
       'hlc': serializer.toJson<String>(hlc),
       'deletedAt': serializer.toJson<String?>(deletedAt),
     };
@@ -5213,6 +5292,7 @@ class Investment extends DataClass implements Insertable<Investment> {
     Value<int?> commissionBps = const Value.absent(),
     Value<String?> organiser = const Value.absent(),
     String? note,
+    Value<bool?> home = const Value.absent(),
     String? hlc,
     Value<String?> deletedAt = const Value.absent(),
   }) => Investment(
@@ -5254,6 +5334,7 @@ class Investment extends DataClass implements Insertable<Investment> {
         : this.commissionBps,
     organiser: organiser.present ? organiser.value : this.organiser,
     note: note ?? this.note,
+    home: home.present ? home.value : this.home,
     hlc: hlc ?? this.hlc,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
   );
@@ -5303,6 +5384,7 @@ class Investment extends DataClass implements Insertable<Investment> {
           : this.commissionBps,
       organiser: data.organiser.present ? data.organiser.value : this.organiser,
       note: data.note.present ? data.note.value : this.note,
+      home: data.home.present ? data.home.value : this.home,
       hlc: data.hlc.present ? data.hlc.value : this.hlc,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
     );
@@ -5337,6 +5419,7 @@ class Investment extends DataClass implements Insertable<Investment> {
           ..write('commissionBps: $commissionBps, ')
           ..write('organiser: $organiser, ')
           ..write('note: $note, ')
+          ..write('home: $home, ')
           ..write('hlc: $hlc, ')
           ..write('deletedAt: $deletedAt')
           ..write(')'))
@@ -5371,6 +5454,7 @@ class Investment extends DataClass implements Insertable<Investment> {
     commissionBps,
     organiser,
     note,
+    home,
     hlc,
     deletedAt,
   ]);
@@ -5404,6 +5488,7 @@ class Investment extends DataClass implements Insertable<Investment> {
           other.commissionBps == this.commissionBps &&
           other.organiser == this.organiser &&
           other.note == this.note &&
+          other.home == this.home &&
           other.hlc == this.hlc &&
           other.deletedAt == this.deletedAt);
 }
@@ -5435,6 +5520,7 @@ class InvestmentsCompanion extends UpdateCompanion<Investment> {
   final Value<int?> commissionBps;
   final Value<String?> organiser;
   final Value<String> note;
+  final Value<bool?> home;
   final Value<String> hlc;
   final Value<String?> deletedAt;
   final Value<int> rowid;
@@ -5465,6 +5551,7 @@ class InvestmentsCompanion extends UpdateCompanion<Investment> {
     this.commissionBps = const Value.absent(),
     this.organiser = const Value.absent(),
     this.note = const Value.absent(),
+    this.home = const Value.absent(),
     this.hlc = const Value.absent(),
     this.deletedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -5496,6 +5583,7 @@ class InvestmentsCompanion extends UpdateCompanion<Investment> {
     this.commissionBps = const Value.absent(),
     this.organiser = const Value.absent(),
     this.note = const Value.absent(),
+    this.home = const Value.absent(),
     required String hlc,
     this.deletedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -5530,6 +5618,7 @@ class InvestmentsCompanion extends UpdateCompanion<Investment> {
     Expression<int>? commissionBps,
     Expression<String>? organiser,
     Expression<String>? note,
+    Expression<bool>? home,
     Expression<String>? hlc,
     Expression<String>? deletedAt,
     Expression<int>? rowid,
@@ -5561,6 +5650,7 @@ class InvestmentsCompanion extends UpdateCompanion<Investment> {
       if (commissionBps != null) 'commission_bps': commissionBps,
       if (organiser != null) 'organiser': organiser,
       if (note != null) 'note': note,
+      if (home != null) 'home': home,
       if (hlc != null) 'hlc': hlc,
       if (deletedAt != null) 'deleted_at': deletedAt,
       if (rowid != null) 'rowid': rowid,
@@ -5594,6 +5684,7 @@ class InvestmentsCompanion extends UpdateCompanion<Investment> {
     Value<int?>? commissionBps,
     Value<String?>? organiser,
     Value<String>? note,
+    Value<bool?>? home,
     Value<String>? hlc,
     Value<String?>? deletedAt,
     Value<int>? rowid,
@@ -5625,6 +5716,7 @@ class InvestmentsCompanion extends UpdateCompanion<Investment> {
       commissionBps: commissionBps ?? this.commissionBps,
       organiser: organiser ?? this.organiser,
       note: note ?? this.note,
+      home: home ?? this.home,
       hlc: hlc ?? this.hlc,
       deletedAt: deletedAt ?? this.deletedAt,
       rowid: rowid ?? this.rowid,
@@ -5712,6 +5804,9 @@ class InvestmentsCompanion extends UpdateCompanion<Investment> {
     if (note.present) {
       map['note'] = Variable<String>(note.value);
     }
+    if (home.present) {
+      map['home'] = Variable<bool>(home.value);
+    }
     if (hlc.present) {
       map['hlc'] = Variable<String>(hlc.value);
     }
@@ -5753,6 +5848,7 @@ class InvestmentsCompanion extends UpdateCompanion<Investment> {
           ..write('commissionBps: $commissionBps, ')
           ..write('organiser: $organiser, ')
           ..write('note: $note, ')
+          ..write('home: $home, ')
           ..write('hlc: $hlc, ')
           ..write('deletedAt: $deletedAt, ')
           ..write('rowid: $rowid')
@@ -9265,6 +9361,7 @@ typedef $$DebtsTableCreateCompanionBuilder = DebtsCompanion Function({
   Value<int?> emiMinor,
   Value<int?> emiDay,
   Value<bool?> emiInBudget,
+  Value<bool?> home,
   required String hlc,
   Value<String?> deletedAt,
   Value<int> rowid,
@@ -9289,6 +9386,7 @@ typedef $$DebtsTableUpdateCompanionBuilder = DebtsCompanion Function({
   Value<int?> emiMinor,
   Value<int?> emiDay,
   Value<bool?> emiInBudget,
+  Value<bool?> home,
   Value<String> hlc,
   Value<String?> deletedAt,
   Value<int> rowid,
@@ -9394,6 +9492,11 @@ class $$DebtsTableFilterComposer extends Composer<_$AppDatabase, $DebtsTable> {
 
   ColumnFilters<bool> get emiInBudget => $composableBuilder(
     column: $table.emiInBudget,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get home => $composableBuilder(
+    column: $table.home,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -9512,6 +9615,11 @@ class $$DebtsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get home => $composableBuilder(
+    column: $table.home,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get hlc => $composableBuilder(
     column: $table.hlc,
     builder: (column) => ColumnOrderings(column),
@@ -9605,6 +9713,9 @@ class $$DebtsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<bool> get home =>
+      $composableBuilder(column: $table.home, builder: (column) => column);
+
   GeneratedColumn<String> get hlc =>
       $composableBuilder(column: $table.hlc, builder: (column) => column);
 
@@ -9659,6 +9770,7 @@ class $$DebtsTableTableManager
                 Value<int?> emiMinor = const Value.absent(),
                 Value<int?> emiDay = const Value.absent(),
                 Value<bool?> emiInBudget = const Value.absent(),
+                Value<bool?> home = const Value.absent(),
                 Value<String> hlc = const Value.absent(),
                 Value<String?> deletedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -9682,6 +9794,7 @@ class $$DebtsTableTableManager
                 emiMinor: emiMinor,
                 emiDay: emiDay,
                 emiInBudget: emiInBudget,
+                home: home,
                 hlc: hlc,
                 deletedAt: deletedAt,
                 rowid: rowid,
@@ -9707,6 +9820,7 @@ class $$DebtsTableTableManager
                 Value<int?> emiMinor = const Value.absent(),
                 Value<int?> emiDay = const Value.absent(),
                 Value<bool?> emiInBudget = const Value.absent(),
+                Value<bool?> home = const Value.absent(),
                 required String hlc,
                 Value<String?> deletedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -9730,6 +9844,7 @@ class $$DebtsTableTableManager
                 emiMinor: emiMinor,
                 emiDay: emiDay,
                 emiInBudget: emiInBudget,
+                home: home,
                 hlc: hlc,
                 deletedAt: deletedAt,
                 rowid: rowid,
@@ -10136,6 +10251,7 @@ typedef $$InvestmentsTableCreateCompanionBuilder =
       Value<int?> commissionBps,
       Value<String?> organiser,
       Value<String> note,
+      Value<bool?> home,
       required String hlc,
       Value<String?> deletedAt,
       Value<int> rowid,
@@ -10168,6 +10284,7 @@ typedef $$InvestmentsTableUpdateCompanionBuilder =
       Value<int?> commissionBps,
       Value<String?> organiser,
       Value<String> note,
+      Value<bool?> home,
       Value<String> hlc,
       Value<String?> deletedAt,
       Value<int> rowid,
@@ -10309,6 +10426,11 @@ class $$InvestmentsTableFilterComposer
 
   ColumnFilters<String> get note => $composableBuilder(
     column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get home => $composableBuilder(
+    column: $table.home,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -10462,6 +10584,11 @@ class $$InvestmentsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get home => $composableBuilder(
+    column: $table.home,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get hlc => $composableBuilder(
     column: $table.hlc,
     builder: (column) => ColumnOrderings(column),
@@ -10578,6 +10705,9 @@ class $$InvestmentsTableAnnotationComposer
   GeneratedColumn<String> get note =>
       $composableBuilder(column: $table.note, builder: (column) => column);
 
+  GeneratedColumn<bool> get home =>
+      $composableBuilder(column: $table.home, builder: (column) => column);
+
   GeneratedColumn<String> get hlc =>
       $composableBuilder(column: $table.hlc, builder: (column) => column);
 
@@ -10642,6 +10772,7 @@ class $$InvestmentsTableTableManager
                 Value<int?> commissionBps = const Value.absent(),
                 Value<String?> organiser = const Value.absent(),
                 Value<String> note = const Value.absent(),
+                Value<bool?> home = const Value.absent(),
                 Value<String> hlc = const Value.absent(),
                 Value<String?> deletedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -10672,6 +10803,7 @@ class $$InvestmentsTableTableManager
                 commissionBps: commissionBps,
                 organiser: organiser,
                 note: note,
+                home: home,
                 hlc: hlc,
                 deletedAt: deletedAt,
                 rowid: rowid,
@@ -10704,6 +10836,7 @@ class $$InvestmentsTableTableManager
                 Value<int?> commissionBps = const Value.absent(),
                 Value<String?> organiser = const Value.absent(),
                 Value<String> note = const Value.absent(),
+                Value<bool?> home = const Value.absent(),
                 required String hlc,
                 Value<String?> deletedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -10734,6 +10867,7 @@ class $$InvestmentsTableTableManager
                 commissionBps: commissionBps,
                 organiser: organiser,
                 note: note,
+                home: home,
                 hlc: hlc,
                 deletedAt: deletedAt,
                 rowid: rowid,

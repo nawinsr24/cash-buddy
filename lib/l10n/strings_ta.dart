@@ -6,7 +6,6 @@ const Map<String, String> stringsTa = {
   'Settings': 'அமைப்புகள்',
   'Debts': 'கடன்கள்',
   'Invest': 'முதலீடு',
-  'Set a monthly budget': 'மாதாந்திர பட்ஜெட்டை அமைக்கவும்',
   'Monthly budget': 'மாதாந்திர பட்ஜெட்',
   'Set my budget': 'என் பட்ஜெட்டை அமை',
   'Month': 'மாதம்',
@@ -30,7 +29,6 @@ const Map<String, String> stringsTa = {
   'Total': 'மொத்தம்',
   'View all': 'அனைத்தையும் பார்',
   'Nothing outstanding': 'நிலுவை எதுவும் இல்லை',
-  'Received vs spent': 'பெற்றது vs செலவு',
   'Main categories': 'முக்கிய வகைகள்',
   'Sub-categories': 'துணை வகைகள்',
   'Charge interest': 'வட்டி விதி',
@@ -211,8 +209,6 @@ const Map<String, String> stringsTa = {
   'Right when I swipe': 'ஸ்வைப் செய்யும்போதே',
   'Add 10 entries to see your score.':
       'மதிப்பெண்ணைக் காண 10 பதிவுகளைச் சேர்க்கவும்.',
-  'Nothing to show for this period yet':
-      'இந்தக் காலத்திற்கு இன்னும் எதுவும் இல்லை',
   'Switch any time without losing history.':
       'வரலாற்றை இழக்காமல் எப்போது வேண்டுமானாலும் மாற்றலாம்.',
   'Cash and each bank account kept apart.':
@@ -352,15 +348,10 @@ const Map<String, String> stringsTa = {
       'உங்கள் பதிவுகள், இருப்பு, குறிப்புகள் அனுப்பப்படாது.',
   'Access to the app can be turned off.': 'ஆப்பின் அணுகல் நிறுத்தப்படலாம்.',
   'My own spending': 'என் சொந்தச் செலவு',
-  'My budget': 'என் பட்ஜெட்',
-  'I paid for home': 'வீட்டுக்கு நான் செலுத்தியது',
-  'I paid in total': 'நான் செலுத்திய மொத்தம்',
-  'Total home spending': 'வீட்டின் மொத்தச் செலவு',
   'Home budget': 'வீட்டு பட்ஜெட்',
   'Set': 'அமை',
   'left': 'மீதம்',
   'Partner': 'துணை',
-  'Home budget for each month': 'மாதாந்திர வீட்டு பட்ஜெட்',
   'Run a home together?': 'சேர்ந்து வீடு நடத்துகிறீர்களா?',
   'Track house spending with your partner. Your own money stays private.': 'துணையுடன் வீட்டுச் செலவைக் கவனியுங்கள். உங்கள் சொந்தப் பணம் தனிப்பட்டதாகவே இருக்கும்.',
   'Set it up': 'அமைக்கவும்',
@@ -379,4 +370,8 @@ const Map<String, String> stringsTa = {
   'Start home sharing, or join with a code from your partner. Only what you mark Home is shared.': 'வீட்டுப் பகிர்வைத் தொடங்கவும், அல்லது துணையின் குறியீட்டால் சேரவும். "வீடு" எனக் குறித்தவை மட்டுமே பகிரப்படும்.',
   'Start home sharing': 'வீட்டுப் பகிர்வைத் தொடங்கு',
   'Stop home sharing?': 'வீட்டுப் பகிர்வை நிறுத்தவா?',
+  'Counts as': 'எதில் சேரும்',
+  'From account': 'எந்தக் கணக்கிலிருந்து',
+  'days left': 'நாட்கள் மீதம்',
+  'Set a budget': 'பட்ஜெட் அமை',
 };

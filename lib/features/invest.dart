@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../ui/choice_cards.dart';
+import '../data/home_repo.dart';
+import 'mine_home.dart';
 import '../l10n/l10n.dart';
 import '../data/db.dart';
 import '../data/invest_repo.dart';
@@ -342,6 +345,7 @@ class _InvestFormState extends ConsumerState<_InvestForm> {
   late DateTime? endDate = e?.endDate == null ? null : Dates.parse(e!.endDate!);
   DateTime oneTimeDate = Dates.today();
   late String? accountId = e?.accountId;
+  late bool home = e?.home ?? false;
   String? error;
 
   int? _money(TextEditingController c) =>
@@ -423,6 +427,7 @@ class _InvestFormState extends ConsumerState<_InvestForm> {
           endDate: rec ? sch!.until : null,
           note: note.text.trim(),
         );
+        if (home) await repo.setInvestmentHome(id, true);
         // A one-time custom investment with an amount is recorded right away.
         if (isCustom && !recurring && _money(amount) != null) {
           await repo.addInvestmentEntry(
@@ -433,6 +438,9 @@ class _InvestFormState extends ConsumerState<_InvestForm> {
           );
         }
       } else {
+        if (isCustom && home != (e!.home ?? false)) {
+          await repo.setInvestmentHome(e!.id, home);
+        }
         await repo.updateInvestment(
           e!.id,
           name: name.text,
@@ -590,16 +598,10 @@ class _InvestFormState extends ConsumerState<_InvestForm> {
         if (cycle == 'monthly')
           Padding(
             padding: const EdgeInsets.only(bottom: Sp.x3),
-            child: DropdownButtonFormField<int>(
-              initialValue: monthDay ?? start?.day ?? 1,
-              decoration: const InputDecoration(
-                labelText: 'Day of the month',
-                helperText: 'Short months use their last day (31 → 28/30)',
-              ),
-              items: [
-                for (var i = 1; i <= 31; i++)
-                  DropdownMenuItem(value: i, child: Text('$i')),
-              ],
+            child: ChoiceCards<int>(
+              label: 'Day of the month (short months use their last day)',
+              value: monthDay ?? start?.day ?? 1,
+              choices: [for (var i = 1; i <= 31; i++) Choice(i, '$i')],
               onChanged: (v) => setState(() => monthDay = v),
             ),
           ),
@@ -801,22 +803,21 @@ class _InvestFormState extends ConsumerState<_InvestForm> {
             if ((settings?.split ?? false) && accounts.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(bottom: Sp.x3),
-                child: DropdownButtonFormField<String?>(
-                  initialValue: accountId,
-                  isExpanded: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Pay from (optional)',
-                  ),
-                  items: [
-                    DropdownMenuItem(
-                      value: null,
-                      child: Text(tr('Default account')),
-                    ),
+                child: ChoiceCards<String?>(
+                  label: 'Pay from (optional)',
+                  value: accountId,
+                  choices: [
+                    Choice(null, tr('Default account')),
                     for (final a in accounts)
-                      DropdownMenuItem(value: a.id, child: Text(a.name)),
+                      Choice(a.id, a.name, accountIcon(a)),
                   ],
                   onChanged: (v) => setState(() => accountId = v),
                 ),
+              ),
+            if (isCustom)
+              MineHomeCards(
+                home: home,
+                onChanged: (v) => setState(() => home = v),
               ),
             _plain(note, 'Note (optional)'),
             if (error != null)

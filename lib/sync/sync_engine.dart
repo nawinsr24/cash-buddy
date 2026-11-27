@@ -88,7 +88,8 @@ class SyncEngine {
   /// 3: splitId on debts (nullable, so it needs no default below).
   /// 4: EMI loan fields on debts (all nullable).
   /// 5: the Mine/Home mark on transactions (nullable).
-  static const schema = 5;
+  /// 6: the Mine/Home mark on loans and investments (nullable).
+  static const schema = 6;
 
   /// Required fields that segments from earlier releases may not have, with
   /// the value they get when this phone has no copy of the row either.

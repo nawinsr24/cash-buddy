@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../ui/choice_cards.dart';
+import 'mine_home.dart';
 import '../l10n/l10n.dart';
 import '../data/db.dart';
 import '../data/home_repo.dart';
@@ -1075,57 +1077,36 @@ class _TxnFormState extends ConsumerState<_TxnForm> {
                 }),
               ),
             ],
-            if (_canMarkHome) ...[
-              const SizedBox(height: Sp.x4),
-              SegmentedButton<bool>(
-                showSelectedIcon: false,
-                segments: [
-                  ButtonSegment(
-                    value: false,
-                    icon: const Icon(Icons.person_outline),
-                    label: Text(tr('Mine')),
-                  ),
-                  ButtonSegment(
-                    value: true,
-                    icon: const Icon(Icons.home_outlined),
-                    label: Text(tr('Home')),
-                  ),
-                ],
-                selected: {home},
-                onSelectionChanged: (s) => setState(() => home = s.first),
+            if (_canMarkHome)
+              MineHomeCards(
+                home: home,
+                onChanged: (v) => setState(() => home = v),
               ),
-              if (home)
-                Padding(
-                  padding: const EdgeInsets.only(top: Sp.x2),
-                  child: Text(tr('Your partner will see this.')),
-                ),
-            ],
             if (split || (cards.isNotEmpty && type != 'transfer')) ...[
               const SizedBox(height: Sp.x4),
-              DropdownButtonFormField<String>(
-                initialValue:
-                    accountId ?? (payFrom.isNotEmpty ? payFrom.first.id : null),
-                decoration: InputDecoration(
-                  labelText: type == 'transfer'
+              ChoiceCards<String>(
+                label: tr(
+                  type == 'transfer'
                       ? 'From account'
                       : cards.isNotEmpty
                       ? 'Paid with'
                       : 'Account',
                 ),
-                items: [
-                  for (final a in payFrom)
-                    DropdownMenuItem(value: a.id, child: Text(a.name)),
+                value:
+                    accountId ?? (payFrom.isNotEmpty ? payFrom.first.id : null),
+                choices: [
+                  for (final a in payFrom) Choice(a.id, a.name, accountIcon(a)),
                 ],
                 onChanged: (v) => setState(() => accountId = v),
               ),
               if (type == 'transfer') ...[
                 const SizedBox(height: Sp.x4),
-                DropdownButtonFormField<String>(
-                  initialValue: toAccountId,
-                  decoration: InputDecoration(labelText: tr('To account')),
-                  items: [
+                ChoiceCards<String>(
+                  label: tr('To account'),
+                  value: toAccountId,
+                  choices: [
                     for (final a in accounts)
-                      DropdownMenuItem(value: a.id, child: Text(a.name)),
+                      Choice(a.id, a.name, accountIcon(a)),
                   ],
                   onChanged: (v) => setState(() => toAccountId = v),
                 ),

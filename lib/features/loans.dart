@@ -3,6 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../data/home_repo.dart';
+import '../ui/choice_cards.dart';
+import 'mine_home.dart';
 import '../data/loan_repo.dart';
 import '../data/repo.dart';
 import '../domain/dates.dart';
@@ -144,6 +147,7 @@ class _AddLoanState extends ConsumerState<AddLoanSheet> {
   final emi = TextEditingController();
   String? accountId, error;
   var inBudget = true;
+  var home = false;
 
   int get _calculated => emiFor(
     Money.parse(owed.text) ?? 0,
@@ -169,6 +173,7 @@ class _AddLoanState extends ConsumerState<AddLoanSheet> {
       context,
       ref,
       (repo) => repo.addLoan(
+        home: home,
         kind: kind,
         lender: lender.text.trim(),
         owed: amount,
@@ -227,17 +232,17 @@ class _AddLoanState extends ConsumerState<AddLoanSheet> {
         if (split)
           Padding(
             padding: const EdgeInsets.only(top: Sp.x3),
-            child: DropdownButtonFormField<String>(
-              initialValue:
+            child: ChoiceCards<String>(
+              label: tr('Paid from'),
+              value:
                   accountId ?? (accounts.isNotEmpty ? accounts.first.id : null),
-              decoration: InputDecoration(labelText: tr('Paid from')),
-              items: [
-                for (final a in accounts)
-                  DropdownMenuItem(value: a.id, child: Text(a.name)),
+              choices: [
+                for (final a in accounts) Choice(a.id, a.name, accountIcon(a)),
               ],
-              onChanged: (v) => accountId = v,
+              onChanged: (v) => setState(() => accountId = v),
             ),
           ),
+        MineHomeCards(home: home, onChanged: (v) => setState(() => home = v)),
         SwitchListTile.adaptive(
           contentPadding: EdgeInsets.zero,
           title: Text(tr('Count the full EMI in my budget')),
@@ -593,6 +598,10 @@ class LoanPage extends ConsumerWidget {
                 ],
               ),
             ),
+          ),
+          MineHomeCards(
+            home: l.debt.home ?? false,
+            onChanged: (v) => repo.setLoanHome(debtId, v),
           ),
           if (open) ...[
             const SizedBox(height: Sp.x3),

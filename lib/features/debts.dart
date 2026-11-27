@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../ui/choice_cards.dart';
+import 'mine_home.dart';
 import '../l10n/l10n.dart';
 import '../data/db.dart';
 import '../data/repo.dart';
@@ -376,16 +378,16 @@ class _AddDebtSheetState extends ConsumerState<AddDebtSheet> {
             AmountField(controller: _amount, label: tr('Loan amount')),
             const SizedBox(height: Sp.x3),
             if (split)
-              DropdownButtonFormField<String>(
-                initialValue:
+              ChoiceCards<String>(
+                label: tr('Account'),
+                value:
                     accountId ??
                     (accounts.isNotEmpty ? accounts.first.id : null),
-                decoration: InputDecoration(labelText: tr('Account')),
-                items: [
+                choices: [
                   for (final a in accounts)
-                    DropdownMenuItem(value: a.id, child: Text(a.name)),
+                    Choice(a.id, a.name, accountIcon(a)),
                 ],
-                onChanged: (v) => accountId = v,
+                onChanged: (v) => setState(() => accountId = v),
               ),
             SwitchListTile.adaptive(
               contentPadding: EdgeInsets.zero,
@@ -394,38 +396,27 @@ class _AddDebtSheetState extends ConsumerState<AddDebtSheet> {
               onChanged: (v) => setState(() => interest = v),
             ),
             if (interest) ...[
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _rate,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      decoration: InputDecoration(
-                        labelText: tr('Rate'),
-                        suffixText: '%',
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: Sp.x3),
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      initialValue: period,
-                      decoration: const InputDecoration(labelText: 'per'),
-                      items: const [
-                        DropdownMenuItem(value: 'daily', child: Text('day')),
-                        DropdownMenuItem(value: 'weekly', child: Text('week')),
-                        DropdownMenuItem(
-                          value: 'monthly',
-                          child: Text('month'),
-                        ),
-                        DropdownMenuItem(value: 'yearly', child: Text('year')),
-                      ],
-                      onChanged: (v) => setState(() => period = v!),
-                    ),
-                  ),
+              TextField(
+                controller: _rate,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: InputDecoration(
+                  labelText: tr('Rate'),
+                  suffixText: '%',
+                ),
+              ),
+              const SizedBox(height: Sp.x3),
+              ChoiceCards<String>(
+                label: 'per',
+                value: period,
+                choices: const [
+                  Choice('daily', 'day'),
+                  Choice('weekly', 'week'),
+                  Choice('monthly', 'month'),
+                  Choice('yearly', 'year'),
                 ],
+                onChanged: (v) => setState(() => period = v),
               ),
               const SizedBox(height: Sp.x3),
               SegmentedButton<String>(

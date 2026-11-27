@@ -10,10 +10,16 @@ import '../domain/dates.dart';
 import '../sync/group/note.dart';
 import '../sync/group/replica.dart';
 import 'db.dart';
+import 'invest_repo.dart';
 import 'repo.dart';
 
 const _spend =
     "t.type='debit' AND t.source NOT IN ('debt','invest') AND t.deleted_at IS NULL";
+
+/// What counts as home spending: anything I marked, including chit fund
+/// instalments, but not money that was only lent.
+const _homeSpend =
+    "t.type='debit' AND t.source <> 'debt' AND t.deleted_at IS NULL AND t.home = 1";
 
 /// One home spend, mine or my partner's.
 class HomeSpend {
@@ -80,6 +86,23 @@ extension HomeRepo on Repo {
         TransactionsCompanion(home: Value(home), hlc: Value(clock.next())),
       );
 
+  /// A loan's payments, past and future, count as Mine or Home.
+  Future<void> setLoanHome(String debtId, bool home) =>
+      db.transaction(() async {
+        await (db.update(db.debts)..where((d) => d.id.equals(debtId))).write(
+          DebtsCompanion(home: Value(home), hlc: Value(clock.next())),
+        );
+        await reconcileDebt(debtId);
+      });
+
+  Future<void> setInvestmentHome(String id, bool home) =>
+      db.transaction(() async {
+        await (db.update(db.investments)..where((i) => i.id.equals(id))).write(
+          InvestmentsCompanion(home: Value(home), hlc: Value(clock.next())),
+        );
+        await reconcileInvestment(id);
+      });
+
   /// Categories last saved as Home, to preselect the button next time.
   Future<Set<String>> homeCategories() async => {
     ...(jsonDecode(await getSetting('homeCategories') ?? '[]') as List)
@@ -102,12 +125,12 @@ extension HomeRepo on Repo {
     final rows = await db
         .customSelect(
           '''SELECT t.id, t.amount_minor AS a, t.date AS d, t.note AS n,
-                    COALESCE(p.name, c.name) AS main,
+                    COALESCE(p.name, c.name, CASE t.source WHEN 'invest' THEN 'Chit and investments' WHEN 'emi' THEN 'Loan EMI' END) AS main,
                     CASE WHEN p.id IS NULL THEN NULL ELSE c.name END AS sub
              FROM transactions t
              LEFT JOIN categories c ON c.id = t.category_id
              LEFT JOIN categories p ON p.id = c.parent_id
-             WHERE $_spend AND t.home = 1 AND t.date BETWEEN ? AND ?''',
+             WHERE $_homeSpend AND t.date BETWEEN ? AND ?''',
           variables: [Variable(from), Variable(to)],
           readsFrom: {db.transactions, db.categories},
         )

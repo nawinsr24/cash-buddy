@@ -96,6 +96,7 @@ class Debts extends Table {
   IntColumn get emiMinor => integer().nullable()();
   IntColumn get emiDay => integer().nullable()();
   BoolColumn get emiInBudget => boolean().nullable()(); // null = yes
+  BoolColumn get home => boolean().nullable()(); // payments count as Home
   TextColumn get hlc => text()();
   TextColumn get deletedAt => text().nullable()();
   @override
@@ -153,6 +154,7 @@ class Investments extends Table {
   IntColumn get commissionBps => integer().nullable()();
   TextColumn get organiser => text().nullable()();
   TextColumn get note => text().withDefault(const Constant(''))();
+  BoolColumn get home => boolean().nullable()(); // instalments count as Home
   TextColumn get hlc => text()();
   TextColumn get deletedAt => text().nullable()();
   @override
@@ -264,7 +266,7 @@ class AppDatabase extends _$AppDatabase {
   static AppDatabase open() => AppDatabase(openAppDatabase());
 
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -330,6 +332,11 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 12) {
         await m.addColumn(transactions, transactions.home);
+      }
+      if (from < 13) {
+        await m.addColumn(debts, debts.home);
+        // version 1 had no investments: createTable above made them complete
+        if (from >= 2) await m.addColumn(investments, investments.home);
       }
       if (from < 3) {
         // Chit funds became custom monthly plans: instalment = monthly amount,

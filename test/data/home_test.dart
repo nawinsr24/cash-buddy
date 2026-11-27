@@ -1,6 +1,8 @@
 import 'package:cash_buddy/data/budget_repo.dart';
 import 'package:cash_buddy/data/db_key.dart';
 import 'package:cash_buddy/data/home_repo.dart';
+import 'package:cash_buddy/data/invest_repo.dart';
+import 'package:cash_buddy/data/loan_repo.dart';
 import 'package:cash_buddy/domain/dates.dart';
 import 'package:cash_buddy/sync/group/group_service.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -107,5 +109,48 @@ void main() {
     expect(await shared(), isEmpty);
     final g = (await service.open())!;
     expect(g.disk.notes.values.join(), isNot(contains('secret gift')));
+  });
+
+  test(
+    'a Home loan and chit fund count at home, and can be moved back',
+    () async {
+      final (env, _) = await _sharing();
+      final r = env.repo;
+      final loan = await r.addLoan(
+        kind: 'home',
+        lender: 'HDFC',
+        owed: 50000000,
+        annualMilli: 9000,
+        months: 60,
+        emiDay: 5,
+        home: true,
+      );
+      await r.payEmi(loan, interest: 375000, principal: 662918);
+      final chit = await r.createInvestment(kind: 'custom', name: 'Chit');
+      await r.setInvestmentHome(chit, true);
+      await r.addInvestmentEntry(
+        chit,
+        type: 'contribute',
+        amountMinor: 500000,
+        date: Dates.day(2026, 11, 3),
+      );
+      // renaming it must not lose the mark
+      await r.updateInvestment(chit, name: 'Family chit');
+      var s = (await r.homeSummary(_month))!;
+      expect((s.iPaidHome, s.mine), (1037918 + 500000, 0));
+      expect(s.main.map((c) => c.name), contains('Chit and investments'));
+      expect((await r.budgetStatus(2026, 11))!.spent, 0);
+      await r.setLoanHome(loan, false);
+      await r.setInvestmentHome(chit, false);
+      s = (await r.homeSummary(_month))!;
+      expect((s.iPaidHome, s.mine), (0, 1037918));
+    },
+  );
+
+  test('without home sharing a Home mark changes nothing', () async {
+    final env = await newEnv(opening: 100000);
+    await env.repo.setBudget(50000);
+    await env.repo.addTransaction(type: 'debit', amountMinor: 700, home: true);
+    expect((await env.repo.budgetStatus(2026, 11))!.spent, 700);
   });
 }

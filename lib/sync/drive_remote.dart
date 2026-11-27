@@ -68,15 +68,17 @@ class DriveRemote implements RemoteStore {
     }
   }
 
-  /// Silent re-authentication on app start; null if the user must sign in again.
+  /// Used by background syncs, so it must never show anything. Returns null
+  /// when Google would need the user, who can then sign in from Settings.
+  ///
+  /// Do not call attemptLightweightAuthentication here: on Android it opens
+  /// Google's bottom sheet, which came back every time it was closed.
   static Future<DriveRemote?> restore() async {
     try {
       if (!configured) return null;
       final gs = GoogleSignIn.instance;
       await gs.initialize(serverClientId: serverClientId);
-      final account = await gs.attemptLightweightAuthentication();
-      if (account == null) return null;
-      final authz = await account.authorizationClient.authorizationForScopes([
+      final authz = await gs.authorizationClient.authorizationForScopes([
         scope,
       ]);
       return authz == null

@@ -366,7 +366,8 @@ void main() {
       await shot(tester, '$p-2d-grade');
       await tester.tap(find.byTooltip('Back'));
       await settle(tester);
-      await tapText(tester, 'BUDGET');
+      await tester.tap(find.byKey(const ValueKey('my-budget')));
+      await settle(tester);
       await shot(tester, '$p-2e-budget');
       await tester.tap(find.text('Year'));
       await settle(tester);

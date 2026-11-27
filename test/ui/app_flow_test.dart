@@ -378,8 +378,9 @@ void main() {
     tester,
   ) async {
     final env = await pump(tester, opening: 10000000);
-    expect(find.text('Set a monthly budget'), findsOneWidget);
-    await tapText(tester, 'Set a monthly budget');
+    expect(find.byKey(const ValueKey('my-budget')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('my-budget')));
+    await settle(tester);
     expect(find.text('No budget yet'), findsOneWidget);
     await tapText(tester, 'Set my budget');
     // the editor reads the database first
@@ -424,7 +425,8 @@ void main() {
     tester,
   ) async {
     final env = await pump(tester, opening: 10000000);
-    await tapText(tester, 'Set a monthly budget');
+    await tester.tap(find.byKey(const ValueKey('my-budget')));
+    await settle(tester);
     await tapText(tester, 'Set my budget');
     await tester.runAsync(
       () => Future<void>.delayed(const Duration(milliseconds: 300)),

@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../ui/choice_cards.dart';
+import 'mine_home.dart';
 import '../l10n/l10n.dart';
 import '../data/db.dart';
 import '../data/invest_repo.dart';
@@ -206,22 +208,12 @@ class _PayFrom extends ConsumerWidget {
         ),
         if ((settings?.split ?? false) && accounts.length > 1 && take) ...[
           _gap(Sp.x2),
-          Padding(
-            padding: const EdgeInsets.only(left: 2, bottom: 6),
-            child: Text(
-              'Pay from',
-              style: context.text.labelLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          DropdownButtonFormField<String?>(
-            initialValue: accountId,
-            isExpanded: true,
-            items: [
-              DropdownMenuItem(value: null, child: Text(tr('Default account'))),
-              for (final a in accounts)
-                DropdownMenuItem(value: a.id, child: Text(a.name)),
+          ChoiceCards<String?>(
+            label: 'Pay from',
+            value: accountId,
+            choices: [
+              Choice(null, tr('Default account')),
+              for (final a in accounts) Choice(a.id, a.name, accountIcon(a)),
             ],
             onChanged: onAccount,
           ),

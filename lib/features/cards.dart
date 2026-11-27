@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../ui/choice_cards.dart';
+import 'mine_home.dart';
 import '../data/card_repo.dart';
 import '../data/db.dart';
 import '../data/repo.dart';
@@ -763,13 +765,11 @@ class _PayBillSheetState extends ConsumerState<PayBillSheet> {
             const SizedBox(height: Sp.x4),
             AmountField(controller: amount, autofocus: true),
             const SizedBox(height: Sp.x3),
-            DropdownButtonFormField<String>(
-              initialValue:
-                  from ?? (accounts.isNotEmpty ? accounts.first.id : null),
-              decoration: InputDecoration(labelText: tr('Paid from')),
-              items: [
-                for (final a in accounts)
-                  DropdownMenuItem(value: a.id, child: Text(a.name)),
+            ChoiceCards<String>(
+              label: tr('Paid from'),
+              value: from ?? (accounts.isNotEmpty ? accounts.first.id : null),
+              choices: [
+                for (final a in accounts) Choice(a.id, a.name, accountIcon(a)),
               ],
               onChanged: (v) => setState(() => from = v),
             ),

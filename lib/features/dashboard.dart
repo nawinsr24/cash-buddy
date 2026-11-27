@@ -14,7 +14,7 @@ import '../providers.dart';
 import '../ui/motion.dart';
 import '../ui/theme.dart';
 import '../ui/emoji.dart';
-import 'budget.dart';
+import 'budget_rings.dart';
 import 'home_share.dart';
 import 'card_warning.dart';
 import 'category_insight_page.dart';
@@ -42,7 +42,7 @@ class DashboardPage extends ConsumerWidget {
     final settings = ref.watch(settingsProvider).value;
     final pending = ref.watch(pendingSmsProvider).value?.length ?? 0;
     final invest = ref.watch(investSummariesProvider).value ?? const [];
-    final home = ref.watch(homeMonthProvider).value;
+    final home = ref.watch(homeOnProvider).value == true;
     final homePeriod = ref.watch(homePeriodProvider).value;
     return Scaffold(
       appBar: AppBar(
@@ -113,14 +113,12 @@ class DashboardPage extends ConsumerWidget {
             ),
             const SizedBox(height: Sp.x3),
             const HomeInviteCard(),
-            if (home == null) const BudgetCard() else HomeMonthCard(home),
+            const BudgetRings(),
             const CardWarningLine(),
             const SizedBox(height: Sp.x3),
             const PlusScoreCard(),
             const SizedBox(height: Sp.x3),
             _PillarGrid(data: d),
-            const SizedBox(height: Sp.x3),
-            Reveal(index: 5, child: ReceivedSpentChart(data: d)),
             if (invest.isNotEmpty) ...[
               const SizedBox(height: Sp.x3),
               InvestHero(
@@ -130,15 +128,13 @@ class DashboardPage extends ConsumerWidget {
             ],
             const SectionTitle('Insights'),
             const InsightsStrip(),
-            SectionTitle(
-              home == null ? 'Where your money went' : 'My spending',
-            ),
+            SectionTitle(home ? 'My spending' : 'Where your money went'),
             MoneyWent(
               main: d.spendingByCategory,
               subs: d.spendingBySub,
-              total: home == null
-                  ? d.spending
-                  : d.spendingByCategory.fold(0, (s, c) => s + c.totalMinor),
+              total: home
+                  ? d.spendingByCategory.fold(0, (s, c) => s + c.totalMinor)
+                  : d.spending,
               range: d.range,
               emptyText: 'No spending in this period',
             ),
@@ -1230,167 +1226,6 @@ class _SparkPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_SparkPainter o) => o.t != t || o.v != v;
-}
-
-/// Money in vs money out, grouped into five slices of the chosen period.
-class ReceivedSpentChart extends StatelessWidget {
-  final DashboardData data;
-  const ReceivedSpentChart({super.key, required this.data});
-
-  @override
-  Widget build(BuildContext context) {
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    final recvC = dark ? const Color(0xFF4FD1B8) : const Color(0xFF5ED3BC);
-    final spentC = dark ? const Color(0xFFA793FF) : const Color(0xFF7C5CF0);
-    const n = 5;
-    final days = data.range.days.clamp(1, 4000);
-    final per = (days / n).ceil();
-    final recv = List<double>.filled(n, 0);
-    final spent = List<double>.filled(n, 0);
-    for (var i = 0; i < days; i++) {
-      final k = Dates.str(data.range.start.add(Duration(days: i)));
-      final b = (i ~/ per).clamp(0, n - 1);
-      recv[b] += (data.dailyIncome[k] ?? 0) / Money.unit;
-      spent[b] += (data.dailySpending[k] ?? 0) / Money.unit;
-    }
-    String label(int b) {
-      final a = b * per + 1;
-      final z = ((b + 1) * per).clamp(1, days);
-      return a > days ? '' : '$a-$z';
-    }
-
-    final maxV = [...recv, ...spent].fold<double>(0, (a, b) => a > b ? a : b);
-    final c = context.cash;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(Sp.x4, Sp.x4, Sp.x4, Sp.x3),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Received vs spent',
-                    style: context.text.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-                _legend(context, recvC, 'Received'),
-                const SizedBox(width: Sp.x3),
-                _legend(context, spentC, 'Spent'),
-              ],
-            ),
-            const SizedBox(height: Sp.x4),
-            SizedBox(
-              height: 170,
-              child: maxV == 0
-                  ? Center(
-                      child: Text(
-                        'Nothing to show for this period yet',
-                        style: context.text.bodySmall?.copyWith(
-                          color: c.textMuted,
-                        ),
-                      ),
-                    )
-                  : BarChart(
-                      duration: const Duration(milliseconds: 700),
-                      curve: Curves.easeOutCubic,
-                      BarChartData(
-                        maxY: maxV * 1.15,
-                        alignment: BarChartAlignment.spaceAround,
-                        gridData: FlGridData(
-                          drawVerticalLine: false,
-                          horizontalInterval: maxV * 1.15 / 4,
-                          getDrawingHorizontalLine: (_) => FlLine(
-                            color: context.scheme.outlineVariant,
-                            strokeWidth: 1,
-                            dashArray: [4, 4],
-                          ),
-                        ),
-                        borderData: FlBorderData(show: false),
-                        titlesData: FlTitlesData(
-                          topTitles: const AxisTitles(),
-                          rightTitles: const AxisTitles(),
-                          leftTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              reservedSize: 44,
-                              interval: maxV * 1.15 / 4,
-                              getTitlesWidget: (v, m) => v == m.max
-                                  ? const SizedBox.shrink()
-                                  : Text(
-                                      Money.compact(Money.fromMajor(v)),
-                                      style: TextStyle(
-                                        fontSize: 10.5,
-                                        color: c.textMuted,
-                                      ),
-                                    ),
-                            ),
-                          ),
-                          bottomTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              getTitlesWidget: (v, _) => Padding(
-                                padding: const EdgeInsets.only(top: 6),
-                                child: Text(
-                                  label(v.toInt()),
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: c.textMuted,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        barTouchData: BarTouchData(enabled: false),
-                        barGroups: [
-                          for (var i = 0; i < n; i++)
-                            BarChartGroupData(
-                              x: i,
-                              barsSpace: 4,
-                              barRods: [
-                                BarChartRodData(
-                                  toY: recv[i],
-                                  width: 12,
-                                  color: recvC,
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                BarChartRodData(
-                                  toY: spent[i],
-                                  width: 12,
-                                  color: spentC,
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                              ],
-                            ),
-                        ],
-                      ),
-                    ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _legend(BuildContext context, Color color, String text) => Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Container(
-        width: 9,
-        height: 9,
-        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-      ),
-      const SizedBox(width: 5),
-      Text(
-        text,
-        style: context.text.labelSmall?.copyWith(color: context.cash.textMuted),
-      ),
-    ],
-  );
 }
 
 /// Spending and Income always show; Incoming Debts and Liabilities only when

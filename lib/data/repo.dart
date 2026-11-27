@@ -1741,7 +1741,8 @@ class Repo {
           cur.accountId == account &&
           cur.categoryId == l.categoryId &&
           cur.source == l.source &&
-          cur.merchant == debt.counterparty;
+          cur.merchant == debt.counterparty &&
+          (!isLoan || (cur.home ?? false) == (debt.home ?? false));
       if (same) continue;
       await _writeTxnRow(
         TransactionsCompanion.insert(
@@ -1771,6 +1772,7 @@ class Repo {
           source: Value(l.source),
           sourceRef: Value(entry.key),
           deletedAt: const Value(null),
+          home: isLoan ? Value(debt.home) : const Value.absent(),
         ),
       );
     }
