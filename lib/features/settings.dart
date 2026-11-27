@@ -13,6 +13,7 @@ import '../platform/notifications.dart';
 import '../platform/reminders.dart';
 import '../platform/sms_reader.dart';
 import '../providers.dart';
+import 'account_tile.dart';
 import 'backup_actions.dart';
 import '../domain/currency.dart';
 import 'inbox.dart' show ImportSheet;
@@ -155,6 +156,7 @@ class SettingsPage extends ConsumerWidget {
                 ],
               ),
             ),
+            const AccountCard(),
             const _Group('Accounts'),
             Card(
               child: Column(

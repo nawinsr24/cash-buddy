@@ -295,4 +295,22 @@ const Map<String, String> stringsTa = {
   'Backup restored': 'காப்பு மீட்டெடுக்கப்பட்டது',
   'This is not a backup file, or it is damaged.':
       'இது காப்புக் கோப்பு அல்ல, அல்லது சேதமடைந்துள்ளது.',
+  'Before you sign in': 'உள்நுழையும் முன்',
+  'Our server stores your Google email, an ID for this phone and when it last connected.': 'எங்கள் சர்வர் உங்கள் Google மின்னஞ்சல், இந்தப் போனின் ID, கடைசியாக இணைந்த நேரம் ஆகியவற்றைச் சேமிக்கும்.',
+  'It does not receive your entries, balances or notes.':
+      'உங்கள் பதிவுகள், இருப்பு, குறிப்புகள் அதற்குச் செல்லாது.',
+  'It can turn off access to the app for an account or phone.':
+      'ஒரு கணக்கு அல்லது போனுக்கான அணுகலை அது நிறுத்த முடியும்.',
+  'I agree': 'ஒப்புக்கொள்கிறேன்',
+  'Sign in with Google': 'Google மூலம் உள்நுழை',
+  'Signed in': 'உள்நுழைந்துள்ளீர்கள்',
+  'Needed only for a shared group': 'பகிர்ந்த குழுவுக்கு மட்டுமே தேவை',
+  'Sign out': 'வெளியேறு',
+  'Google sign-in is not available in this version.':
+      'இந்தப் பதிப்பில் Google உள்நுழைவு இல்லை.',
+  'Google sign-in failed. Please try again.':
+      'Google உள்நுழைவு தோல்வி. மீண்டும் முயலவும்.',
+  'The server could not be reached. Try again later.':
+      'சர்வரை அணுக முடியவில்லை. பிறகு முயலவும்.',
+  'The server did not accept the sign-in.': 'சர்வர் உள்நுழைவை ஏற்கவில்லை.',
 };

@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "wrangler dev --local",
     "keys": "node scripts/keys.js",
-    "test": "sh scripts/live_test.sh"
+    "test": "node --experimental-sqlite --test test/*.test.js && sh scripts/live_test.sh"
   },
   "devDependencies": {
     "wrangler": "^4.169.0"

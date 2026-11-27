@@ -290,4 +290,23 @@ const Map<String, String> stringsHi = {
   'Backup restored': 'बैकअप वापस आ गया',
   'This is not a backup file, or it is damaged.':
       'यह बैकअप फ़ाइल नहीं है, या खराब है।',
+  'Before you sign in': 'साइन इन से पहले',
+  'Our server stores your Google email, an ID for this phone and when it last connected.': 'हमारा सर्वर आपका Google ईमेल, इस फ़ोन की ID और आखिरी कनेक्शन का समय रखता है।',
+  'It does not receive your entries, balances or notes.':
+      'इसे आपकी प्रविष्टियाँ, बैलेंस या नोट नहीं मिलते।',
+  'It can turn off access to the app for an account or phone.':
+      'यह किसी खाते या फ़ोन के लिए ऐप बंद कर सकता है।',
+  'I agree': 'मैं सहमत हूँ',
+  'Sign in with Google': 'Google से साइन इन करें',
+  'Signed in': 'साइन इन है',
+  'Needed only for a shared group': 'केवल साझा समूह के लिए ज़रूरी',
+  'Sign out': 'साइन आउट',
+  'Google sign-in is not available in this version.':
+      'इस संस्करण में Google साइन इन उपलब्ध नहीं है।',
+  'Google sign-in failed. Please try again.':
+      'Google साइन इन नहीं हुआ। फिर कोशिश करें।',
+  'The server could not be reached. Try again later.':
+      'सर्वर तक नहीं पहुँच सके। बाद में कोशिश करें।',
+  'The server did not accept the sign-in.':
+      'सर्वर ने साइन इन स्वीकार नहीं किया।',
 };

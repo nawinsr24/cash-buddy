@@ -5,6 +5,10 @@ compatibility_date = "2026-11-01"
 # Secrets SIGNING_KEY and ADMIN_TOKEN are set with `wrangler secret put`
 # (locally in .dev.vars, which is never committed).
 
+[vars]
+# The app's Google web client ID (public). Sign-in is refused while empty.
+GOOGLE_CLIENT_ID = "725839010520-lhet238be54f4iadun9sd2qoug4i2fu6.apps.googleusercontent.com"
+
 [[d1_databases]]
 binding = "DB"
 database_name = "cash-buddy"
