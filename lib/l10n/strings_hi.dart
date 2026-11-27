@@ -378,4 +378,5 @@ const Map<String, String> stringsHi = {
       'आप दोनों का खर्च एक ही बजट में गिना जाता है।',
   'Share one budget with your partner.': 'साथी के साथ एक बजट रखें।',
   'Start home sharing, or join with a code from your partner. You then share one budget and your spending.': 'घर साझा करना शुरू करें, या साथी के कोड से जुड़ें। फिर एक बजट और खर्च साझा होगा।',
+  'of': 'कुल',
 };

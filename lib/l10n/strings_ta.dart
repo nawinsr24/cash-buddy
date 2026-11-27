@@ -379,4 +379,5 @@ const Map<String, String> stringsTa = {
       'இருவரின் செலவும் ஒரே பட்ஜெட்டில் சேரும்.',
   'Share one budget with your partner.': 'துணையுடன் ஒரே பட்ஜெட்டைப் பகிரவும்.',
   'Start home sharing, or join with a code from your partner. You then share one budget and your spending.': 'வீட்டுப் பகிர்வைத் தொடங்கவும், அல்லது துணையின் குறியீட்டால் சேரவும். பிறகு ஒரே பட்ஜெட்டும் செலவும் பகிரப்படும்.',
+  'of': 'மொத்தம்',
 };

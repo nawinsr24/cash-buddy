@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../domain/budget.dart';
 import '../domain/dates.dart';
 import '../domain/money.dart';
 import '../l10n/l10n.dart';
@@ -92,13 +93,12 @@ class _Ring extends StatelessWidget {
   Widget build(BuildContext context) {
     final limit = budget;
     final set = limit != null && limit > 0;
-    final over = set && spent > limit;
-    final color = over
-        ? context.cash.spending
-        : set && spent * 10 >= limit * 8
-        ? context.cash.debtIn
-        : context.cash.income;
-    final muted = context.text.bodySmall?.copyWith(
+    final state = set ? budgetState(spent, limit) : null;
+    final color = state == null
+        ? context.scheme.primary
+        : budgetColor(context, state);
+    final over = state == BudgetState.over;
+    final muted = context.text.bodyMedium?.copyWith(
       color: context.cash.textMuted,
     );
     return Pressable(
@@ -106,17 +106,17 @@ class _Ring extends StatelessWidget {
       child: Card(
         child: Padding(
           padding: const EdgeInsets.all(Sp.x4),
-          // a small ring on the left holding the percentage, the rest beside it
+          // laid out like the Money Health card below it
           child: Row(
             children: [
               SizedBox.square(
-                dimension: 88,
+                dimension: 76,
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
                     CircularProgressIndicator(
                       value: set ? (spent / limit).clamp(0, 1).toDouble() : 0,
-                      strokeWidth: 9,
+                      strokeWidth: 7,
                       strokeCap: StrokeCap.round,
                       color: color,
                       backgroundColor: context.scheme.primaryContainer,
@@ -128,16 +128,15 @@ class _Ring extends StatelessWidget {
                               child: FittedBox(
                                 child: Text(
                                   '${(spent * 100 / limit).round()}%',
-                                  style: context.text.titleLarge?.copyWith(
+                                  style: context.text.titleMedium?.copyWith(
                                     fontWeight: FontWeight.w800,
-                                    color: over ? color : null,
                                   ),
                                 ),
                               ),
                             )
                           : Icon(
                               Icons.add,
-                              size: 32,
+                              size: 30,
                               color: context.scheme.primary,
                               semanticLabel: tr('Set a budget'),
                             ),
@@ -150,27 +149,67 @@ class _Ring extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: muted),
+                    // the badge drops below the title when there is no room
+                    Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: Sp.x2,
+                      runSpacing: Sp.x1,
+                      children: [
+                        Eyebrow(title),
+                        if (state != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: Sp.x3,
+                              vertical: Sp.x1,
+                            ),
+                            decoration: BoxDecoration(
+                              color: color.withValues(alpha: 0.14),
+                              borderRadius: BorderRadius.circular(99),
+                            ),
+                            child: Text(
+                              tr(state.label),
+                              style: context.text.labelMedium?.copyWith(
+                                color: color,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                     if (set) ...[
+                      const SizedBox(height: Sp.x1),
                       FittedBox(
                         fit: BoxFit.scaleDown,
-                        child: Text(
-                          Money.compact((limit - spent).abs()),
-                          style: context.text.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.w800,
-                            color: color,
-                          ),
+                        alignment: Alignment.centerLeft,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.baseline,
+                          textBaseline: TextBaseline.alphabetic,
+                          children: [
+                            Text(
+                              Money.format((limit - spent).abs()),
+                              style: context.text.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                color: over ? color : null,
+                              ),
+                            ),
+                            const SizedBox(width: Sp.x2),
+                            Text(tr(over ? 'over' : 'left'), style: muted),
+                          ],
                         ),
                       ),
                       Text(
-                        '${Money.compact(spent)} / ${Money.compact(limit)}',
+                        '${tr('of')} ${Money.format(limit)}  ·  '
+                        '$daysLeft ${tr('days left')}',
                         style: muted,
                       ),
-                      Text('$daysLeft ${tr('days left')}', style: muted),
                     ],
                   ],
                 ),
               ),
+              const SizedBox(width: Sp.x1),
+              const Icon(Icons.chevron_right, size: 20),
             ],
           ),
         ),
