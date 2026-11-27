@@ -4,6 +4,12 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// Push needs google-services.json, which is not in git. Without it the app
+// builds and runs the same, just without push.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 // Release signing comes from the environment (CI secrets or local env). Without it
 // the build falls back to the debug key so local builds still work.
 val releaseStore: String? = System.getenv("CB_KEYSTORE_PATH")

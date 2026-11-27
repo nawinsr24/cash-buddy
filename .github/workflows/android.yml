@@ -26,6 +26,15 @@ jobs:
           channel: stable
           flutter-version: '3.47.7'
           cache: true
+      - name: Restore Firebase settings for push (if configured)
+        env:
+          GOOGLE_SERVICES_B64: ${{ secrets.GOOGLE_SERVICES_B64 }}
+        run: |
+          if [ -n "$GOOGLE_SERVICES_B64" ]; then
+            echo "$GOOGLE_SERVICES_B64" | base64 -d > android/app/google-services.json
+          else
+            echo "No Firebase settings: building without push"
+          fi
       - run: flutter pub get
       - run: dart run build_runner build --delete-conflicting-outputs
       - run: flutter analyze

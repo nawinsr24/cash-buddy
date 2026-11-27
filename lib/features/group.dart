@@ -15,6 +15,7 @@ import '../sync/group/replica.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
 import 'account_tile.dart';
+import 'group_keeper.dart';
 
 /// Null in builds without a server: then nothing about groups is shown.
 final groupServiceProvider = Provider<GroupService?>((ref) {
@@ -84,7 +85,18 @@ class _GroupPageState extends ConsumerState<GroupPage> {
   @override
   void initState() {
     super.initState();
+    groupSynced.addListener(_redraw);
     _open();
+  }
+
+  @override
+  void dispose() {
+    groupSynced.removeListener(_redraw);
+    super.dispose();
+  }
+
+  void _redraw() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _open() async {

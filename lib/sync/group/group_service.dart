@@ -131,6 +131,12 @@ class GroupService {
     await save();
   }
 
+  /// Tells the server where to nudge this phone.
+  Future<void> registerPush(String token) async {
+    final box = await _box();
+    await _guard(() => box.call('push', body: {'token': token}));
+  }
+
   /// Makes a change and saves it; it is sent at the next [sync].
   Future<void> change(void Function(Replica group) edit) async {
     final replica = await open();
