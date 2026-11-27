@@ -45,7 +45,7 @@ void main() {
     await a.create('Naveen');
     final code = await a.inviteCode();
     // mistyped, and well formed but with the wrong key
-    for (final bad in ['${'x' * 43}', '${'A' * 43}']) {
+    for (final bad in ['x' * 43, 'A' * 43]) {
       await expectLater(
         b.join('${code.split('.').first}.$bad', 'Priya'),
         throwsA(isA<GroupProblem>()),
