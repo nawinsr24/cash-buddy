@@ -51,6 +51,7 @@ Future<File> databaseAt(int v) async {
       'grace_days',
     ]);
   }
+  if (v < 9) await drop('debts', ['split_id']);
   if (v < 7) await drop('debts', ['affects_balance']);
   if (v < 6 && v >= 2) await drop('investment_entries', ['units']);
   if (v < 5) await drop('debt_events', ['target']);
@@ -79,7 +80,7 @@ Future<File> databaseAt(int v) async {
 void main() {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
 
-  for (var v = 1; v <= 7; v++) {
+  for (var v = 1; v <= 8; v++) {
     test('upgrading from version $v keeps the data', () async {
       final db = AppDatabase(NativeDatabase(await databaseAt(v)));
       addTearDown(db.close);

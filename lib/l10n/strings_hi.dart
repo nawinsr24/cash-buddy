@@ -213,4 +213,14 @@ const Map<String, String> stringsHi = {
   'Card spending and my budget': 'कार्ड खर्च और मेरा बजट',
   'Not until I pay the bill': 'जब तक मैं बिल न चुकाऊँ, नहीं',
   'Right when I swipe': 'स्वाइप करते ही',
+  'Split': 'बँटा हुआ',
+  'Split with others': 'दूसरों के साथ बाँटें',
+  'Split expense': 'बँटा हुआ खर्च',
+  'Equally': 'बराबर',
+  'Add person': 'व्यक्ति जोड़ें',
+  'Remove person': 'व्यक्ति हटाएँ',
+  'Person': 'व्यक्ति',
+  'You': 'आप',
+  'Your share and every other share must be above zero.':
+      'आपका और हर व्यक्ति का हिस्सा शून्य से ज़्यादा होना चाहिए।',
 };

@@ -7,6 +7,8 @@ import '../data/db.dart';
 import '../data/repo.dart';
 import '../domain/dates.dart';
 import '../domain/money.dart';
+import '../domain/split.dart';
+import 'split_form.dart';
 import '../providers.dart';
 import '../ui/art.dart';
 import 'category_picker.dart';
@@ -406,6 +408,7 @@ class _TxnTile extends ConsumerWidget {
     final managed =
         txn.source == 'debt' ||
         txn.source == 'interest' ||
+        txn.source == 'split' ||
         txn.source == 'invest';
     final color = isTransfer
         ? context.scheme.primary
@@ -429,6 +432,8 @@ class _TxnTile extends ConsumerWidget {
       else if (showAccount && account != null)
         account!.name,
       if (txn.source == 'sms') 'SMS',
+      if (ref.watch(splitExpensesProvider).value?.contains(txn.id) ?? false)
+        tr('Split'),
     ].join(' · ');
     final tile = ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: Sp.x2),
@@ -479,6 +484,13 @@ class _TxnTile extends ConsumerWidget {
         color: c.spending.withValues(alpha: 0.9),
         child: const Icon(Icons.delete_outline, color: Colors.white),
       ),
+      confirmDismiss: (_) async {
+        if (!await ref.read(repoProvider).splitSettling(txn.id)) return true;
+        if (context.mounted) {
+          toast(context, 'Remove the repayment from Debts before deleting.');
+        }
+        return false;
+      },
       onDismissed: (_) async {
         final repo = ref.read(repoProvider);
         await repo.deleteTransaction(txn.id);
@@ -790,6 +802,78 @@ class _TxnFormState extends ConsumerState<_TxnForm> {
   String? error;
   bool saving = false;
 
+  bool splitting = false;
+  final splitDraft = SplitDraft();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSplit();
+  }
+
+  /// An existing split opens with its people, and the amount shown is the
+  /// whole bill, not just my share.
+  Future<void> _loadSplit() async {
+    final edit = widget.edit;
+    if (edit == null) return;
+    final debts = await ref.read(repoProvider).splitDebts(edit.id);
+    if (debts.isEmpty || !mounted) return;
+    setState(() {
+      splitting = true;
+      splitDraft.by = SplitBy.amount;
+      splitDraft.people
+        ..clear()
+        ..addAll([
+          for (final d in debts)
+            SplitPerson()
+              ..name.text = d.counterparty
+              ..value.text = Money.edit(d.principalMinor),
+        ]);
+      _amount.text = Money.edit(
+        debts.fold(edit.amountMinor, (sum, d) => sum + d.principalMinor),
+      );
+    });
+  }
+
+  bool get _canSplit => type == 'debit' && widget.sms == null;
+
+  /// Saves the split; returns false after showing what is wrong.
+  Future<bool> _saveSplit(int total) async {
+    final repo = ref.read(repoProvider);
+    final shares = splitDraft.shares(total);
+    if (shares == null) {
+      setState(() {
+        error = tr('Your share and every other share must be above zero.');
+        saving = false;
+      });
+      return false;
+    }
+    final others = splitDraft.others(shares);
+    if (widget.edit == null) {
+      await repo.addSplit(
+        mine: shares.mine,
+        others: others,
+        accountId: accountId,
+        categoryId: categoryId,
+        date: date,
+        note: _note.text.trim(),
+        merchant: _merchant.text.trim().isEmpty ? null : _merchant.text.trim(),
+      );
+    } else {
+      await repo.updateSplit(
+        widget.edit!.id,
+        mine: shares.mine,
+        others: others,
+        accountId: accountId ?? widget.edit!.accountId,
+        categoryId: categoryId,
+        date: date,
+        note: _note.text.trim(),
+        merchant: _merchant.text.trim(),
+      );
+    }
+    return true;
+  }
+
   Future<void> _save() async {
     final amt = Money.parse(_amount.text);
     if (amt == null || amt <= 0) {
@@ -802,7 +886,9 @@ class _TxnFormState extends ConsumerState<_TxnForm> {
     });
     final repo = ref.read(repoProvider);
     try {
-      if (widget.sms != null) {
+      if (splitting && _canSplit) {
+        if (!await _saveSplit(amt)) return;
+      } else if (widget.sms != null) {
         await repo.confirmSms(
           widget.sms!.id,
           type: type,
@@ -933,6 +1019,24 @@ class _TxnFormState extends ConsumerState<_TxnForm> {
                   ),
                 ),
               ),
+            // An existing plain expense cannot be turned into a split.
+            if (_canSplit && (widget.edit == null || splitting)) ...[
+              const SizedBox(height: Sp.x2),
+              SwitchListTile.adaptive(
+                contentPadding: EdgeInsets.zero,
+                title: Text(tr('Split with others')),
+                value: splitting,
+                onChanged: widget.edit == null
+                    ? (v) => setState(() => splitting = v)
+                    : null,
+              ),
+              if (splitting)
+                SplitFields(
+                  draft: splitDraft,
+                  total: _amount,
+                  onChanged: () => setState(() {}),
+                ),
+            ],
             if (type != 'transfer') ...[
               const SizedBox(height: Sp.x4),
               CategoryField(

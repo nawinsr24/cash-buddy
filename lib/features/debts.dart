@@ -203,6 +203,14 @@ class _DebtTile extends StatelessWidget {
                 Wrap(
                   spacing: Sp.x3,
                   children: [
+                    if (d.splitId != null)
+                      Text(
+                        tr('Split expense'),
+                        style: context.text.bodySmall?.copyWith(
+                          color: color,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     Text(
                       '${(progress * 100).round()}% repaid',
                       style: context.text.bodySmall?.copyWith(
@@ -544,8 +552,12 @@ class DebtDetailPage extends ConsumerWidget {
                       ),
                     );
                     if (ok == true) {
-                      await repo.deleteDebt(debtId);
-                      if (context.mounted) Navigator.pop(context);
+                      try {
+                        await repo.deleteDebt(debtId);
+                        if (context.mounted) Navigator.pop(context);
+                      } on ValidationException catch (e) {
+                        if (context.mounted) toast(context, e.message);
+                      }
                     }
                   } else if (v == 'combined') {
                     if (context.mounted) {

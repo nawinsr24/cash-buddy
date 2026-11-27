@@ -2464,6 +2464,17 @@ class $DebtsTable extends Debts with TableInfo<$DebtsTable, Debt> {
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _splitIdMeta = const VerificationMeta(
+    'splitId',
+  );
+  @override
+  late final GeneratedColumn<String> splitId = GeneratedColumn<String>(
+    'split_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _hlcMeta = const VerificationMeta('hlc');
   @override
   late final GeneratedColumn<String> hlc = GeneratedColumn<String>(
@@ -2499,6 +2510,7 @@ class $DebtsTable extends Debts with TableInfo<$DebtsTable, Debt> {
     accountId,
     affectsBalance,
     note,
+    splitId,
     hlc,
     deletedAt,
   ];
@@ -2616,6 +2628,12 @@ class $DebtsTable extends Debts with TableInfo<$DebtsTable, Debt> {
         note.isAcceptableOrUnknown(data['note']!, _noteMeta),
       );
     }
+    if (data.containsKey('split_id')) {
+      context.handle(
+        _splitIdMeta,
+        splitId.isAcceptableOrUnknown(data['split_id']!, _splitIdMeta),
+      );
+    }
     if (data.containsKey('hlc')) {
       context.handle(
         _hlcMeta,
@@ -2691,6 +2709,10 @@ class $DebtsTable extends Debts with TableInfo<$DebtsTable, Debt> {
         DriftSqlType.string,
         data['${effectivePrefix}note'],
       )!,
+      splitId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}split_id'],
+      ),
       hlc: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}hlc'],
@@ -2722,6 +2744,7 @@ class Debt extends DataClass implements Insertable<Debt> {
   final String accountId;
   final bool affectsBalance;
   final String note;
+  final String? splitId;
   final String hlc;
   final String? deletedAt;
   const Debt({
@@ -2738,6 +2761,7 @@ class Debt extends DataClass implements Insertable<Debt> {
     required this.accountId,
     required this.affectsBalance,
     required this.note,
+    this.splitId,
     required this.hlc,
     this.deletedAt,
   });
@@ -2759,6 +2783,9 @@ class Debt extends DataClass implements Insertable<Debt> {
     map['account_id'] = Variable<String>(accountId);
     map['affects_balance'] = Variable<bool>(affectsBalance);
     map['note'] = Variable<String>(note);
+    if (!nullToAbsent || splitId != null) {
+      map['split_id'] = Variable<String>(splitId);
+    }
     map['hlc'] = Variable<String>(hlc);
     if (!nullToAbsent || deletedAt != null) {
       map['deleted_at'] = Variable<String>(deletedAt);
@@ -2783,6 +2810,9 @@ class Debt extends DataClass implements Insertable<Debt> {
       accountId: Value(accountId),
       affectsBalance: Value(affectsBalance),
       note: Value(note),
+      splitId: splitId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(splitId),
       hlc: Value(hlc),
       deletedAt: deletedAt == null && nullToAbsent
           ? const Value.absent()
@@ -2809,6 +2839,7 @@ class Debt extends DataClass implements Insertable<Debt> {
       accountId: serializer.fromJson<String>(json['accountId']),
       affectsBalance: serializer.fromJson<bool>(json['affectsBalance']),
       note: serializer.fromJson<String>(json['note']),
+      splitId: serializer.fromJson<String?>(json['splitId']),
       hlc: serializer.fromJson<String>(json['hlc']),
       deletedAt: serializer.fromJson<String?>(json['deletedAt']),
     );
@@ -2830,6 +2861,7 @@ class Debt extends DataClass implements Insertable<Debt> {
       'accountId': serializer.toJson<String>(accountId),
       'affectsBalance': serializer.toJson<bool>(affectsBalance),
       'note': serializer.toJson<String>(note),
+      'splitId': serializer.toJson<String?>(splitId),
       'hlc': serializer.toJson<String>(hlc),
       'deletedAt': serializer.toJson<String?>(deletedAt),
     };
@@ -2849,6 +2881,7 @@ class Debt extends DataClass implements Insertable<Debt> {
     String? accountId,
     bool? affectsBalance,
     String? note,
+    Value<String?> splitId = const Value.absent(),
     String? hlc,
     Value<String?> deletedAt = const Value.absent(),
   }) => Debt(
@@ -2865,6 +2898,7 @@ class Debt extends DataClass implements Insertable<Debt> {
     accountId: accountId ?? this.accountId,
     affectsBalance: affectsBalance ?? this.affectsBalance,
     note: note ?? this.note,
+    splitId: splitId.present ? splitId.value : this.splitId,
     hlc: hlc ?? this.hlc,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
   );
@@ -2895,6 +2929,7 @@ class Debt extends DataClass implements Insertable<Debt> {
           ? data.affectsBalance.value
           : this.affectsBalance,
       note: data.note.present ? data.note.value : this.note,
+      splitId: data.splitId.present ? data.splitId.value : this.splitId,
       hlc: data.hlc.present ? data.hlc.value : this.hlc,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
     );
@@ -2916,6 +2951,7 @@ class Debt extends DataClass implements Insertable<Debt> {
           ..write('accountId: $accountId, ')
           ..write('affectsBalance: $affectsBalance, ')
           ..write('note: $note, ')
+          ..write('splitId: $splitId, ')
           ..write('hlc: $hlc, ')
           ..write('deletedAt: $deletedAt')
           ..write(')'))
@@ -2937,6 +2973,7 @@ class Debt extends DataClass implements Insertable<Debt> {
     accountId,
     affectsBalance,
     note,
+    splitId,
     hlc,
     deletedAt,
   );
@@ -2957,6 +2994,7 @@ class Debt extends DataClass implements Insertable<Debt> {
           other.accountId == this.accountId &&
           other.affectsBalance == this.affectsBalance &&
           other.note == this.note &&
+          other.splitId == this.splitId &&
           other.hlc == this.hlc &&
           other.deletedAt == this.deletedAt);
 }
@@ -2975,6 +3013,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
   final Value<String> accountId;
   final Value<bool> affectsBalance;
   final Value<String> note;
+  final Value<String?> splitId;
   final Value<String> hlc;
   final Value<String?> deletedAt;
   final Value<int> rowid;
@@ -2992,6 +3031,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
     this.accountId = const Value.absent(),
     this.affectsBalance = const Value.absent(),
     this.note = const Value.absent(),
+    this.splitId = const Value.absent(),
     this.hlc = const Value.absent(),
     this.deletedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -3010,6 +3050,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
     required String accountId,
     this.affectsBalance = const Value.absent(),
     this.note = const Value.absent(),
+    this.splitId = const Value.absent(),
     required String hlc,
     this.deletedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -3034,6 +3075,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
     Expression<String>? accountId,
     Expression<bool>? affectsBalance,
     Expression<String>? note,
+    Expression<String>? splitId,
     Expression<String>? hlc,
     Expression<String>? deletedAt,
     Expression<int>? rowid,
@@ -3052,6 +3094,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
       if (accountId != null) 'account_id': accountId,
       if (affectsBalance != null) 'affects_balance': affectsBalance,
       if (note != null) 'note': note,
+      if (splitId != null) 'split_id': splitId,
       if (hlc != null) 'hlc': hlc,
       if (deletedAt != null) 'deleted_at': deletedAt,
       if (rowid != null) 'rowid': rowid,
@@ -3072,6 +3115,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
     Value<String>? accountId,
     Value<bool>? affectsBalance,
     Value<String>? note,
+    Value<String?>? splitId,
     Value<String>? hlc,
     Value<String?>? deletedAt,
     Value<int>? rowid,
@@ -3090,6 +3134,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
       accountId: accountId ?? this.accountId,
       affectsBalance: affectsBalance ?? this.affectsBalance,
       note: note ?? this.note,
+      splitId: splitId ?? this.splitId,
       hlc: hlc ?? this.hlc,
       deletedAt: deletedAt ?? this.deletedAt,
       rowid: rowid ?? this.rowid,
@@ -3138,6 +3183,9 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
     if (note.present) {
       map['note'] = Variable<String>(note.value);
     }
+    if (splitId.present) {
+      map['split_id'] = Variable<String>(splitId.value);
+    }
     if (hlc.present) {
       map['hlc'] = Variable<String>(hlc.value);
     }
@@ -3166,6 +3214,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
           ..write('accountId: $accountId, ')
           ..write('affectsBalance: $affectsBalance, ')
           ..write('note: $note, ')
+          ..write('splitId: $splitId, ')
           ..write('hlc: $hlc, ')
           ..write('deletedAt: $deletedAt, ')
           ..write('rowid: $rowid')
@@ -8629,6 +8678,7 @@ typedef $$DebtsTableCreateCompanionBuilder = DebtsCompanion Function({
   required String accountId,
   Value<bool> affectsBalance,
   Value<String> note,
+  Value<String?> splitId,
   required String hlc,
   Value<String?> deletedAt,
   Value<int> rowid,
@@ -8647,6 +8697,7 @@ typedef $$DebtsTableUpdateCompanionBuilder = DebtsCompanion Function({
   Value<String> accountId,
   Value<bool> affectsBalance,
   Value<String> note,
+  Value<String?> splitId,
   Value<String> hlc,
   Value<String?> deletedAt,
   Value<int> rowid,
@@ -8722,6 +8773,11 @@ class $$DebtsTableFilterComposer extends Composer<_$AppDatabase, $DebtsTable> {
 
   ColumnFilters<String> get note => $composableBuilder(
     column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get splitId => $composableBuilder(
+    column: $table.splitId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -8810,6 +8866,11 @@ class $$DebtsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get splitId => $composableBuilder(
+    column: $table.splitId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get hlc => $composableBuilder(
     column: $table.hlc,
     builder: (column) => ColumnOrderings(column),
@@ -8881,6 +8942,9 @@ class $$DebtsTableAnnotationComposer
   GeneratedColumn<String> get note =>
       $composableBuilder(column: $table.note, builder: (column) => column);
 
+  GeneratedColumn<String> get splitId =>
+      $composableBuilder(column: $table.splitId, builder: (column) => column);
+
   GeneratedColumn<String> get hlc =>
       $composableBuilder(column: $table.hlc, builder: (column) => column);
 
@@ -8929,6 +8993,7 @@ class $$DebtsTableTableManager
                 Value<String> accountId = const Value.absent(),
                 Value<bool> affectsBalance = const Value.absent(),
                 Value<String> note = const Value.absent(),
+                Value<String?> splitId = const Value.absent(),
                 Value<String> hlc = const Value.absent(),
                 Value<String?> deletedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -8946,6 +9011,7 @@ class $$DebtsTableTableManager
                 accountId: accountId,
                 affectsBalance: affectsBalance,
                 note: note,
+                splitId: splitId,
                 hlc: hlc,
                 deletedAt: deletedAt,
                 rowid: rowid,
@@ -8965,6 +9031,7 @@ class $$DebtsTableTableManager
                 required String accountId,
                 Value<bool> affectsBalance = const Value.absent(),
                 Value<String> note = const Value.absent(),
+                Value<String?> splitId = const Value.absent(),
                 required String hlc,
                 Value<String?> deletedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -8982,6 +9049,7 @@ class $$DebtsTableTableManager
                 accountId: accountId,
                 affectsBalance: affectsBalance,
                 note: note,
+                splitId: splitId,
                 hlc: hlc,
                 deletedAt: deletedAt,
                 rowid: rowid,

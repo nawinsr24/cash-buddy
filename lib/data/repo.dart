@@ -964,6 +964,10 @@ class Repo {
   Future<Transaction> getTransaction(String id) =>
       (db.select(db.transactions)..where((t) => t.id.equals(id))).getSingle();
 
+  /// Ledger rows written by debts; 'split' is a written-off share.
+  bool _managedByDebt(Transaction t) =>
+      const {'debt', 'interest', 'split'}.contains(t.source);
+
   Future<void> updateTransaction(
     String id, {
     String? type,
@@ -987,10 +991,13 @@ class Repo {
         'This entry is managed by an investment; edit it from the Invest tab',
       );
     }
-    if (t.source == 'debt' || t.source == 'interest') {
+    if (_managedByDebt(t)) {
       throw ValidationException(
         'This entry is managed by a debt; edit it from the Debts tab',
       );
+    }
+    if ((type ?? t.type) != 'debit' && (await splitDebts(id)).isNotEmpty) {
+      throw ValidationException('A split expense must stay an expense');
     }
     final nt = type ?? t.type;
     final amt = amountMinor ?? t.amountMinor;
@@ -1022,6 +1029,144 @@ class Repo {
     );
   }
 
+  // ───────────────────────── split expense ─────────────────────────
+  Future<List<Debt>> splitDebts(String txnId) =>
+      (db.select(db.debts)
+            ..where((d) => d.splitId.equals(txnId) & d.deletedAt.isNull())
+            ..orderBy([(d) => OrderingTerm.asc(d.id)]))
+          .get();
+
+  /// True once anyone has paid back or been written off: the split can then no
+  /// longer be edited or deleted until that is removed.
+  Future<bool> splitSettling(String txnId) async {
+    for (final d in await splitDebts(txnId)) {
+      if (_payments(await _events(d.id)).isNotEmpty) return true;
+    }
+    return false;
+  }
+
+  Future<void> _requireUnpaid(String txnId) async {
+    if (await splitSettling(txnId)) {
+      throw ValidationException(
+        'Someone has already paid back. Remove that payment from Debts first.',
+      );
+    }
+  }
+
+  void _validateShares(int mine, List<(String, int)> others) {
+    if (mine <= 0) throw ValidationException('Your share must be positive');
+    if (others.isEmpty) throw ValidationException('Add at least one person');
+    if (others.any((o) => o.$1.trim().isEmpty)) {
+      throw ValidationException('Every person needs a name');
+    }
+    if (others.any((o) => o.$2 <= 0)) {
+      throw ValidationException('Every share must be positive');
+    }
+  }
+
+  /// Saves an expense I paid for several people. [mine] counts as spending;
+  /// each of [others] becomes a receivable. Returns the expense's id.
+  Future<String> addSplit({
+    required int mine,
+    required List<(String, int)> others,
+    String? accountId,
+    String? categoryId,
+    DateTime? date,
+    String note = '',
+    String? merchant,
+  }) async {
+    _validateShares(mine, others);
+    final acc = accountId ?? await defaultAccountId();
+    return db.transaction(() async {
+      final id = await addTransaction(
+        type: 'debit',
+        amountMinor: mine,
+        accountId: acc,
+        categoryId: categoryId,
+        date: date,
+        note: note,
+        merchant: merchant,
+      );
+      await _lendShares(id, others, acc, date, note);
+      return id;
+    });
+  }
+
+  Future<void> _lendShares(
+    String txnId,
+    List<(String, int)> others,
+    String accountId,
+    DateTime? date,
+    String note,
+  ) async {
+    for (final (name, amount) in others) {
+      await createDebt(
+        direction: 'receivable',
+        counterparty: name,
+        principalMinor: amount,
+        accountId: accountId,
+        issuedOn: date,
+        note: note,
+        splitId: txnId,
+      );
+    }
+  }
+
+  Future<void> updateSplit(
+    String txnId, {
+    required int mine,
+    required List<(String, int)> others,
+    required String accountId,
+    String? categoryId,
+    required DateTime date,
+    String note = '',
+    String merchant = '',
+  }) async {
+    _validateShares(mine, others);
+    await db.transaction(() async {
+      await _requireUnpaid(txnId);
+      for (final d in await splitDebts(txnId)) {
+        await _markDebt(d, _nowIso);
+      }
+      await updateTransaction(
+        txnId,
+        type: 'debit',
+        amountMinor: mine,
+        accountId: accountId,
+        categoryId: categoryId,
+        clearCategory: categoryId == null,
+        date: date,
+        note: note,
+        merchant: merchant,
+      );
+      await _lendShares(txnId, others, accountId, date, note);
+    });
+  }
+
+  /// Marks a debt and its events deleted (or restores them when [at] is null).
+  Future<void> _markDebt(Debt d, String? at) async {
+    final events = await _events(d.id, includeDeleted: true);
+    final was = d.deletedAt;
+    await db
+        .into(db.debts)
+        .insertOnConflictUpdate(
+          d
+              .toCompanion(true)
+              .copyWith(deletedAt: Value(at), hlc: Value(clock.next())),
+        );
+    for (final e in events) {
+      if (e.deletedAt != was || e.type == 'accrual') continue;
+      await db
+          .into(db.debtEvents)
+          .insertOnConflictUpdate(
+            e
+                .toCompanion(true)
+                .copyWith(deletedAt: Value(at), hlc: Value(clock.next())),
+          );
+    }
+    await reconcileDebt(d.id);
+  }
+
   Future<void> deleteTransaction(String id) async {
     final t = await getTransaction(id);
     if (t.source == 'invest') {
@@ -1029,25 +1174,44 @@ class Repo {
         'This entry is managed by an investment; edit it from the Invest tab',
       );
     }
-    if (t.source == 'debt' || t.source == 'interest') {
+    if (_managedByDebt(t)) {
       throw ValidationException(
         'This entry is managed by a debt; edit it from the Debts tab',
       );
     }
-    await _writeTxnRow(
-      t
-          .toCompanion(true)
-          .copyWith(deletedAt: Value(_nowIso), hlc: Value(clock.next())),
-    );
+    final at = _nowIso;
+    await db.transaction(() async {
+      // A split goes as a whole: my share and what others owe for it.
+      await _requireUnpaid(id);
+      for (final d in await splitDebts(id)) {
+        await _markDebt(d, at);
+      }
+      await _writeTxnRow(
+        t
+            .toCompanion(true)
+            .copyWith(deletedAt: Value(at), hlc: Value(clock.next())),
+      );
+    });
   }
 
   Future<void> restoreTransaction(String id) async {
     final t = await getTransaction(id);
-    await _writeTxnRow(
-      t
-          .toCompanion(true)
-          .copyWith(deletedAt: const Value(null), hlc: Value(clock.next())),
-    );
+    await db.transaction(() async {
+      await _writeTxnRow(
+        t
+            .toCompanion(true)
+            .copyWith(deletedAt: const Value(null), hlc: Value(clock.next())),
+      );
+      // Only what was deleted together with it, not shares replaced earlier.
+      final gone = t.deletedAt;
+      if (gone == null) return;
+      final shares = await (db.select(
+        db.debts,
+      )..where((d) => d.splitId.equals(id) & d.deletedAt.equals(gone))).get();
+      for (final d in shares) {
+        await _markDebt(d, null);
+      }
+    });
   }
 
   Future<List<Transaction>> searchTransactions(
@@ -1154,6 +1318,7 @@ class Repo {
     String? accountId,
     String note = '',
     bool affectsBalance = true,
+    String? splitId,
   }) async {
     if (!{'receivable', 'liability'}.contains(direction)) {
       throw ValidationException('Bad direction');
@@ -1189,6 +1354,7 @@ class Repo {
               ratePeriod: Value(ratePeriod),
               note: Value(note),
               affectsBalance: Value(affectsBalance),
+              splitId: Value(splitId),
             ),
           );
       await db
@@ -1315,6 +1481,16 @@ class Repo {
       final d = await (db.select(
         db.debts,
       )..where((x) => x.id.equals(debtId))).getSingle();
+      final expense = d.splitId == null
+          ? null
+          : await (db.select(
+              db.transactions,
+            )..where((t) => t.id.equals(d.splitId!))).getSingleOrNull();
+      if (expense != null && expense.deletedAt == null) {
+        throw ValidationException(
+          'This is part of a split. Edit or delete the expense in Activity.',
+        );
+      }
       await db
           .into(db.debts)
           .insertOnConflictUpdate(
@@ -1427,6 +1603,19 @@ class Repo {
     // Chosen per loan: the principal may be left out of the balance entirely.
     final principalLegs = debt.affectsBalance;
     final legs = <String, _Leg>{};
+    String? splitCategory;
+    String? payBackTo;
+    if (debt.splitId != null) {
+      final expense = await (db.select(
+        db.transactions,
+      )..where((t) => t.id.equals(debt.splitId!))).getSingleOrNull();
+      splitCategory = expense?.categoryId;
+      // Paid by credit card: friends pay me back in money, not onto the card.
+      final paidWith = await (db.select(
+        db.accounts,
+      )..where((a) => a.id.equals(debt.accountId))).getSingleOrNull();
+      if (paidWith?.kind == 'card') payBackTo = await defaultAccountId();
+    }
     if (debtLive) {
       for (final e in live) {
         if (e.type == 'issue') {
@@ -1438,6 +1627,23 @@ class Repo {
             'debt',
             null,
           );
+        } else if (e.type == 'writeoff' && debt.splitId != null) {
+          final a = state.allocations[e.id];
+          if (a == null || a.principalMinor <= 0) continue;
+          legs['ev:${e.id}:p'] = _Leg(
+            'credit',
+            a.principalMinor,
+            e.date,
+            'debt',
+            null,
+          );
+          legs['ev:${e.id}:i'] = _Leg(
+            'debit',
+            a.principalMinor,
+            e.date,
+            'split',
+            splitCategory,
+          );
         } else if (e.type == 'repayment') {
           final a = state.allocations[e.id];
           if (a == null) continue;
@@ -1448,6 +1654,7 @@ class Repo {
               e.date,
               'debt',
               null,
+              payBackTo,
             );
           }
           if (a.interestMinor > 0) {
@@ -1472,20 +1679,21 @@ class Repo {
         await (db.select(db.transactions)..where(
               (t) =>
                   t.sourceRef.isIn(refs) &
-                  (t.source.equals('debt') | t.source.equals('interest')),
+                  t.source.isIn(const ['debt', 'interest', 'split']),
             ))
             .get();
     final byRef = {for (final t in existingLegs) t.sourceRef!: t};
     for (final entry in legs.entries) {
       final cur = byRef[entry.key];
       final l = entry.value;
+      final account = l.accountId ?? debt.accountId;
       final same =
           cur != null &&
           cur.deletedAt == null &&
           cur.type == l.type &&
           cur.amountMinor == l.amount &&
           cur.date == l.date &&
-          cur.accountId == debt.accountId &&
+          cur.accountId == account &&
           cur.categoryId == l.categoryId &&
           cur.source == l.source &&
           cur.merchant == debt.counterparty;
@@ -1495,13 +1703,17 @@ class Repo {
           id: 'led:${entry.key}',
           type: l.type,
           amountMinor: l.amount,
-          accountId: debt.accountId,
+          accountId: account,
           date: l.date,
           hlc: clock.next(),
           categoryId: Value(l.categoryId),
           merchant: Value(debt.counterparty),
           note: Value(
-            isRec
+            l.source == 'split'
+                ? 'Written off: ${debt.counterparty}'
+                : debt.splitId != null
+                ? 'Split: ${debt.counterparty}'
+                : isRec
                 ? 'Lent: ${debt.counterparty}'
                 : 'Borrowed: ${debt.counterparty}',
           ),
@@ -1861,5 +2073,15 @@ class _Leg {
   final String date;
   final String source;
   final String? categoryId;
-  _Leg(this.type, this.amount, this.date, this.source, this.categoryId);
+
+  /// Null: the debt's own account.
+  final String? accountId;
+  _Leg(
+    this.type,
+    this.amount,
+    this.date,
+    this.source,
+    this.categoryId, [
+    this.accountId,
+  ]);
 }

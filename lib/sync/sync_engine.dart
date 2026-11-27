@@ -85,7 +85,8 @@ class SyncEngine {
   /// the new field to [_addedLater].
   ///
   /// 2: credit card fields on accounts.
-  static const schema = 2;
+  /// 3: splitId on debts (nullable, so it needs no default below).
+  static const schema = 3;
 
   /// Required fields that segments from earlier releases may not have, with
   /// the value they get when this phone has no copy of the row either.

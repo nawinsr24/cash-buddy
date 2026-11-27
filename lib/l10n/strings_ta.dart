@@ -217,4 +217,13 @@ const Map<String, String> stringsTa = {
       'வரலாற்றை இழக்காமல் எப்போது வேண்டுமானாலும் மாற்றலாம்.',
   'Cash and each bank account kept apart.':
       'பணமும் ஒவ்வொரு வங்கிக் கணக்கும் தனித்தனியாக.',
+  'Split': 'பிரிக்கப்பட்டது',
+  'Split with others': 'மற்றவர்களுடன் பிரிக்கவும்',
+  'Split expense': 'பிரிக்கப்பட்ட செலவு',
+  'Equally': 'சமமாக',
+  'Add person': 'நபரைச் சேர்',
+  'Remove person': 'நபரை நீக்கு',
+  'Person': 'நபர்',
+  'You': 'நீங்கள்',
+  'Your share and every other share must be above zero.': 'உங்கள் பங்கும் மற்ற ஒவ்வொருவரின் பங்கும் பூச்சியத்தை விட அதிகமாக இருக்க வேண்டும்.',
 };

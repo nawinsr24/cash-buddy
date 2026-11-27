@@ -392,3 +392,14 @@ final transactionsProvider = FutureProvider.autoDispose<List<Transaction>>((
   final f = ref.watch(txnFilterProvider);
   return ref.watch(repoProvider).searchTransactions(f, limit: 1000);
 });
+
+/// Expenses that are split with others, to label them in lists.
+final splitExpensesProvider = FutureProvider.autoDispose<Set<String>>((ref) {
+  return _tick(
+    ref,
+    () async => {
+      for (final d in await ref.watch(repoProvider).debts())
+        if (d.splitId != null) d.splitId!,
+    },
+  );
+});

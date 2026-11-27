@@ -86,6 +86,8 @@ class Debts extends Table {
   BoolColumn get affectsBalance =>
       boolean().withDefault(const Constant(true))();
   TextColumn get note => text().withDefault(const Constant(''))();
+  // Split expense: the transaction holding my own share. Null for a loan.
+  TextColumn get splitId => text().nullable()();
   TextColumn get hlc => text()();
   TextColumn get deletedAt => text().nullable()();
   @override
@@ -243,7 +245,7 @@ class AppDatabase extends _$AppDatabase {
   static AppDatabase open() => AppDatabase(openAppDatabase());
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -293,6 +295,9 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(accounts, accounts.interestBps);
         await m.addColumn(accounts, accounts.ratePeriod);
         await m.addColumn(accounts, accounts.graceDays);
+      }
+      if (from < 9) {
+        await m.addColumn(debts, debts.splitId);
       }
       if (from < 3) {
         // Chit funds became custom monthly plans: instalment = monthly amount,
