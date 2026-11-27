@@ -280,12 +280,4 @@ const Map<String, String> stringsTa = {
   'Schedule': 'அட்டவணை',
   'Press and hold a payment to remove it.':
       'கட்டணத்தை நீக்க அழுத்திப் பிடிக்கவும்.',
-  'Safe to spend today': 'இன்று பாதுகாப்பாகச் செலவிடலாம்',
-  'Nothing left for today.': 'இன்றைக்கு எதுவும் மீதமில்லை.',
-  'How this is worked out': 'இது எப்படிக் கணக்கிடப்பட்டது',
-  'Budget left this morning': 'இன்று காலை மீதமிருந்த பட்ஜெட்',
-  'still due': 'நிலுவை',
-  'Days left, with today': 'இன்று உட்பட மீதமுள்ள நாட்கள்',
-  'For each day': 'ஒவ்வொரு நாளுக்கும்',
-  'Already spent today': 'இன்று செலவானது',
 };

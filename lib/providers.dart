@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'data/db.dart';
 import 'platform/features.dart';
 import 'data/budget_repo.dart';
-import 'data/safe_repo.dart';
 import 'data/card_repo.dart';
 import 'domain/card.dart';
 import 'data/insights_repo.dart';
@@ -338,10 +337,6 @@ final budgetStatusProvider = FutureProvider.autoDispose<BudgetStatus?>((ref) {
     ref,
     () => ref.watch(repoProvider).budgetStatus(now.year, now.month),
   );
-});
-
-final safeToSpendProvider = FutureProvider.autoDispose<SafeToSpend?>((ref) {
-  return _tick(ref, () => ref.watch(repoProvider).safeToSpend());
 });
 
 final budgetDailyProvider = FutureProvider.autoDispose<List<int>>((ref) {
