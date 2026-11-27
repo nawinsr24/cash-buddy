@@ -436,7 +436,8 @@ class _TxnTile extends ConsumerWidget {
       else if (showAccount && account != null)
         account!.name,
       if (txn.source == 'sms') 'SMS',
-      if (txn.home == true) tr('Home'),
+      if (txn.uncounted == true && ref.watch(homeOnProvider).value == true)
+        tr('Not counted'),
       if (ref.watch(splitExpensesProvider).value?.contains(txn.id) ?? false)
         tr('Split'),
     ].join(' · ');
@@ -810,25 +811,16 @@ class _TxnFormState extends ConsumerState<_TxnForm> {
   bool splitting = false;
   final splitDraft = SplitDraft();
 
-  // Mine or Home, offered only while home sharing is on.
+  // "Don't count this", offered only while home sharing is on.
   bool inHome = false;
-  late bool home = widget.edit?.home ?? false;
-  Set<String> homeCats = const {};
+  late bool uncounted = widget.edit?.uncounted ?? false;
 
   Future<void> _loadHome() async {
-    final repo = ref.read(repoProvider);
-    if (await repo.homeMember() == null) return;
-    final cats = await repo.homeCategories();
-    if (!mounted) return;
-    setState(() {
-      inHome = true;
-      homeCats = cats;
-      if (widget.edit == null) home = cats.contains(categoryId ?? '');
-    });
+    if (await ref.read(repoProvider).homeMember() == null) return;
+    if (mounted) setState(() => inHome = true);
   }
 
-  bool get _canMarkHome =>
-      inHome && type == 'debit' && !splitting && widget.sms == null;
+  bool get _canExclude => inHome && type == 'debit' && !splitting;
 
   @override
   void initState() {
@@ -917,6 +909,7 @@ class _TxnFormState extends ConsumerState<_TxnForm> {
       } else if (widget.sms != null) {
         await repo.confirmSms(
           widget.sms!.id,
+          uncounted: _canExclude && uncounted,
           type: type,
           amountMinor: amt,
           accountId: accountId,
@@ -927,9 +920,8 @@ class _TxnFormState extends ConsumerState<_TxnForm> {
           merchant: _merchant.text.trim().isEmpty ? '' : _merchant.text.trim(),
         );
       } else if (widget.edit == null) {
-        if (_canMarkHome) await repo.rememberHomeCategory(categoryId, home);
         await repo.addTransaction(
-          home: _canMarkHome && home,
+          uncounted: _canExclude && uncounted,
           type: type,
           amountMinor: amt,
           accountId: accountId,
@@ -943,7 +935,7 @@ class _TxnFormState extends ConsumerState<_TxnForm> {
               : _merchant.text.trim(),
         );
       } else {
-        if (_canMarkHome) await repo.setHome(widget.edit!.id, home);
+        if (_canExclude) await repo.setUncounted(widget.edit!.id, uncounted);
         await repo.updateTransaction(
           widget.edit!.id,
           type: type,
@@ -1071,16 +1063,13 @@ class _TxnFormState extends ConsumerState<_TxnForm> {
               CategoryField(
                 cats: cats,
                 categoryId: categoryId,
-                onChanged: (v) => setState(() {
-                  categoryId = v;
-                  if (widget.edit == null) home = homeCats.contains(v ?? '');
-                }),
+                onChanged: (v) => setState(() => categoryId = v),
               ),
             ],
-            if (_canMarkHome)
-              MineHomeCards(
-                home: home,
-                onChanged: (v) => setState(() => home = v),
+            if (_canExclude)
+              DontCountTile(
+                value: uncounted,
+                onChanged: (v) => setState(() => uncounted = v),
               ),
             if (split || (cards.isNotEmpty && type != 'transfer')) ...[
               const SizedBox(height: Sp.x4),

@@ -73,6 +73,9 @@ void main() {
     await tester.enterText(find.byType(TextField), 'Naveen');
     await tapText(tester, 'OK');
     await wait(tester);
+    await tapText(tester, 'Only from today');
+    await wait(tester);
+    expect(find.text('Show my balance to my partner'), findsOneWidget);
     expect(find.text('Naveen'), findsOneWidget);
     expect(find.text('Invite your partner'), findsOneWidget);
     expect(await tester.runAsync(() => env.repo.homeMember()), isNotNull);

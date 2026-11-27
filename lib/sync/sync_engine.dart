@@ -89,7 +89,8 @@ class SyncEngine {
   /// 4: EMI loan fields on debts (all nullable).
   /// 5: the Mine/Home mark on transactions (nullable).
   /// 6: the Mine/Home mark on loans and investments (nullable).
-  static const schema = 6;
+  /// 7: "Don't count this" on transactions, debts and investments (nullable).
+  static const schema = 7;
 
   /// Required fields that segments from earlier releases may not have, with
   /// the value they get when this phone has no copy of the row either.

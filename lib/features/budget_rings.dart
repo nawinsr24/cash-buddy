@@ -11,8 +11,8 @@ import '../ui/widgets.dart';
 import 'budget.dart';
 import 'group.dart';
 
-/// This month's budgets as round cards: mine, and the home's beside it while
-/// home sharing is on. A card with no budget shows only a plus.
+/// This month's budget as a round card, shared by both while home sharing is
+/// on. With no budget it shows only a plus.
 class BudgetRings extends ConsumerWidget {
   const BudgetRings({super.key});
 
@@ -23,35 +23,20 @@ class BudgetRings extends ConsumerWidget {
     if (!mine.hasValue) return const SizedBox.shrink();
     final today = ref.watch(repoProvider).today;
     final days = Dates.daysInMonth(today.year, today.month) - today.day;
-    final cards = [
-      _Ring(
-        key: const ValueKey('my-budget'),
-        title: tr(home == null ? 'Budget' : 'Mine'),
-        spent: mine.value?.spent ?? 0,
-        budget: mine.value?.budget,
-        daysLeft: days,
-        onTap: () => pushReveal(context, const BudgetPage()),
-      ),
-      if (home != null)
-        _Ring(
-          key: const ValueKey('home-budget'),
-          title: tr('Home'),
-          spent: home.homeTotal,
-          budget: home.homeBudget,
-          daysLeft: days,
-          onTap: () => _setHomeBudget(context, ref, home.homeBudget),
-        ),
-    ];
-    if (cards.length == 1) return cards.single;
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(child: cards[0]),
-          const SizedBox(width: Sp.x3),
-          Expanded(child: cards[1]),
-        ],
-      ),
+    // While sharing there is one budget for both; my earlier one is the
+    // starting figure until it is changed.
+    final budget = home == null
+        ? mine.value?.budget
+        : home.budget ?? mine.value?.budget;
+    return _Ring(
+      key: const ValueKey('my-budget'),
+      title: tr('Budget'),
+      spent: home == null ? mine.value?.spent ?? 0 : home.sharedTotal,
+      budget: budget,
+      daysLeft: days,
+      onTap: home == null
+          ? () => pushReveal(context, const BudgetPage())
+          : () => _setHomeBudget(context, ref, budget),
     );
   }
 
@@ -66,7 +51,7 @@ class BudgetRings extends ConsumerWidget {
     final ok = await showDialog<bool>(
       context: context,
       builder: (d) => AlertDialog(
-        title: Text(tr('Home budget')),
+        title: Text(tr('Budget')),
         content: AmountField(controller: c, autofocus: true),
         actions: [
           TextButton(

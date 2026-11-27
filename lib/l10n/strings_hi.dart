@@ -346,32 +346,36 @@ const Map<String, String> stringsHi = {
   'Your entries, balances and notes are not sent.':
       'आपकी प्रविष्टियाँ, बैलेंस और नोट नहीं भेजे जाते।',
   'Access to the app can be turned off.': 'ऐप की पहुँच बंद की जा सकती है।',
-  'My own spending': 'मेरा अपना खर्च',
-  'Home budget': 'घर का बजट',
   'Set': 'तय करें',
   'left': 'बाकी',
   'Partner': 'साथी',
   'Run a home together?': 'साथ घर चलाते हैं?',
-  'Track house spending with your partner. Your own money stays private.':
-      'अपने साथी के साथ घर का खर्च रखें। आपका अपना पैसा निजी रहता है।',
   'Set it up': 'शुरू करें',
-  'My spending': 'मेरा खर्च',
-  'Home spending': 'घर का खर्च',
-  'No home spending in this period': 'इस अवधि में घर का खर्च नहीं',
   'Mine': 'मेरा',
-  'Your partner will see this.': 'आपका साथी इसे देखेगा।',
   'Update the app to see newer home entries.':
       'नई प्रविष्टियाँ देखने के लिए ऐप अपडेट करें।',
-  'Add house spends with the Home button. Your dashboard shows both of you.':
-      'घर का खर्च "घर" बटन से जोड़ें। डैशबोर्ड पर दोनों का दिखेगा।',
   'Invite your partner': 'साथी को बुलाएँ',
   'Home sharing': 'घर साझा करें',
   'Share house spending with your partner': 'साथी के साथ घर का खर्च साझा करें',
-  'Start home sharing, or join with a code from your partner. Only what you mark Home is shared.': 'घर साझा करना शुरू करें, या साथी के कोड से जुड़ें। केवल "घर" वाली चीज़ें साझा होती हैं।',
   'Start home sharing': 'घर साझा करना शुरू करें',
   'Stop home sharing?': 'घर साझा करना बंद करें?',
-  'Counts as': 'किसमें गिनें',
   'From account': 'किस खाते से',
   'days left': 'दिन बाकी',
   'Set a budget': 'बजट तय करें',
+  "Don't count this": 'इसे न गिनें',
+  "Not in the budget. Your partner won't see it.":
+      'बजट में नहीं। आपका साथी इसे नहीं देखेगा।',
+  'Not counted': 'नहीं गिना',
+  'Show my balance to my partner': 'मेरा बैलेंस साथी को दिखाएँ',
+  'Waiting for your partner to switch it on.': 'साथी के चालू करने का इंतज़ार।',
+  'Both must switch it on.': 'दोनों को चालू करना होगा।',
+  'Share your earlier spending too?': 'पुराना खर्च भी साझा करें?',
+  'Your partner will see what you spend. Choose how far back.':
+      'साथी आपका खर्च देखेगा। चुनें कब से।',
+  'Only from today': 'केवल आज से',
+  'Include earlier': 'पुराना भी',
+  'What you both spend counts in one budget.':
+      'आप दोनों का खर्च एक ही बजट में गिना जाता है।',
+  'Share one budget with your partner.': 'साथी के साथ एक बजट रखें।',
+  'Start home sharing, or join with a code from your partner. You then share one budget and your spending.': 'घर साझा करना शुरू करें, या साथी के कोड से जुड़ें। फिर एक बजट और खर्च साझा होगा।',
 };

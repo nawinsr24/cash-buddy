@@ -147,7 +147,7 @@ class _AddLoanState extends ConsumerState<AddLoanSheet> {
   final emi = TextEditingController();
   String? accountId, error;
   var inBudget = true;
-  var home = false;
+  var uncounted = false;
 
   int get _calculated => emiFor(
     Money.parse(owed.text) ?? 0,
@@ -173,7 +173,7 @@ class _AddLoanState extends ConsumerState<AddLoanSheet> {
       context,
       ref,
       (repo) => repo.addLoan(
-        home: home,
+        uncounted: uncounted,
         kind: kind,
         lender: lender.text.trim(),
         owed: amount,
@@ -242,7 +242,10 @@ class _AddLoanState extends ConsumerState<AddLoanSheet> {
               onChanged: (v) => setState(() => accountId = v),
             ),
           ),
-        MineHomeCards(home: home, onChanged: (v) => setState(() => home = v)),
+        DontCountTile(
+          value: uncounted,
+          onChanged: (v) => setState(() => uncounted = v),
+        ),
         SwitchListTile.adaptive(
           contentPadding: EdgeInsets.zero,
           title: Text(tr('Count the full EMI in my budget')),
@@ -599,9 +602,9 @@ class LoanPage extends ConsumerWidget {
               ),
             ),
           ),
-          MineHomeCards(
-            home: l.debt.home ?? false,
-            onChanged: (v) => repo.setLoanHome(debtId, v),
+          DontCountTile(
+            value: l.debt.uncounted ?? false,
+            onChanged: (v) => repo.setLoanUncounted(debtId, v),
           ),
           if (open) ...[
             const SizedBox(height: Sp.x3),

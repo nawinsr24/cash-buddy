@@ -10,7 +10,9 @@ import '../sync/group/replica.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
 import 'account_tile.dart';
+import '../data/home_repo.dart';
 import 'group_keeper.dart';
+import 'partner_balance.dart';
 
 /// Null in builds without a server: then nothing about groups is shown.
 final groupServiceProvider = Provider<GroupService?>((ref) {
@@ -151,10 +153,36 @@ class _GroupPageState extends ConsumerState<GroupPage> {
     final name = await _ask('Your name');
     if (name == null) return;
     await _attempt(() async {
+      if (!mounted) return;
+      final earlier = await _askEarlier();
+      if (earlier == null) return;
+      final repo = ref.read(repoProvider);
       joining ? await _service.join(code!, name) : await _service.create(name);
+      await repo.chooseSharing(earlierToo: earlier);
       await _open();
     });
   }
+
+  /// Null when the dialog is dismissed: nothing is set up then.
+  Future<bool?> _askEarlier() => showDialog<bool>(
+    context: context,
+    builder: (d) => AlertDialog(
+      title: Text(tr('Share your earlier spending too?')),
+      content: Text(
+        tr('Your partner will see what you spend. Choose how far back.'),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(d, false),
+          child: Text(tr('Only from today')),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(d, true),
+          child: Text(tr('Include earlier')),
+        ),
+      ],
+    ),
+  );
 
   Future<void> _invite() => _attempt(() async {
     final code = await _service.inviteCode();
@@ -252,7 +280,7 @@ class _GroupPageState extends ConsumerState<GroupPage> {
     children: [
       Text(
         tr(
-          'Start home sharing, or join with a code from your partner. Only what you mark Home is shared.',
+          'Start home sharing, or join with a code from your partner. You then share one budget and your spending.',
         ),
       ),
       const SizedBox(height: Sp.x4),
@@ -277,11 +305,7 @@ class _GroupPageState extends ConsumerState<GroupPage> {
           child: Text(tr(_problem!)),
         ),
       if (g.needsUpdate) Text(tr('Update the app to see newer home entries.')),
-      Text(
-        tr(
-          'Add house spends with the Home button. Your dashboard shows both of you.',
-        ),
-      ),
+      Text(tr('What you both spend counts in one budget.')),
       const SizedBox(height: Sp.x4),
       for (final e in GroupService.ofKind(g, 'member'))
         ListTile(
@@ -289,6 +313,19 @@ class _GroupPageState extends ConsumerState<GroupPage> {
           leading: const Icon(Icons.person_outline),
           title: Text(e.data['name'] as String),
         ),
+      FutureBuilder<bool>(
+        future: ref.read(repoProvider).showsMyBalance,
+        builder: (context, snap) => SwitchListTile.adaptive(
+          contentPadding: EdgeInsets.zero,
+          title: Text(tr('Show my balance to my partner')),
+          subtitle: Text(tr('Both must switch it on.')),
+          value: snap.data ?? false,
+          onChanged: (v) async {
+            await setBalanceSharing(ref, v);
+            if (mounted) setState(() {});
+          },
+        ),
+      ),
       const SizedBox(height: Sp.x4),
       FilledButton.icon(
         icon: const Icon(Icons.person_add_alt),

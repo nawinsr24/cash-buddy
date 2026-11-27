@@ -938,7 +938,7 @@ class Repo {
     String source = 'manual',
     String? sourceRef,
     String? id,
-    bool? home,
+    bool? uncounted,
   }) async {
     final acc = accountId ?? await defaultAccountId();
     _validateTxn(type, amountMinor, toAccountId, acc);
@@ -958,7 +958,7 @@ class Repo {
         merchant: Value(merchant),
         source: Value(source),
         sourceRef: Value(sourceRef),
-        home: Value(home),
+        uncounted: Value(uncounted),
       ),
     );
     return tid;
@@ -1027,7 +1027,7 @@ class Repo {
         merchant: Value(merchant ?? t.merchant),
         source: Value(t.source),
         sourceRef: Value(t.sourceRef),
-        home: Value(t.home),
+        uncounted: Value(t.uncounted),
         hlc: Value(clock.next()),
       ),
     );
@@ -1742,7 +1742,7 @@ class Repo {
           cur.categoryId == l.categoryId &&
           cur.source == l.source &&
           cur.merchant == debt.counterparty &&
-          (!isLoan || (cur.home ?? false) == (debt.home ?? false));
+          (!isLoan || (cur.uncounted ?? false) == (debt.uncounted ?? false));
       if (same) continue;
       await _writeTxnRow(
         TransactionsCompanion.insert(
@@ -1772,7 +1772,7 @@ class Repo {
           source: Value(l.source),
           sourceRef: Value(entry.key),
           deletedAt: const Value(null),
-          home: isLoan ? Value(debt.home) : const Value.absent(),
+          uncounted: isLoan ? Value(debt.uncounted) : const Value.absent(),
         ),
       );
     }
@@ -1849,7 +1849,7 @@ class Repo {
     DateRange r, {
     bool sub = false,
   }) async {
-    final mine = type == 'debit' ? await mineOnly() : '';
+    final mine = type == 'debit' ? await countedOnly() : '';
     final rows = await db
         .customSelect(
           '''
@@ -2033,6 +2033,7 @@ class Repo {
     String? paymentMethod,
     DateTime? date,
     String? type,
+    bool? uncounted,
   }) async {
     return db.transaction(() async {
       final s = await (db.select(
@@ -2054,6 +2055,7 @@ class Repo {
         note: note ?? '',
         source: 'sms',
         sourceRef: s.fingerprint,
+        uncounted: uncounted,
         id: 'sms:${s.fingerprint}',
       );
       await (db.update(db.smsInbox)..where((x) => x.id.equals(smsId))).write(

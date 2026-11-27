@@ -16,6 +16,7 @@ import '../ui/theme.dart';
 import '../ui/emoji.dart';
 import 'budget_rings.dart';
 import 'home_share.dart';
+import 'partner_balance.dart';
 import 'card_warning.dart';
 import 'category_insight_page.dart';
 import 'performance_sheet.dart';
@@ -42,7 +43,6 @@ class DashboardPage extends ConsumerWidget {
     final settings = ref.watch(settingsProvider).value;
     final pending = ref.watch(pendingSmsProvider).value?.length ?? 0;
     final invest = ref.watch(investSummariesProvider).value ?? const [];
-    final home = ref.watch(homeOnProvider).value == true;
     final homePeriod = ref.watch(homePeriodProvider).value;
     return Scaffold(
       appBar: AppBar(
@@ -106,10 +106,12 @@ class DashboardPage extends ConsumerWidget {
             const SizedBox(height: Sp.x3),
             if ((settings?.smsEnabled ?? false) && pending > 0)
               _SmsBanner(count: pending, onTap: onOpenInbox),
-            _BalanceCard(
-              total: d.totalBalance,
-              split: settings?.split ?? false,
-              trend: _trend(d),
+            BalanceRow(
+              mine: _BalanceCard(
+                total: d.totalBalance,
+                split: settings?.split ?? false,
+                trend: _trend(d),
+              ),
             ),
             const SizedBox(height: Sp.x3),
             const HomeInviteCard(),
@@ -128,27 +130,16 @@ class DashboardPage extends ConsumerWidget {
             ],
             const SectionTitle('Insights'),
             const InsightsStrip(),
-            SectionTitle(home ? 'My spending' : 'Where your money went'),
+            const SectionTitle('Where your money went'),
+            // while sharing, one chart for both of us
             MoneyWent(
-              main: d.spendingByCategory,
-              subs: d.spendingBySub,
-              total: home
-                  ? d.spendingByCategory.fold(0, (s, c) => s + c.totalMinor)
-                  : d.spending,
+              main: homePeriod?.main ?? d.spendingByCategory,
+              subs: homePeriod?.subs ?? d.spendingBySub,
+              total: homePeriod?.total ?? d.spending,
               range: d.range,
               emptyText: 'No spending in this period',
+              tappable: homePeriod == null,
             ),
-            if (homePeriod != null) ...[
-              const SectionTitle('Home spending'),
-              MoneyWent(
-                main: homePeriod.main,
-                subs: homePeriod.subs,
-                total: homePeriod.homeTotal,
-                range: d.range,
-                emptyText: 'No home spending in this period',
-                tappable: false,
-              ),
-            ],
           ],
         ),
       ),

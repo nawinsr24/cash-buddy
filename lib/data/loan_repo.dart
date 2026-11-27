@@ -70,7 +70,7 @@ extension LoanRepo on Repo {
     String? accountId,
     DateTime? asOf,
     bool emiInBudget = true,
-    bool home = false,
+    bool uncounted = false,
   }) async {
     if (annualMilli < 0) throw ValidationException('Rate cannot be negative');
     if (months <= 0 || months > 600) {
@@ -99,7 +99,7 @@ extension LoanRepo on Repo {
           emiMinor: Value(pay),
           emiDay: Value(emiDay),
           emiInBudget: Value(emiInBudget),
-          home: Value(home),
+          uncounted: Value(uncounted),
           hlc: Value(clock.next()),
         ),
       );

@@ -48,11 +48,7 @@ class HomeInviteCard extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  Text(
-                    tr(
-                      'Track house spending with your partner. Your own money stays private.',
-                    ),
-                  ),
+                  Text(tr('Share one budget with your partner.')),
                   const SizedBox(height: Sp.x3),
                   FilledButton(
                     onPressed: () => Navigator.of(context).push(

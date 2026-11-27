@@ -396,7 +396,7 @@ extension InvestRepo on Repo {
             cur.date == e.date &&
             cur.accountId == account &&
             cur.merchant == inv.name &&
-            (cur.home ?? false) == (inv.home ?? false);
+            (cur.uncounted ?? false) == (inv.uncounted ?? false);
         if (same) continue;
         await db
             .into(db.transactions)
@@ -418,7 +418,7 @@ extension InvestRepo on Repo {
                 source: const Value('invest'),
                 sourceRef: Value(ref),
                 deletedAt: const Value(null),
-                home: Value(inv.home),
+                uncounted: Value(inv.uncounted),
               ),
             );
       } else if (cur != null && cur.deletedAt == null) {

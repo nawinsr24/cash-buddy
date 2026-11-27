@@ -249,7 +249,7 @@ extension BudgetRepo on Repo {
 
   Future<Map<String, int>> _spentByMainCategory(DateRange r) async {
     final waits = await _cardsWaitForBill();
-    final mine = await mineOnly();
+    final mine = await countedOnly();
     final rows = await db
         .customSelect(
           '''SELECT COALESCE(p.id, c.id, '_none') AS cid, SUM(t.amount_minor) AS s
@@ -394,7 +394,7 @@ extension BudgetRepo on Repo {
     final waits = await _cardsWaitForBill();
     final rows = await db
         .customSelect(
-          "SELECT date AS d, SUM(amount_minor) AS s FROM transactions WHERE type='debit' AND source NOT IN ('debt','invest') AND deleted_at IS NULL AND date BETWEEN ? AND ? ${waits ? "AND account_id NOT IN (SELECT id FROM accounts WHERE kind = 'card')" : ''} ${await mineOnly('transactions')} GROUP BY date",
+          "SELECT date AS d, SUM(amount_minor) AS s FROM transactions WHERE type='debit' AND source NOT IN ('debt','invest') AND deleted_at IS NULL AND date BETWEEN ? AND ? ${waits ? "AND account_id NOT IN (SELECT id FROM accounts WHERE kind = 'card')" : ''} ${await countedOnly('transactions')} GROUP BY date",
           variables: [Variable(r.startStr), Variable(r.endStr)],
           readsFrom: {db.transactions, db.accounts},
         )

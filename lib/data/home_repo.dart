@@ -1,5 +1,6 @@
-/// Mine and Home. A spend I mark Home leaves my balance like any other, but
-/// counts in the home budget instead of mine, and my partner sees it.
+/// Home sharing: one budget and one spending total for two people. Everything
+/// spent counts and is shared, unless ticked "Don't count this", which keeps
+/// it out of the budget and off the partner's phone.
 library;
 
 import 'dart:convert';
@@ -13,15 +14,15 @@ import 'db.dart';
 import 'invest_repo.dart';
 import 'repo.dart';
 
-const _spend =
-    "t.type='debit' AND t.source NOT IN ('debt','invest') AND t.deleted_at IS NULL";
+/// What counts as spending between us: money paid out, including chit fund
+/// instalments, but not money lent, stocks or mutual funds.
+const _spend = '''
+t.type = 'debit' AND t.source <> 'debt' AND t.deleted_at IS NULL
+AND COALESCE(t.uncounted, 0) = 0
+AND (t.source <> 'invest' OR EXISTS (
+  SELECT 1 FROM investment_entries e JOIN investments i ON i.id = e.investment_id
+  WHERE 'inv:' || e.id = t.source_ref AND i.kind = 'custom'))''';
 
-/// What counts as home spending: anything I marked, including chit fund
-/// instalments, but not money that was only lent.
-const _homeSpend =
-    "t.type='debit' AND t.source <> 'debt' AND t.deleted_at IS NULL AND t.home = 1";
-
-/// One home spend, mine or my partner's.
 class HomeSpend {
   final String paidBy, category;
   final String? sub;
@@ -37,102 +38,120 @@ class HomeSpend {
   );
 }
 
+/// A partner's balance, shown only while you both share.
+class PartnerBalance {
+  final String name;
+  final int amount;
+  final DateTime at;
+  const PartnerBalance(this.name, this.amount, this.at);
+}
+
 class HomeSummary {
   final String me;
 
-  /// My own spending and what I put into the home.
-  final int mine, iPaidHome;
-  final List<HomeSpend> home;
-  final Map<String, String> names;
-  final int? homeBudget;
+  /// Mine and my partner's counted spends in the range.
+  final List<HomeSpend> spends;
+
+  /// The part of [spends] both phones have: what the budget is measured on.
+  final int sharedTotal;
+  final int? budget;
   final List<CatSlice> main, subs;
+  final bool showMyBalance;
+  final List<PartnerBalance> partnerBalances;
   const HomeSummary({
     required this.me,
-    required this.mine,
-    required this.iPaidHome,
-    required this.home,
-    required this.names,
-    required this.homeBudget,
+    required this.spends,
+    required this.sharedTotal,
+    required this.budget,
     required this.main,
     required this.subs,
+    required this.showMyBalance,
+    required this.partnerBalances,
   });
 
-  int get homeTotal => home.fold(0, (s, e) => s + e.amount);
-  int get iPaidInTotal => mine + iPaidHome;
+  int get total => spends.fold(0, (s, e) => s + e.amount);
+}
 
-  /// Member -> what they paid for the home.
-  Map<String, int> get byPerson {
-    final out = <String, int>{me: 0};
-    for (final e in home) {
-      out[e.paidBy] = (out[e.paidBy] ?? 0) + e.amount;
-    }
-    return out;
-  }
+/// Whether every other member has switched balance sharing on.
+bool _allShareBalance(Map<String, Entry> entries, String me) {
+  final others = [
+    for (final e in entries.values)
+      if (e.data['kind'] == 'member' && e.id != 'member:$me')
+        e.id.substring('member:'.length),
+  ];
+  return others.isNotEmpty &&
+      others.every((m) => entries['balance:$m']?.data['on'] == true);
 }
 
 extension HomeRepo on Repo {
-  /// This phone's member ID in the home, or null when home sharing is off.
+  /// This phone's member ID, or null when home sharing is off.
   Future<String?> homeMember() async {
     final raw = await getSetting('group') ?? '';
     return raw.isEmpty ? null : (jsonDecode(raw) as Map)['member'] as String;
   }
 
-  /// Leaves Home spends out of "my" figures, only while home sharing is on.
-  Future<String> mineOnly([String t = 't']) async =>
-      await homeMember() == null ? '' : 'AND COALESCE($t.home, 0) = 0';
+  /// While sharing, "Don't count this" entries stay out of the totals.
+  Future<String> countedOnly([String t = 't']) async =>
+      await homeMember() == null ? '' : 'AND COALESCE($t.uncounted, 0) = 0';
 
-  Future<void> setHome(String txnId, bool home) =>
+  /// The first date whose spends the partner may see.
+  Future<String> shareFrom() async =>
+      await getSetting('shareFrom') ?? Dates.str(today);
+
+  Future<void> chooseSharing({required bool earlierToo}) =>
+      setSetting('shareFrom', earlierToo ? '0000-00-00' : Dates.str(today));
+
+  Future<bool> get showsMyBalance async =>
+      await getSetting('shareBalance') == '1';
+
+  Future<void> showMyBalance(bool on) =>
+      setSetting('shareBalance', on ? '1' : '0');
+
+  Future<void> setUncounted(String txnId, bool value) =>
       (db.update(db.transactions)..where((t) => t.id.equals(txnId))).write(
-        TransactionsCompanion(home: Value(home), hlc: Value(clock.next())),
+        TransactionsCompanion(
+          uncounted: Value(value),
+          hlc: Value(clock.next()),
+        ),
       );
 
-  /// A loan's payments, past and future, count as Mine or Home.
-  Future<void> setLoanHome(String debtId, bool home) =>
+  /// A loan's payments, past and future.
+  Future<void> setLoanUncounted(String debtId, bool value) =>
       db.transaction(() async {
         await (db.update(db.debts)..where((d) => d.id.equals(debtId))).write(
-          DebtsCompanion(home: Value(home), hlc: Value(clock.next())),
+          DebtsCompanion(uncounted: Value(value), hlc: Value(clock.next())),
         );
         await reconcileDebt(debtId);
       });
 
-  Future<void> setInvestmentHome(String id, bool home) =>
-      db.transaction(() async {
-        await (db.update(db.investments)..where((i) => i.id.equals(id))).write(
-          InvestmentsCompanion(home: Value(home), hlc: Value(clock.next())),
-        );
-        await reconcileInvestment(id);
-      });
+  Future<void> setInvestmentUncounted(String id, bool value) => db.transaction(
+    () async {
+      await (db.update(db.investments)..where((i) => i.id.equals(id))).write(
+        InvestmentsCompanion(uncounted: Value(value), hlc: Value(clock.next())),
+      );
+      await reconcileInvestment(id);
+    },
+  );
 
-  /// Categories last saved as Home, to preselect the button next time.
-  Future<Set<String>> homeCategories() async => {
-    ...(jsonDecode(await getSetting('homeCategories') ?? '[]') as List)
-        .cast<String>(),
-  };
-
-  Future<void> rememberHomeCategory(String? categoryId, bool home) async {
-    final set = await homeCategories();
-    final key = categoryId ?? '';
-    home ? set.add(key) : set.remove(key);
-    await setSetting('homeCategories', jsonEncode(set.toList()));
-  }
-
-  /// My own Home spends in [from]..[to] (YYYY-MM-DD), keyed by transaction ID.
-  Future<Map<String, HomeSpend>> _myHomeSpends(
+  /// My counted spends in [from]..[to] (YYYY-MM-DD), keyed by transaction ID.
+  Future<Map<String, HomeSpend>> _mySpends(
     String me, [
-    String from = '0000-01-01',
+    String from = '0000-00-00',
     String to = '9999-12-31',
   ]) async {
     final rows = await db
         .customSelect(
           '''SELECT t.id, t.amount_minor AS a, t.date AS d, t.note AS n,
-                    COALESCE(p.name, c.name, CASE t.source WHEN 'invest' THEN 'Chit and investments' WHEN 'emi' THEN 'Loan EMI' END) AS main,
+                    COALESCE(p.name, c.name, CASE t.source
+                      WHEN 'invest' THEN 'Chit and investments'
+                      WHEN 'emi' THEN 'Loan EMI' END) AS main,
                     CASE WHEN p.id IS NULL THEN NULL ELSE c.name END AS sub
              FROM transactions t
              LEFT JOIN categories c ON c.id = t.category_id
              LEFT JOIN categories p ON p.id = c.parent_id
-             WHERE $_homeSpend AND t.date BETWEEN ? AND ?''',
+             WHERE $_spend AND t.date BETWEEN ? AND ?''',
           variables: [Variable(from), Variable(to)],
-          readsFrom: {db.transactions, db.categories},
+          readsFrom: {db.transactions, db.categories, db.investments},
         )
         .get();
     return {
@@ -148,20 +167,17 @@ extension HomeRepo on Repo {
     };
   }
 
+  Future<Map<String, Entry>> _groupEntries() async => entriesOf([
+    for (final n in await db.select(db.groupNotes).get()) Note.decode(n.body),
+  ]);
+
   /// Null when home sharing is off.
   Future<HomeSummary?> homeSummary(DateRange range) async {
     final me = await homeMember();
     if (me == null) return null;
-    final notes = await db.select(db.groupNotes).get();
-    final entries = entriesOf([for (final n in notes) Note.decode(n.body)]);
-    final names = <String, String>{
-      for (final e in entries.values)
-        if (e.data['kind'] == 'member')
-          e.id.substring('member:'.length): e.data['name'] as String,
-    };
-    final home = <HomeSpend>[
-      ...(await _myHomeSpends(me, range.startStr, range.endStr)).values,
-      // my partner's, as their phone sent them
+    final entries = await _groupEntries();
+    final mine = (await _mySpends(me, range.startStr, range.endStr)).values;
+    final theirs = [
       for (final e in entries.values)
         if (e.data['kind'] == 'expense' &&
             e.data['paidBy'] != me &&
@@ -176,26 +192,25 @@ extension HomeRepo on Repo {
             e.data['sub'] as String?,
           ),
     ];
-    final mine = await db
-        .customSelect(
-          'SELECT COALESCE(SUM(t.amount_minor),0) AS s FROM transactions t '
-          'WHERE $_spend AND COALESCE(t.home,0) = 0 AND t.date BETWEEN ? AND ?',
-          variables: [Variable(range.startStr), Variable(range.endStr)],
-          readsFrom: {db.transactions},
-        )
-        .getSingle();
+    final spends = [...mine, ...theirs];
+    final from = await shareFrom();
+    final shared =
+        theirs.fold<int>(0, (s, e) => s + e.amount) +
+        mine
+            .where((e) => e.date.compareTo(from) >= 0)
+            .fold<int>(0, (s, e) => s + e.amount);
 
     // Slices use my category of the same name for its colour, when I have it.
     final cats = await categories(kind: 'debit');
     List<CatSlice> slices(bool bySub) {
       final totals = <(String, String?), int>{};
-      for (final e in home) {
+      for (final e in spends) {
         final key = bySub && e.sub != null
             ? (e.sub!, e.category)
             : (e.category, null);
         totals[key] = (totals[key] ?? 0) + e.amount;
       }
-      final out = [
+      return [
         for (final t in totals.entries)
           () {
             final c = cats.where((c) => c.name == t.key.$1).firstOrNull;
@@ -208,28 +223,40 @@ extension HomeRepo on Repo {
             );
           }(),
       ]..sort((a, b) => b.totalMinor.compareTo(a.totalMinor));
-      return out;
     }
 
+    final share = await showsMyBalance;
     return HomeSummary(
       me: me,
-      mine: mine.read<int>('s'),
-      iPaidHome: home
-          .where((e) => e.paidBy == me)
-          .fold(0, (s, e) => s + e.amount),
-      home: home,
-      names: names,
-      homeBudget: entries['budget']?.data['limitMinor'] as int?,
+      spends: spends,
+      sharedTotal: shared,
+      budget: entries['budget']?.data['limitMinor'] as int?,
       main: slices(false),
       subs: slices(true),
+      showMyBalance: share,
+      partnerBalances: [
+        if (share && _allShareBalance(entries, me))
+          for (final e in entries.values)
+            if (e.data['kind'] == 'balance' &&
+                e.id != 'balance:$me' &&
+                e.data['balanceMinor'] != null)
+              PartnerBalance(
+                entries['member:${e.id.substring('balance:'.length)}']
+                            ?.data['name']
+                        as String? ??
+                    '',
+                e.data['balanceMinor'] as int,
+                DateTime.fromMillisecondsSinceEpoch(e.data['at'] as int),
+              ),
+      ],
     );
   }
 
-  /// Brings the shared notes in line with my Home spends: adds new ones, edits
-  /// changed ones and removes those deleted or moved back to Mine.
+  /// Brings the shared notes in line with this phone: my counted spends, and
+  /// my balance once everyone has agreed to share theirs.
   Future<void> publishHome(Replica group) async {
     final me = group.disk.member;
-    final spends = await _myHomeSpends(me);
+    final spends = await _mySpends(me, await shareFrom());
     final shared = {
       for (final e in group.entries.values)
         if (e.data['paidBy'] == me && e.data['txn'] != null)
@@ -263,5 +290,20 @@ extension HomeRepo on Repo {
     for (final e in shared.entries) {
       if (!spends.containsKey(e.key)) group.delete(e.value.id);
     }
+
+    // The amount leaves this phone only when both sides have said yes.
+    final want = await showsMyBalance;
+    final old = group.entries['balance:$me']?.data;
+    if (!want && old == null) return;
+    final amount = want && _allShareBalance(group.entries, me)
+        ? await totalBalance()
+        : null;
+    if (old?['on'] == want && old?['balanceMinor'] == amount) return;
+    group.put('balance:$me', {
+      'kind': 'balance',
+      'on': want,
+      'balanceMinor': amount,
+      'at': now().millisecondsSinceEpoch,
+    });
   }
 }

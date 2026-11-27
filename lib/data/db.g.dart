@@ -1641,6 +1641,20 @@ class $TransactionsTable extends Transactions
       'CHECK ("home" IN (0, 1))',
     ),
   );
+  static const VerificationMeta _uncountedMeta = const VerificationMeta(
+    'uncounted',
+  );
+  @override
+  late final GeneratedColumn<bool> uncounted = GeneratedColumn<bool>(
+    'uncounted',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("uncounted" IN (0, 1))',
+    ),
+  );
   static const VerificationMeta _hlcMeta = const VerificationMeta('hlc');
   @override
   late final GeneratedColumn<String> hlc = GeneratedColumn<String>(
@@ -1676,6 +1690,7 @@ class $TransactionsTable extends Transactions
     source,
     sourceRef,
     home,
+    uncounted,
     hlc,
     deletedAt,
   ];
@@ -1785,6 +1800,12 @@ class $TransactionsTable extends Transactions
         home.isAcceptableOrUnknown(data['home']!, _homeMeta),
       );
     }
+    if (data.containsKey('uncounted')) {
+      context.handle(
+        _uncountedMeta,
+        uncounted.isAcceptableOrUnknown(data['uncounted']!, _uncountedMeta),
+      );
+    }
     if (data.containsKey('hlc')) {
       context.handle(
         _hlcMeta,
@@ -1860,6 +1881,10 @@ class $TransactionsTable extends Transactions
         DriftSqlType.bool,
         data['${effectivePrefix}home'],
       ),
+      uncounted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}uncounted'],
+      ),
       hlc: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}hlc'],
@@ -1891,6 +1916,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
   final String source;
   final String? sourceRef;
   final bool? home;
+  final bool? uncounted;
   final String hlc;
   final String? deletedAt;
   const Transaction({
@@ -1907,6 +1933,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     required this.source,
     this.sourceRef,
     this.home,
+    this.uncounted,
     required this.hlc,
     this.deletedAt,
   });
@@ -1937,6 +1964,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     }
     if (!nullToAbsent || home != null) {
       map['home'] = Variable<bool>(home);
+    }
+    if (!nullToAbsent || uncounted != null) {
+      map['uncounted'] = Variable<bool>(uncounted);
     }
     map['hlc'] = Variable<String>(hlc);
     if (!nullToAbsent || deletedAt != null) {
@@ -1970,6 +2000,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           ? const Value.absent()
           : Value(sourceRef),
       home: home == null && nullToAbsent ? const Value.absent() : Value(home),
+      uncounted: uncounted == null && nullToAbsent
+          ? const Value.absent()
+          : Value(uncounted),
       hlc: Value(hlc),
       deletedAt: deletedAt == null && nullToAbsent
           ? const Value.absent()
@@ -1996,6 +2029,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       source: serializer.fromJson<String>(json['source']),
       sourceRef: serializer.fromJson<String?>(json['sourceRef']),
       home: serializer.fromJson<bool?>(json['home']),
+      uncounted: serializer.fromJson<bool?>(json['uncounted']),
       hlc: serializer.fromJson<String>(json['hlc']),
       deletedAt: serializer.fromJson<String?>(json['deletedAt']),
     );
@@ -2017,6 +2051,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       'source': serializer.toJson<String>(source),
       'sourceRef': serializer.toJson<String?>(sourceRef),
       'home': serializer.toJson<bool?>(home),
+      'uncounted': serializer.toJson<bool?>(uncounted),
       'hlc': serializer.toJson<String>(hlc),
       'deletedAt': serializer.toJson<String?>(deletedAt),
     };
@@ -2036,6 +2071,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     String? source,
     Value<String?> sourceRef = const Value.absent(),
     Value<bool?> home = const Value.absent(),
+    Value<bool?> uncounted = const Value.absent(),
     String? hlc,
     Value<String?> deletedAt = const Value.absent(),
   }) => Transaction(
@@ -2054,6 +2090,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     source: source ?? this.source,
     sourceRef: sourceRef.present ? sourceRef.value : this.sourceRef,
     home: home.present ? home.value : this.home,
+    uncounted: uncounted.present ? uncounted.value : this.uncounted,
     hlc: hlc ?? this.hlc,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
   );
@@ -2080,6 +2117,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       source: data.source.present ? data.source.value : this.source,
       sourceRef: data.sourceRef.present ? data.sourceRef.value : this.sourceRef,
       home: data.home.present ? data.home.value : this.home,
+      uncounted: data.uncounted.present ? data.uncounted.value : this.uncounted,
       hlc: data.hlc.present ? data.hlc.value : this.hlc,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
     );
@@ -2101,6 +2139,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           ..write('source: $source, ')
           ..write('sourceRef: $sourceRef, ')
           ..write('home: $home, ')
+          ..write('uncounted: $uncounted, ')
           ..write('hlc: $hlc, ')
           ..write('deletedAt: $deletedAt')
           ..write(')'))
@@ -2122,6 +2161,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     source,
     sourceRef,
     home,
+    uncounted,
     hlc,
     deletedAt,
   );
@@ -2142,6 +2182,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           other.source == this.source &&
           other.sourceRef == this.sourceRef &&
           other.home == this.home &&
+          other.uncounted == this.uncounted &&
           other.hlc == this.hlc &&
           other.deletedAt == this.deletedAt);
 }
@@ -2160,6 +2201,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
   final Value<String> source;
   final Value<String?> sourceRef;
   final Value<bool?> home;
+  final Value<bool?> uncounted;
   final Value<String> hlc;
   final Value<String?> deletedAt;
   final Value<int> rowid;
@@ -2177,6 +2219,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     this.source = const Value.absent(),
     this.sourceRef = const Value.absent(),
     this.home = const Value.absent(),
+    this.uncounted = const Value.absent(),
     this.hlc = const Value.absent(),
     this.deletedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -2195,6 +2238,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     this.source = const Value.absent(),
     this.sourceRef = const Value.absent(),
     this.home = const Value.absent(),
+    this.uncounted = const Value.absent(),
     required String hlc,
     this.deletedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -2218,6 +2262,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     Expression<String>? source,
     Expression<String>? sourceRef,
     Expression<bool>? home,
+    Expression<bool>? uncounted,
     Expression<String>? hlc,
     Expression<String>? deletedAt,
     Expression<int>? rowid,
@@ -2236,6 +2281,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       if (source != null) 'source': source,
       if (sourceRef != null) 'source_ref': sourceRef,
       if (home != null) 'home': home,
+      if (uncounted != null) 'uncounted': uncounted,
       if (hlc != null) 'hlc': hlc,
       if (deletedAt != null) 'deleted_at': deletedAt,
       if (rowid != null) 'rowid': rowid,
@@ -2256,6 +2302,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     Value<String>? source,
     Value<String?>? sourceRef,
     Value<bool?>? home,
+    Value<bool?>? uncounted,
     Value<String>? hlc,
     Value<String?>? deletedAt,
     Value<int>? rowid,
@@ -2274,6 +2321,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       source: source ?? this.source,
       sourceRef: sourceRef ?? this.sourceRef,
       home: home ?? this.home,
+      uncounted: uncounted ?? this.uncounted,
       hlc: hlc ?? this.hlc,
       deletedAt: deletedAt ?? this.deletedAt,
       rowid: rowid ?? this.rowid,
@@ -2322,6 +2370,9 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     if (home.present) {
       map['home'] = Variable<bool>(home.value);
     }
+    if (uncounted.present) {
+      map['uncounted'] = Variable<bool>(uncounted.value);
+    }
     if (hlc.present) {
       map['hlc'] = Variable<String>(hlc.value);
     }
@@ -2350,6 +2401,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
           ..write('source: $source, ')
           ..write('sourceRef: $sourceRef, ')
           ..write('home: $home, ')
+          ..write('uncounted: $uncounted, ')
           ..write('hlc: $hlc, ')
           ..write('deletedAt: $deletedAt, ')
           ..write('rowid: $rowid')
@@ -2591,6 +2643,20 @@ class $DebtsTable extends Debts with TableInfo<$DebtsTable, Debt> {
       'CHECK ("home" IN (0, 1))',
     ),
   );
+  static const VerificationMeta _uncountedMeta = const VerificationMeta(
+    'uncounted',
+  );
+  @override
+  late final GeneratedColumn<bool> uncounted = GeneratedColumn<bool>(
+    'uncounted',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("uncounted" IN (0, 1))',
+    ),
+  );
   static const VerificationMeta _hlcMeta = const VerificationMeta('hlc');
   @override
   late final GeneratedColumn<String> hlc = GeneratedColumn<String>(
@@ -2633,6 +2699,7 @@ class $DebtsTable extends Debts with TableInfo<$DebtsTable, Debt> {
     emiDay,
     emiInBudget,
     home,
+    uncounted,
     hlc,
     deletedAt,
   ];
@@ -2795,6 +2862,12 @@ class $DebtsTable extends Debts with TableInfo<$DebtsTable, Debt> {
         home.isAcceptableOrUnknown(data['home']!, _homeMeta),
       );
     }
+    if (data.containsKey('uncounted')) {
+      context.handle(
+        _uncountedMeta,
+        uncounted.isAcceptableOrUnknown(data['uncounted']!, _uncountedMeta),
+      );
+    }
     if (data.containsKey('hlc')) {
       context.handle(
         _hlcMeta,
@@ -2898,6 +2971,10 @@ class $DebtsTable extends Debts with TableInfo<$DebtsTable, Debt> {
         DriftSqlType.bool,
         data['${effectivePrefix}home'],
       ),
+      uncounted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}uncounted'],
+      ),
       hlc: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}hlc'],
@@ -2936,6 +3013,7 @@ class Debt extends DataClass implements Insertable<Debt> {
   final int? emiDay;
   final bool? emiInBudget;
   final bool? home;
+  final bool? uncounted;
   final String hlc;
   final String? deletedAt;
   const Debt({
@@ -2959,6 +3037,7 @@ class Debt extends DataClass implements Insertable<Debt> {
     this.emiDay,
     this.emiInBudget,
     this.home,
+    this.uncounted,
     required this.hlc,
     this.deletedAt,
   });
@@ -3000,6 +3079,9 @@ class Debt extends DataClass implements Insertable<Debt> {
     }
     if (!nullToAbsent || home != null) {
       map['home'] = Variable<bool>(home);
+    }
+    if (!nullToAbsent || uncounted != null) {
+      map['uncounted'] = Variable<bool>(uncounted);
     }
     map['hlc'] = Variable<String>(hlc);
     if (!nullToAbsent || deletedAt != null) {
@@ -3044,6 +3126,9 @@ class Debt extends DataClass implements Insertable<Debt> {
           ? const Value.absent()
           : Value(emiInBudget),
       home: home == null && nullToAbsent ? const Value.absent() : Value(home),
+      uncounted: uncounted == null && nullToAbsent
+          ? const Value.absent()
+          : Value(uncounted),
       hlc: Value(hlc),
       deletedAt: deletedAt == null && nullToAbsent
           ? const Value.absent()
@@ -3077,6 +3162,7 @@ class Debt extends DataClass implements Insertable<Debt> {
       emiDay: serializer.fromJson<int?>(json['emiDay']),
       emiInBudget: serializer.fromJson<bool?>(json['emiInBudget']),
       home: serializer.fromJson<bool?>(json['home']),
+      uncounted: serializer.fromJson<bool?>(json['uncounted']),
       hlc: serializer.fromJson<String>(json['hlc']),
       deletedAt: serializer.fromJson<String?>(json['deletedAt']),
     );
@@ -3105,6 +3191,7 @@ class Debt extends DataClass implements Insertable<Debt> {
       'emiDay': serializer.toJson<int?>(emiDay),
       'emiInBudget': serializer.toJson<bool?>(emiInBudget),
       'home': serializer.toJson<bool?>(home),
+      'uncounted': serializer.toJson<bool?>(uncounted),
       'hlc': serializer.toJson<String>(hlc),
       'deletedAt': serializer.toJson<String?>(deletedAt),
     };
@@ -3131,6 +3218,7 @@ class Debt extends DataClass implements Insertable<Debt> {
     Value<int?> emiDay = const Value.absent(),
     Value<bool?> emiInBudget = const Value.absent(),
     Value<bool?> home = const Value.absent(),
+    Value<bool?> uncounted = const Value.absent(),
     String? hlc,
     Value<String?> deletedAt = const Value.absent(),
   }) => Debt(
@@ -3154,6 +3242,7 @@ class Debt extends DataClass implements Insertable<Debt> {
     emiDay: emiDay.present ? emiDay.value : this.emiDay,
     emiInBudget: emiInBudget.present ? emiInBudget.value : this.emiInBudget,
     home: home.present ? home.value : this.home,
+    uncounted: uncounted.present ? uncounted.value : this.uncounted,
     hlc: hlc ?? this.hlc,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
   );
@@ -3195,6 +3284,7 @@ class Debt extends DataClass implements Insertable<Debt> {
           ? data.emiInBudget.value
           : this.emiInBudget,
       home: data.home.present ? data.home.value : this.home,
+      uncounted: data.uncounted.present ? data.uncounted.value : this.uncounted,
       hlc: data.hlc.present ? data.hlc.value : this.hlc,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
     );
@@ -3223,6 +3313,7 @@ class Debt extends DataClass implements Insertable<Debt> {
           ..write('emiDay: $emiDay, ')
           ..write('emiInBudget: $emiInBudget, ')
           ..write('home: $home, ')
+          ..write('uncounted: $uncounted, ')
           ..write('hlc: $hlc, ')
           ..write('deletedAt: $deletedAt')
           ..write(')'))
@@ -3251,6 +3342,7 @@ class Debt extends DataClass implements Insertable<Debt> {
     emiDay,
     emiInBudget,
     home,
+    uncounted,
     hlc,
     deletedAt,
   ]);
@@ -3278,6 +3370,7 @@ class Debt extends DataClass implements Insertable<Debt> {
           other.emiDay == this.emiDay &&
           other.emiInBudget == this.emiInBudget &&
           other.home == this.home &&
+          other.uncounted == this.uncounted &&
           other.hlc == this.hlc &&
           other.deletedAt == this.deletedAt);
 }
@@ -3303,6 +3396,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
   final Value<int?> emiDay;
   final Value<bool?> emiInBudget;
   final Value<bool?> home;
+  final Value<bool?> uncounted;
   final Value<String> hlc;
   final Value<String?> deletedAt;
   final Value<int> rowid;
@@ -3327,6 +3421,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
     this.emiDay = const Value.absent(),
     this.emiInBudget = const Value.absent(),
     this.home = const Value.absent(),
+    this.uncounted = const Value.absent(),
     this.hlc = const Value.absent(),
     this.deletedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -3352,6 +3447,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
     this.emiDay = const Value.absent(),
     this.emiInBudget = const Value.absent(),
     this.home = const Value.absent(),
+    this.uncounted = const Value.absent(),
     required String hlc,
     this.deletedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -3383,6 +3479,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
     Expression<int>? emiDay,
     Expression<bool>? emiInBudget,
     Expression<bool>? home,
+    Expression<bool>? uncounted,
     Expression<String>? hlc,
     Expression<String>? deletedAt,
     Expression<int>? rowid,
@@ -3408,6 +3505,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
       if (emiDay != null) 'emi_day': emiDay,
       if (emiInBudget != null) 'emi_in_budget': emiInBudget,
       if (home != null) 'home': home,
+      if (uncounted != null) 'uncounted': uncounted,
       if (hlc != null) 'hlc': hlc,
       if (deletedAt != null) 'deleted_at': deletedAt,
       if (rowid != null) 'rowid': rowid,
@@ -3435,6 +3533,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
     Value<int?>? emiDay,
     Value<bool?>? emiInBudget,
     Value<bool?>? home,
+    Value<bool?>? uncounted,
     Value<String>? hlc,
     Value<String?>? deletedAt,
     Value<int>? rowid,
@@ -3460,6 +3559,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
       emiDay: emiDay ?? this.emiDay,
       emiInBudget: emiInBudget ?? this.emiInBudget,
       home: home ?? this.home,
+      uncounted: uncounted ?? this.uncounted,
       hlc: hlc ?? this.hlc,
       deletedAt: deletedAt ?? this.deletedAt,
       rowid: rowid ?? this.rowid,
@@ -3529,6 +3629,9 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
     if (home.present) {
       map['home'] = Variable<bool>(home.value);
     }
+    if (uncounted.present) {
+      map['uncounted'] = Variable<bool>(uncounted.value);
+    }
     if (hlc.present) {
       map['hlc'] = Variable<String>(hlc.value);
     }
@@ -3564,6 +3667,7 @@ class DebtsCompanion extends UpdateCompanion<Debt> {
           ..write('emiDay: $emiDay, ')
           ..write('emiInBudget: $emiInBudget, ')
           ..write('home: $home, ')
+          ..write('uncounted: $uncounted, ')
           ..write('hlc: $hlc, ')
           ..write('deletedAt: $deletedAt, ')
           ..write('rowid: $rowid')
@@ -4572,6 +4676,20 @@ class $InvestmentsTable extends Investments
       'CHECK ("home" IN (0, 1))',
     ),
   );
+  static const VerificationMeta _uncountedMeta = const VerificationMeta(
+    'uncounted',
+  );
+  @override
+  late final GeneratedColumn<bool> uncounted = GeneratedColumn<bool>(
+    'uncounted',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("uncounted" IN (0, 1))',
+    ),
+  );
   static const VerificationMeta _hlcMeta = const VerificationMeta('hlc');
   @override
   late final GeneratedColumn<String> hlc = GeneratedColumn<String>(
@@ -4621,6 +4739,7 @@ class $InvestmentsTable extends Investments
     organiser,
     note,
     home,
+    uncounted,
     hlc,
     deletedAt,
   ];
@@ -4828,6 +4947,12 @@ class $InvestmentsTable extends Investments
         home.isAcceptableOrUnknown(data['home']!, _homeMeta),
       );
     }
+    if (data.containsKey('uncounted')) {
+      context.handle(
+        _uncountedMeta,
+        uncounted.isAcceptableOrUnknown(data['uncounted']!, _uncountedMeta),
+      );
+    }
     if (data.containsKey('hlc')) {
       context.handle(
         _hlcMeta,
@@ -4959,6 +5084,10 @@ class $InvestmentsTable extends Investments
         DriftSqlType.bool,
         data['${effectivePrefix}home'],
       ),
+      uncounted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}uncounted'],
+      ),
       hlc: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}hlc'],
@@ -5004,6 +5133,7 @@ class Investment extends DataClass implements Insertable<Investment> {
   final String? organiser;
   final String note;
   final bool? home;
+  final bool? uncounted;
   final String hlc;
   final String? deletedAt;
   const Investment({
@@ -5034,6 +5164,7 @@ class Investment extends DataClass implements Insertable<Investment> {
     this.organiser,
     required this.note,
     this.home,
+    this.uncounted,
     required this.hlc,
     this.deletedAt,
   });
@@ -5108,6 +5239,9 @@ class Investment extends DataClass implements Insertable<Investment> {
     map['note'] = Variable<String>(note);
     if (!nullToAbsent || home != null) {
       map['home'] = Variable<bool>(home);
+    }
+    if (!nullToAbsent || uncounted != null) {
+      map['uncounted'] = Variable<bool>(uncounted);
     }
     map['hlc'] = Variable<String>(hlc);
     if (!nullToAbsent || deletedAt != null) {
@@ -5185,6 +5319,9 @@ class Investment extends DataClass implements Insertable<Investment> {
           : Value(organiser),
       note: Value(note),
       home: home == null && nullToAbsent ? const Value.absent() : Value(home),
+      uncounted: uncounted == null && nullToAbsent
+          ? const Value.absent()
+          : Value(uncounted),
       hlc: Value(hlc),
       deletedAt: deletedAt == null && nullToAbsent
           ? const Value.absent()
@@ -5225,6 +5362,7 @@ class Investment extends DataClass implements Insertable<Investment> {
       organiser: serializer.fromJson<String?>(json['organiser']),
       note: serializer.fromJson<String>(json['note']),
       home: serializer.fromJson<bool?>(json['home']),
+      uncounted: serializer.fromJson<bool?>(json['uncounted']),
       hlc: serializer.fromJson<String>(json['hlc']),
       deletedAt: serializer.fromJson<String?>(json['deletedAt']),
     );
@@ -5260,6 +5398,7 @@ class Investment extends DataClass implements Insertable<Investment> {
       'organiser': serializer.toJson<String?>(organiser),
       'note': serializer.toJson<String>(note),
       'home': serializer.toJson<bool?>(home),
+      'uncounted': serializer.toJson<bool?>(uncounted),
       'hlc': serializer.toJson<String>(hlc),
       'deletedAt': serializer.toJson<String?>(deletedAt),
     };
@@ -5293,6 +5432,7 @@ class Investment extends DataClass implements Insertable<Investment> {
     Value<String?> organiser = const Value.absent(),
     String? note,
     Value<bool?> home = const Value.absent(),
+    Value<bool?> uncounted = const Value.absent(),
     String? hlc,
     Value<String?> deletedAt = const Value.absent(),
   }) => Investment(
@@ -5335,6 +5475,7 @@ class Investment extends DataClass implements Insertable<Investment> {
     organiser: organiser.present ? organiser.value : this.organiser,
     note: note ?? this.note,
     home: home.present ? home.value : this.home,
+    uncounted: uncounted.present ? uncounted.value : this.uncounted,
     hlc: hlc ?? this.hlc,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
   );
@@ -5385,6 +5526,7 @@ class Investment extends DataClass implements Insertable<Investment> {
       organiser: data.organiser.present ? data.organiser.value : this.organiser,
       note: data.note.present ? data.note.value : this.note,
       home: data.home.present ? data.home.value : this.home,
+      uncounted: data.uncounted.present ? data.uncounted.value : this.uncounted,
       hlc: data.hlc.present ? data.hlc.value : this.hlc,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
     );
@@ -5420,6 +5562,7 @@ class Investment extends DataClass implements Insertable<Investment> {
           ..write('organiser: $organiser, ')
           ..write('note: $note, ')
           ..write('home: $home, ')
+          ..write('uncounted: $uncounted, ')
           ..write('hlc: $hlc, ')
           ..write('deletedAt: $deletedAt')
           ..write(')'))
@@ -5455,6 +5598,7 @@ class Investment extends DataClass implements Insertable<Investment> {
     organiser,
     note,
     home,
+    uncounted,
     hlc,
     deletedAt,
   ]);
@@ -5489,6 +5633,7 @@ class Investment extends DataClass implements Insertable<Investment> {
           other.organiser == this.organiser &&
           other.note == this.note &&
           other.home == this.home &&
+          other.uncounted == this.uncounted &&
           other.hlc == this.hlc &&
           other.deletedAt == this.deletedAt);
 }
@@ -5521,6 +5666,7 @@ class InvestmentsCompanion extends UpdateCompanion<Investment> {
   final Value<String?> organiser;
   final Value<String> note;
   final Value<bool?> home;
+  final Value<bool?> uncounted;
   final Value<String> hlc;
   final Value<String?> deletedAt;
   final Value<int> rowid;
@@ -5552,6 +5698,7 @@ class InvestmentsCompanion extends UpdateCompanion<Investment> {
     this.organiser = const Value.absent(),
     this.note = const Value.absent(),
     this.home = const Value.absent(),
+    this.uncounted = const Value.absent(),
     this.hlc = const Value.absent(),
     this.deletedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -5584,6 +5731,7 @@ class InvestmentsCompanion extends UpdateCompanion<Investment> {
     this.organiser = const Value.absent(),
     this.note = const Value.absent(),
     this.home = const Value.absent(),
+    this.uncounted = const Value.absent(),
     required String hlc,
     this.deletedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -5619,6 +5767,7 @@ class InvestmentsCompanion extends UpdateCompanion<Investment> {
     Expression<String>? organiser,
     Expression<String>? note,
     Expression<bool>? home,
+    Expression<bool>? uncounted,
     Expression<String>? hlc,
     Expression<String>? deletedAt,
     Expression<int>? rowid,
@@ -5651,6 +5800,7 @@ class InvestmentsCompanion extends UpdateCompanion<Investment> {
       if (organiser != null) 'organiser': organiser,
       if (note != null) 'note': note,
       if (home != null) 'home': home,
+      if (uncounted != null) 'uncounted': uncounted,
       if (hlc != null) 'hlc': hlc,
       if (deletedAt != null) 'deleted_at': deletedAt,
       if (rowid != null) 'rowid': rowid,
@@ -5685,6 +5835,7 @@ class InvestmentsCompanion extends UpdateCompanion<Investment> {
     Value<String?>? organiser,
     Value<String>? note,
     Value<bool?>? home,
+    Value<bool?>? uncounted,
     Value<String>? hlc,
     Value<String?>? deletedAt,
     Value<int>? rowid,
@@ -5717,6 +5868,7 @@ class InvestmentsCompanion extends UpdateCompanion<Investment> {
       organiser: organiser ?? this.organiser,
       note: note ?? this.note,
       home: home ?? this.home,
+      uncounted: uncounted ?? this.uncounted,
       hlc: hlc ?? this.hlc,
       deletedAt: deletedAt ?? this.deletedAt,
       rowid: rowid ?? this.rowid,
@@ -5807,6 +5959,9 @@ class InvestmentsCompanion extends UpdateCompanion<Investment> {
     if (home.present) {
       map['home'] = Variable<bool>(home.value);
     }
+    if (uncounted.present) {
+      map['uncounted'] = Variable<bool>(uncounted.value);
+    }
     if (hlc.present) {
       map['hlc'] = Variable<String>(hlc.value);
     }
@@ -5849,6 +6004,7 @@ class InvestmentsCompanion extends UpdateCompanion<Investment> {
           ..write('organiser: $organiser, ')
           ..write('note: $note, ')
           ..write('home: $home, ')
+          ..write('uncounted: $uncounted, ')
           ..write('hlc: $hlc, ')
           ..write('deletedAt: $deletedAt, ')
           ..write('rowid: $rowid')
@@ -8949,6 +9105,7 @@ typedef $$TransactionsTableCreateCompanionBuilder =
       Value<String> source,
       Value<String?> sourceRef,
       Value<bool?> home,
+      Value<bool?> uncounted,
       required String hlc,
       Value<String?> deletedAt,
       Value<int> rowid,
@@ -8968,6 +9125,7 @@ typedef $$TransactionsTableUpdateCompanionBuilder =
       Value<String> source,
       Value<String?> sourceRef,
       Value<bool?> home,
+      Value<bool?> uncounted,
       Value<String> hlc,
       Value<String?> deletedAt,
       Value<int> rowid,
@@ -9044,6 +9202,11 @@ class $$TransactionsTableFilterComposer
 
   ColumnFilters<bool> get home => $composableBuilder(
     column: $table.home,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get uncounted => $composableBuilder(
+    column: $table.uncounted,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -9132,6 +9295,11 @@ class $$TransactionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get uncounted => $composableBuilder(
+    column: $table.uncounted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get hlc => $composableBuilder(
     column: $table.hlc,
     builder: (column) => ColumnOrderings(column),
@@ -9199,6 +9367,9 @@ class $$TransactionsTableAnnotationComposer
   GeneratedColumn<bool> get home =>
       $composableBuilder(column: $table.home, builder: (column) => column);
 
+  GeneratedColumn<bool> get uncounted =>
+      $composableBuilder(column: $table.uncounted, builder: (column) => column);
+
   GeneratedColumn<String> get hlc =>
       $composableBuilder(column: $table.hlc, builder: (column) => column);
 
@@ -9250,6 +9421,7 @@ class $$TransactionsTableTableManager
                 Value<String> source = const Value.absent(),
                 Value<String?> sourceRef = const Value.absent(),
                 Value<bool?> home = const Value.absent(),
+                Value<bool?> uncounted = const Value.absent(),
                 Value<String> hlc = const Value.absent(),
                 Value<String?> deletedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -9267,6 +9439,7 @@ class $$TransactionsTableTableManager
                 source: source,
                 sourceRef: sourceRef,
                 home: home,
+                uncounted: uncounted,
                 hlc: hlc,
                 deletedAt: deletedAt,
                 rowid: rowid,
@@ -9286,6 +9459,7 @@ class $$TransactionsTableTableManager
                 Value<String> source = const Value.absent(),
                 Value<String?> sourceRef = const Value.absent(),
                 Value<bool?> home = const Value.absent(),
+                Value<bool?> uncounted = const Value.absent(),
                 required String hlc,
                 Value<String?> deletedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -9303,6 +9477,7 @@ class $$TransactionsTableTableManager
                 source: source,
                 sourceRef: sourceRef,
                 home: home,
+                uncounted: uncounted,
                 hlc: hlc,
                 deletedAt: deletedAt,
                 rowid: rowid,
@@ -9362,6 +9537,7 @@ typedef $$DebtsTableCreateCompanionBuilder = DebtsCompanion Function({
   Value<int?> emiDay,
   Value<bool?> emiInBudget,
   Value<bool?> home,
+  Value<bool?> uncounted,
   required String hlc,
   Value<String?> deletedAt,
   Value<int> rowid,
@@ -9387,6 +9563,7 @@ typedef $$DebtsTableUpdateCompanionBuilder = DebtsCompanion Function({
   Value<int?> emiDay,
   Value<bool?> emiInBudget,
   Value<bool?> home,
+  Value<bool?> uncounted,
   Value<String> hlc,
   Value<String?> deletedAt,
   Value<int> rowid,
@@ -9497,6 +9674,11 @@ class $$DebtsTableFilterComposer extends Composer<_$AppDatabase, $DebtsTable> {
 
   ColumnFilters<bool> get home => $composableBuilder(
     column: $table.home,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get uncounted => $composableBuilder(
+    column: $table.uncounted,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -9620,6 +9802,11 @@ class $$DebtsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get uncounted => $composableBuilder(
+    column: $table.uncounted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get hlc => $composableBuilder(
     column: $table.hlc,
     builder: (column) => ColumnOrderings(column),
@@ -9716,6 +9903,9 @@ class $$DebtsTableAnnotationComposer
   GeneratedColumn<bool> get home =>
       $composableBuilder(column: $table.home, builder: (column) => column);
 
+  GeneratedColumn<bool> get uncounted =>
+      $composableBuilder(column: $table.uncounted, builder: (column) => column);
+
   GeneratedColumn<String> get hlc =>
       $composableBuilder(column: $table.hlc, builder: (column) => column);
 
@@ -9771,6 +9961,7 @@ class $$DebtsTableTableManager
                 Value<int?> emiDay = const Value.absent(),
                 Value<bool?> emiInBudget = const Value.absent(),
                 Value<bool?> home = const Value.absent(),
+                Value<bool?> uncounted = const Value.absent(),
                 Value<String> hlc = const Value.absent(),
                 Value<String?> deletedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -9795,6 +9986,7 @@ class $$DebtsTableTableManager
                 emiDay: emiDay,
                 emiInBudget: emiInBudget,
                 home: home,
+                uncounted: uncounted,
                 hlc: hlc,
                 deletedAt: deletedAt,
                 rowid: rowid,
@@ -9821,6 +10013,7 @@ class $$DebtsTableTableManager
                 Value<int?> emiDay = const Value.absent(),
                 Value<bool?> emiInBudget = const Value.absent(),
                 Value<bool?> home = const Value.absent(),
+                Value<bool?> uncounted = const Value.absent(),
                 required String hlc,
                 Value<String?> deletedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -9845,6 +10038,7 @@ class $$DebtsTableTableManager
                 emiDay: emiDay,
                 emiInBudget: emiInBudget,
                 home: home,
+                uncounted: uncounted,
                 hlc: hlc,
                 deletedAt: deletedAt,
                 rowid: rowid,
@@ -10252,6 +10446,7 @@ typedef $$InvestmentsTableCreateCompanionBuilder =
       Value<String?> organiser,
       Value<String> note,
       Value<bool?> home,
+      Value<bool?> uncounted,
       required String hlc,
       Value<String?> deletedAt,
       Value<int> rowid,
@@ -10285,6 +10480,7 @@ typedef $$InvestmentsTableUpdateCompanionBuilder =
       Value<String?> organiser,
       Value<String> note,
       Value<bool?> home,
+      Value<bool?> uncounted,
       Value<String> hlc,
       Value<String?> deletedAt,
       Value<int> rowid,
@@ -10431,6 +10627,11 @@ class $$InvestmentsTableFilterComposer
 
   ColumnFilters<bool> get home => $composableBuilder(
     column: $table.home,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get uncounted => $composableBuilder(
+    column: $table.uncounted,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -10589,6 +10790,11 @@ class $$InvestmentsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get uncounted => $composableBuilder(
+    column: $table.uncounted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get hlc => $composableBuilder(
     column: $table.hlc,
     builder: (column) => ColumnOrderings(column),
@@ -10708,6 +10914,9 @@ class $$InvestmentsTableAnnotationComposer
   GeneratedColumn<bool> get home =>
       $composableBuilder(column: $table.home, builder: (column) => column);
 
+  GeneratedColumn<bool> get uncounted =>
+      $composableBuilder(column: $table.uncounted, builder: (column) => column);
+
   GeneratedColumn<String> get hlc =>
       $composableBuilder(column: $table.hlc, builder: (column) => column);
 
@@ -10773,6 +10982,7 @@ class $$InvestmentsTableTableManager
                 Value<String?> organiser = const Value.absent(),
                 Value<String> note = const Value.absent(),
                 Value<bool?> home = const Value.absent(),
+                Value<bool?> uncounted = const Value.absent(),
                 Value<String> hlc = const Value.absent(),
                 Value<String?> deletedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -10804,6 +11014,7 @@ class $$InvestmentsTableTableManager
                 organiser: organiser,
                 note: note,
                 home: home,
+                uncounted: uncounted,
                 hlc: hlc,
                 deletedAt: deletedAt,
                 rowid: rowid,
@@ -10837,6 +11048,7 @@ class $$InvestmentsTableTableManager
                 Value<String?> organiser = const Value.absent(),
                 Value<String> note = const Value.absent(),
                 Value<bool?> home = const Value.absent(),
+                Value<bool?> uncounted = const Value.absent(),
                 required String hlc,
                 Value<String?> deletedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -10868,6 +11080,7 @@ class $$InvestmentsTableTableManager
                 organiser: organiser,
                 note: note,
                 home: home,
+                uncounted: uncounted,
                 hlc: hlc,
                 deletedAt: deletedAt,
                 rowid: rowid,

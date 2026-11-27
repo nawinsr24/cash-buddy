@@ -345,7 +345,7 @@ class _InvestFormState extends ConsumerState<_InvestForm> {
   late DateTime? endDate = e?.endDate == null ? null : Dates.parse(e!.endDate!);
   DateTime oneTimeDate = Dates.today();
   late String? accountId = e?.accountId;
-  late bool home = e?.home ?? false;
+  late bool uncounted = e?.uncounted ?? false;
   String? error;
 
   int? _money(TextEditingController c) =>
@@ -427,7 +427,7 @@ class _InvestFormState extends ConsumerState<_InvestForm> {
           endDate: rec ? sch!.until : null,
           note: note.text.trim(),
         );
-        if (home) await repo.setInvestmentHome(id, true);
+        if (uncounted) await repo.setInvestmentUncounted(id, true);
         // A one-time custom investment with an amount is recorded right away.
         if (isCustom && !recurring && _money(amount) != null) {
           await repo.addInvestmentEntry(
@@ -438,8 +438,8 @@ class _InvestFormState extends ConsumerState<_InvestForm> {
           );
         }
       } else {
-        if (isCustom && home != (e!.home ?? false)) {
-          await repo.setInvestmentHome(e!.id, home);
+        if (isCustom && uncounted != (e!.uncounted ?? false)) {
+          await repo.setInvestmentUncounted(e!.id, uncounted);
         }
         await repo.updateInvestment(
           e!.id,
@@ -815,9 +815,9 @@ class _InvestFormState extends ConsumerState<_InvestForm> {
                 ),
               ),
             if (isCustom)
-              MineHomeCards(
-                home: home,
-                onChanged: (v) => setState(() => home = v),
+              DontCountTile(
+                value: uncounted,
+                onChanged: (v) => setState(() => uncounted = v),
               ),
             _plain(note, 'Note (optional)'),
             if (error != null)

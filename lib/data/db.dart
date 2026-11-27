@@ -65,6 +65,7 @@ class Transactions extends Table {
   TextColumn get sourceRef => text().nullable()();
   // Marked Home: shared with my partner and counted in the home budget.
   BoolColumn get home => boolean().nullable()(); // null = mine
+  BoolColumn get uncounted => boolean().nullable()(); // null = counts
   TextColumn get hlc => text()();
   TextColumn get deletedAt => text().nullable()();
   @override
@@ -97,6 +98,7 @@ class Debts extends Table {
   IntColumn get emiDay => integer().nullable()();
   BoolColumn get emiInBudget => boolean().nullable()(); // null = yes
   BoolColumn get home => boolean().nullable()(); // payments count as Home
+  BoolColumn get uncounted => boolean().nullable()(); // null = counts
   TextColumn get hlc => text()();
   TextColumn get deletedAt => text().nullable()();
   @override
@@ -155,6 +157,7 @@ class Investments extends Table {
   TextColumn get organiser => text().nullable()();
   TextColumn get note => text().withDefault(const Constant(''))();
   BoolColumn get home => boolean().nullable()(); // instalments count as Home
+  BoolColumn get uncounted => boolean().nullable()(); // null = counts
   TextColumn get hlc => text()();
   TextColumn get deletedAt => text().nullable()();
   @override
@@ -266,7 +269,7 @@ class AppDatabase extends _$AppDatabase {
   static AppDatabase open() => AppDatabase(openAppDatabase());
 
   @override
-  int get schemaVersion => 13;
+  int get schemaVersion => 14;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -337,6 +340,12 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(debts, debts.home);
         // version 1 had no investments: createTable above made them complete
         if (from >= 2) await m.addColumn(investments, investments.home);
+      }
+      if (from < 14) {
+        await m.addColumn(transactions, transactions.uncounted);
+        await m.addColumn(debts, debts.uncounted);
+        // version 1 had no investments: createTable above made them complete
+        if (from >= 2) await m.addColumn(investments, investments.uncounted);
       }
       if (from < 3) {
         // Chit funds became custom monthly plans: instalment = monthly amount,
