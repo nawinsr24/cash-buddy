@@ -105,24 +105,18 @@ class _Ring extends StatelessWidget {
       onTap: onTap,
       child: Card(
         child: Padding(
-          padding: const EdgeInsets.all(Sp.x3),
-          child: Column(
+          padding: const EdgeInsets.all(Sp.x4),
+          // a small ring on the left holding the percentage, the rest beside it
+          child: Row(
             children: [
-              Text(
-                title,
-                style: context.text.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: Sp.x3),
               SizedBox.square(
-                dimension: 112,
+                dimension: 88,
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
                     CircularProgressIndicator(
                       value: set ? (spent / limit).clamp(0, 1).toDouble() : 0,
-                      strokeWidth: 10,
+                      strokeWidth: 9,
                       strokeCap: StrokeCap.round,
                       color: color,
                       backgroundColor: context.scheme.primaryContainer,
@@ -130,11 +124,11 @@ class _Ring extends StatelessWidget {
                     Center(
                       child: set
                           ? Padding(
-                              padding: const EdgeInsets.all(Sp.x4),
+                              padding: const EdgeInsets.all(Sp.x3),
                               child: FittedBox(
                                 child: Text(
-                                  Money.compact((limit - spent).abs()),
-                                  style: context.text.headlineSmall?.copyWith(
+                                  '${(spent * 100 / limit).round()}%',
+                                  style: context.text.titleLarge?.copyWith(
                                     fontWeight: FontWeight.w800,
                                     color: over ? color : null,
                                   ),
@@ -143,7 +137,7 @@ class _Ring extends StatelessWidget {
                             )
                           : Icon(
                               Icons.add,
-                              size: 40,
+                              size: 32,
                               color: context.scheme.primary,
                               semanticLabel: tr('Set a budget'),
                             ),
@@ -151,23 +145,32 @@ class _Ring extends StatelessWidget {
                   ],
                 ),
               ),
-              if (set) ...[
-                const SizedBox(height: Sp.x3),
-                Text(
-                  '${(spent * 100 / limit).round()}%',
-                  style: context.text.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: color,
-                  ),
+              const SizedBox(width: Sp.x4),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: muted),
+                    if (set) ...[
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          Money.compact((limit - spent).abs()),
+                          style: context.text.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            color: color,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        '${Money.compact(spent)} / ${Money.compact(limit)}',
+                        style: muted,
+                      ),
+                      Text('$daysLeft ${tr('days left')}', style: muted),
+                    ],
+                  ],
                 ),
-                FittedBox(
-                  child: Text(
-                    '${Money.compact(spent)} / ${Money.compact(limit)}',
-                    style: muted,
-                  ),
-                ),
-                Text('$daysLeft ${tr('days left')}', style: muted),
-              ],
+              ),
             ],
           ),
         ),
