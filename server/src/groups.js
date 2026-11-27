@@ -1,5 +1,6 @@
 // The post box. Notes arrive locked with a key only the group's phones hold,
 // wait until each other phone has them (at most 90 days) and are deleted.
+import { nudge } from './push.js';
 
 const DAY = 86400000;
 const KEEP = 90 * DAY;
@@ -71,7 +72,17 @@ export async function groups(request, env, url, who) {
     case 'leave':
       await q('DELETE FROM members WHERE group_id = ? AND member_id = ?', group, member).run();
       await q('DELETE FROM waiting WHERE group_id = ? AND member_id = ?', group, member).run();
+      await q('DELETE FROM push WHERE group_id = ? AND member_id = ?', group, member).run();
       return json({ ok: true });
+    case 'push': { // this phone's address for nudges
+      if (typeof body.token !== 'string' || !body.token || body.token.length > 4096) {
+        return json({ error: 'bad request' }, 400);
+      }
+      await q('INSERT INTO push (group_id, member_id, token) VALUES (?, ?, ?) ' +
+        'ON CONFLICT(group_id, member_id) DO UPDATE SET token = excluded.token',
+        group, member, body.token).run();
+      return json({ ok: true });
+    }
     case 'upload': {
       const { id, sealed } = body;
       if (!NOTE.test(id ?? '') || typeof sealed !== 'string' || sealed.length > MAX_NOTE) {
@@ -88,6 +99,7 @@ export async function groups(request, env, url, who) {
       await q('INSERT INTO highest (group_id, writer, seq) VALUES (?, ?, ?) ' +
         'ON CONFLICT(group_id, writer) DO UPDATE SET seq = MAX(seq, excluded.seq)',
         group, id.slice(0, cut), Number(id.slice(cut + 1))).run();
+      await nudge(env, group, member, now);
       return json({ ok: true });
     }
     case 'fetch': {

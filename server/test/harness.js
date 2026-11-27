@@ -33,7 +33,12 @@ export const env = {
 const rsa = () => generateKeyPairSync('rsa', { modulusLength: 2048 });
 const google = rsa();
 export const stranger = rsa();
-globalThis.fetch = async () => Response.json({
+/** Nudges the stand-in Firebase received. */
+export const nudges = [];
+globalThis.fetch = async (url, init) => String(url).includes('fcm.googleapis')
+  ? (nudges.push(JSON.parse(init.body).message), Response.json({}))
+  : Response.json({
+  access_token: 'fcm-access',
   keys: [{ ...google.publicKey.export({ format: 'jwk' }), kid: 'k1', alg: 'RS256' }],
 });
 

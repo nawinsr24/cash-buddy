@@ -31,3 +31,8 @@ CREATE TABLE IF NOT EXISTS highest (
 CREATE TABLE IF NOT EXISTS requests (
   group_id TEXT, member_id TEXT, missing TEXT NOT NULL,
   PRIMARY KEY (group_id, member_id));
+-- Where to send a phone its "something new" nudge.
+CREATE TABLE IF NOT EXISTS push (
+  group_id TEXT, member_id TEXT, token TEXT NOT NULL,
+  nudged INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (group_id, member_id));
