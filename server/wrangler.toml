@@ -12,4 +12,4 @@ GOOGLE_CLIENT_ID = "725839010520-lhet238be54f4iadun9sd2qoug4i2fu6.apps.googleuse
 [[d1_databases]]
 binding = "DB"
 database_name = "cash-buddy"
-database_id = "00000000-0000-0000-0000-000000000000" # replaced at go-live
+database_id = "190c1660-063e-4623-8bcf-9b181a0880dd"
