@@ -283,4 +283,16 @@ const Map<String, String> stringsTa = {
   'Access has been turned off': 'உங்கள் அணுகல் நிறுத்தப்பட்டுள்ளது',
   'Your data is still on this phone.': 'உங்கள் தரவு இந்தப் போனிலேயே உள்ளது.',
   'Check again': 'மீண்டும் சரிபார்',
+  'Save a protected file where you choose':
+      'நீங்கள் தேர்ந்தெடுக்கும் இடத்தில் பாதுகாப்பான கோப்பைச் சேமி',
+  'Restore from a file': 'கோப்பிலிருந்து மீட்டெடு',
+  'Backup saved': 'காப்பு சேமிக்கப்பட்டது',
+  'The backup could not be saved.': 'காப்பைச் சேமிக்க முடியவில்லை.',
+  'Replace everything on this phone?':
+      'இந்தப் போனில் உள்ள அனைத்தையும் மாற்றவா?',
+  'Entries on this phone that are not in the file will be lost.':
+      'கோப்பில் இல்லாத பதிவுகள் அழிந்துவிடும்.',
+  'Backup restored': 'காப்பு மீட்டெடுக்கப்பட்டது',
+  'This is not a backup file, or it is damaged.':
+      'இது காப்புக் கோப்பு அல்ல, அல்லது சேதமடைந்துள்ளது.',
 };

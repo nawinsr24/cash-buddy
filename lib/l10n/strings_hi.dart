@@ -279,4 +279,15 @@ const Map<String, String> stringsHi = {
   'Access has been turned off': 'आपकी पहुँच बंद कर दी गई है',
   'Your data is still on this phone.': 'आपका डेटा इस फ़ोन में सुरक्षित है।',
   'Check again': 'फिर जाँचें',
+  'Save a protected file where you choose':
+      'अपनी चुनी जगह पर सुरक्षित फ़ाइल सहेजें',
+  'Restore from a file': 'फ़ाइल से वापस लाएँ',
+  'Backup saved': 'बैकअप सहेजा गया',
+  'The backup could not be saved.': 'बैकअप सहेजा नहीं जा सका।',
+  'Replace everything on this phone?': 'इस फ़ोन का सब कुछ बदलें?',
+  'Entries on this phone that are not in the file will be lost.':
+      'जो प्रविष्टियाँ फ़ाइल में नहीं हैं, वे मिट जाएँगी।',
+  'Backup restored': 'बैकअप वापस आ गया',
+  'This is not a backup file, or it is damaged.':
+      'यह बैकअप फ़ाइल नहीं है, या खराब है।',
 };

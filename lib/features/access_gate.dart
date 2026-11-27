@@ -6,10 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../l10n/l10n.dart';
 import '../platform/access.dart';
 import '../providers.dart';
-import '../sync/backup.dart';
 import '../ui/theme.dart';
-import '../ui/widgets.dart';
-import 'passphrase.dart';
+import 'backup_actions.dart';
 
 /// Null (the usual build) means there is no server and nothing to check.
 final accessProvider = Provider<Access?>((ref) {
@@ -93,17 +91,7 @@ class _BlockedScreen extends ConsumerWidget {
               const SizedBox(height: Sp.x5),
               FilledButton(onPressed: onRetry, child: Text(tr('Check again'))),
               TextButton(
-                onPressed: () async {
-                  final vault = ref.read(syncServiceProvider).vault;
-                  if (!await ensurePassphrase(context, vault)) return;
-                  final path = await createBackup(
-                    ref.read(repoProvider),
-                    vault: vault,
-                  );
-                  if (context.mounted && path != null) {
-                    toast(context, 'Backup saved: ${path.split('/').last}');
-                  }
-                },
+                onPressed: () => saveBackup(context, ref),
                 child: Text(tr('Back up now')),
               ),
             ],

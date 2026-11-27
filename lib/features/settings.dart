@@ -13,7 +13,7 @@ import '../platform/notifications.dart';
 import '../platform/reminders.dart';
 import '../platform/sms_reader.dart';
 import '../providers.dart';
-import '../sync/backup.dart';
+import 'backup_actions.dart';
 import '../domain/currency.dart';
 import 'inbox.dart' show ImportSheet;
 import 'locale_pickers.dart';
@@ -142,22 +142,15 @@ class SettingsPage extends ConsumerWidget {
                   ListTile(
                     leading: const Icon(Icons.save_alt),
                     title: Text(tr('Back up now')),
-                    subtitle: const Text(
-                      'Saves a protected copy on this phone',
+                    subtitle: Text(
+                      tr('Save a protected file where you choose'),
                     ),
-                    onTap: () async {
-                      final vault = ref.read(syncServiceProvider).vault;
-                      if (!await ensurePassphrase(context, vault)) return;
-                      final path = await createBackup(repo, vault: vault);
-                      if (context.mounted) {
-                        toast(
-                          context,
-                          path == null
-                              ? 'Backups are not available in the browser'
-                              : 'Backup saved: ${path.split('/').last}',
-                        );
-                      }
-                    },
+                    onTap: () => saveBackup(context, ref),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.restore),
+                    title: Text(tr('Restore from a file')),
+                    onTap: () => restoreFromFile(context, ref),
                   ),
                 ],
               ),
