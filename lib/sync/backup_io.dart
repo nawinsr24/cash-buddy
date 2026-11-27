@@ -5,12 +5,11 @@ import 'package:path_provider/path_provider.dart';
 
 import '../data/repo.dart';
 import 'backup_data.dart';
-import 'vault.dart';
 
 /// Writes a checksummed JSON snapshot of all synced data to the app's
 /// documents folder (kept: the 5 most recent). Returns the file path.
-Future<String?> createBackup(Repo repo, {Vault? vault}) async {
-  final bytes = await buildBackup(repo, vault: vault);
+Future<String?> createBackup(Repo repo) async {
+  final bytes = await buildBackup(repo);
   final dir = Directory(
     p.join((await getApplicationDocumentsDirectory()).path, 'backups'),
   )..createSync(recursive: true);

@@ -1,6 +1,9 @@
 import 'dart:io';
 
 import 'package:cash_buddy/data/db_key.dart';
+import 'package:cash_buddy/data/home_repo.dart';
+import 'package:cash_buddy/domain/dates.dart';
+import 'package:cash_buddy/features/group_keeper.dart' show updateGroup;
 import 'package:cash_buddy/platform/access.dart';
 import 'package:cash_buddy/sync/group/group_service.dart';
 import 'package:cash_buddy/sync/group/http_post_box.dart';
@@ -84,6 +87,42 @@ void main() {
     expect(restarted.history(id).length, 2);
     await b.leave();
     expect(await b.open(), isNull);
+  }, skip: url == null ? 'needs the local server' : false);
+
+  test('spends from before pairing reach the other phone', () async {
+    Future<(TestEnv, GroupService)> phone(int i) async {
+      final env = await newEnv(device: 'dev$i', opening: 1000000);
+      addTearDown(() => env.db.close());
+      await env.repo.setSetting('accountSession', sessions[i]);
+      return (
+        env,
+        GroupService(
+          env.repo,
+          secrets: MemorySecretStore(),
+          server: Uri.parse('$url/'),
+        ),
+      );
+    }
+
+    final (envA, a) = await phone(0);
+    final (envB, b) = await phone(1);
+    for (var n = 1; n <= 5; n++) {
+      await envA.repo.addTransaction(type: 'debit', amountMinor: n * 100);
+    }
+    await a.create('Naveen');
+    await envA.repo.chooseSharing(earlierToo: true);
+    await updateGroup(a, envA.repo); // sent while still alone
+    await b.join(await a.inviteCode(), 'Priya');
+    await envB.repo.chooseSharing(earlierToo: true);
+    await envB.repo.addTransaction(type: 'debit', amountMinor: 7);
+    final month = DateRange.thisMonth(DateTime(2026, 11, 4));
+    for (var i = 0; i < 2; i++) {
+      await updateGroup(b, envB.repo);
+      await updateGroup(a, envA.repo);
+    }
+    await updateGroup(b, envB.repo);
+    expect((await envB.repo.homeSummary(month))!.sharedTotal, 1507);
+    expect((await envA.repo.homeSummary(month))!.sharedTotal, 1507);
   }, skip: url == null ? 'needs the local server' : false);
 
   test('no sign-in, no group', () async {

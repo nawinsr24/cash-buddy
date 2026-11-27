@@ -11,7 +11,6 @@ import '../providers.dart';
 import '../sync/backup_data.dart';
 import '../sync/vault.dart';
 import '../ui/widgets.dart';
-import 'passphrase.dart';
 
 /// The phone's own "save as" and "open" screens, replaceable in tests.
 class FileDialogs {
@@ -27,15 +26,13 @@ class FileDialogs {
 
 final fileDialogsProvider = Provider((ref) => const FileDialogs());
 
-/// Saves a complete, protected backup wherever the user chooses.
+/// Saves a complete backup wherever the user chooses.
 Future<void> saveBackup(BuildContext context, WidgetRef ref) async {
   final repo = ref.read(repoProvider);
-  final vault = ref.read(syncServiceProvider).vault;
   final dialogs = ref.read(fileDialogsProvider);
-  if (!await ensurePassphrase(context, vault)) return;
   var message = tr('Backup saved');
   try {
-    final bytes = await buildBackup(repo, vault: vault);
+    final bytes = await buildBackup(repo);
     final day = DateFormat('yyyy-MM-dd').format(repo.today);
     // A browser download reports no location, so it cannot be told apart.
     if (!await dialogs.save('cashplusplus-$day.cbbackup', bytes)) return;

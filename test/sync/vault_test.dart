@@ -42,48 +42,48 @@ void main() {
     );
   });
 
-  test(
-    'two devices with the same passphrase sync through encrypted files',
-    () async {
-      final remote = InMemoryRemote();
-      final a = await dev('devA', remote);
-      final b = await dev('devB', remote);
-      final sa = MemorySecretStore(), sb = MemorySecretStore();
-      final va = vault(sa)..setPassphrase('one passphrase');
-      final vb = vault(sb)..setPassphrase('one passphrase');
-      await Future<void>.delayed(Duration.zero);
-      await a.repo.addTransaction(type: 'debit', amountMinor: 4200);
-      final ea = SyncEngine(a.repo, remote, 'devA', vault: va);
-      final eb = SyncEngine(b.repo, remote, 'devB', vault: vb);
-      for (var i = 0; i < 3; i++) {
-        expect((await ea.sync()).ok, isTrue);
-        expect((await eb.sync()).ok, isTrue);
-      }
-      for (final bytes in remote.files.values) {
-        expect(Vault.isEncrypted(bytes), isTrue);
-      }
-      expect(await dump(b.repo), await dump(a.repo));
-    },
-  );
+  /// Uploads as an older version did: locked with the backup password.
+  Future<void> uploadLocked(InMemoryRemote remote, Vault v) async {
+    for (final name in remote.files.keys.toList()) {
+      remote.files[name] = await v.encrypt(remote.files[name]!);
+    }
+  }
 
-  test('a device without the passphrase cannot read encrypted data', () async {
+  test('new uploads need no password, even when one is stored', () async {
+    final remote = InMemoryRemote();
+    final a = await dev('devA', remote);
+    final v = vault(MemorySecretStore());
+    await v.setPassphrase('one passphrase');
+    await a.repo.addTransaction(type: 'debit', amountMinor: 4200);
+    expect(
+      (await SyncEngine(a.repo, remote, 'devA', vault: v).sync()).ok,
+      isTrue,
+    );
+    expect(remote.files.values.any(Vault.isEncrypted), isFalse);
+  });
+
+  test('data locked by an older version needs its password', () async {
     final remote = InMemoryRemote();
     final a = await dev('devA', remote);
     final b = await dev('devB', remote);
-    final va = vault(MemorySecretStore());
-    await va.setPassphrase('one passphrase');
     await a.repo.addTransaction(type: 'debit', amountMinor: 4200);
-    expect(
-      (await SyncEngine(a.repo, remote, 'devA', vault: va).sync()).ok,
-      isTrue,
-    );
-    final r = await SyncEngine(b.repo, remote, 'devB').sync();
-    expect(r.ok, isFalse);
-    expect(r.error, contains('password'));
+    await syncAll([a]);
+    final old = vault(MemorySecretStore());
+    await old.setPassphrase('one passphrase');
+    await uploadLocked(remote, old);
+
+    final none = await SyncEngine(b.repo, remote, 'devB').sync();
+    expect(none.ok, isFalse);
+    expect(none.error, contains('password'));
     final wrong = vault(MemorySecretStore());
     await wrong.setPassphrase('some other one');
-    final r2 = await SyncEngine(b.repo, remote, 'devB', vault: wrong).sync();
-    expect(r2.ok, isFalse);
+    expect(
+      (await SyncEngine(b.repo, remote, 'devB', vault: wrong).sync()).ok,
+      isFalse,
+    );
+    final right = await SyncEngine(b.repo, remote, 'devB', vault: old).sync();
+    expect(right.ok, isTrue, reason: right.error);
+    expect(await dump(b.repo), await dump(a.repo));
   });
 
   test('old unencrypted files are still read', () async {

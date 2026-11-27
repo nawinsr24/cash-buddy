@@ -93,9 +93,7 @@ const Map<String, String> stringsHi = {
   'Switch any time without losing history.': 'इतिहास खोए बिना कभी भी बदलें।',
   'Bank balance': 'बैंक बैलेंस',
   'Monthly income (optional)': 'मासिक आय (वैकल्पिक)',
-  'Protect your backups': 'अपने बैकअप सुरक्षित करें',
   'Passphrase': 'पासफ़्रेज़',
-  'Type it again': 'फिर से लिखें',
   '✨ Your performance': '✨ आपका प्रदर्शन',
   'Money Health': 'मनी हेल्थ',
   'Take a tour of Settings': 'सेटिंग्स का टूर लें',
@@ -173,7 +171,6 @@ const Map<String, String> stringsHi = {
   'Check my data': 'मेरा डेटा जांचें',
   'Back up now': 'अभी बैकअप लें',
   'Backup password': 'बैकअप पासवर्ड',
-  'Show password': 'पासवर्ड दिखाएं',
   'Automatic entries': 'अपने आप बनने वाली एंट्री',
   'Add entries from bank messages': 'बैंक संदेशों से एंट्री जोड़ें',
   'Cash++ turns your bank alerts into entries you confirm.': 'Cash++ आपके बैंक अलर्ट को ऐसी एंट्री में बदलता है जिन्हें आप पक्का करते हैं।',
@@ -276,8 +273,6 @@ const Map<String, String> stringsHi = {
   'Access has been turned off': 'आपकी पहुँच बंद कर दी गई है',
   'Your data is still on this phone.': 'आपका डेटा इस फ़ोन में सुरक्षित है।',
   'Check again': 'फिर जाँचें',
-  'Save a protected file where you choose':
-      'अपनी चुनी जगह पर सुरक्षित फ़ाइल सहेजें',
   'Restore from a file': 'फ़ाइल से वापस लाएँ',
   'Backup saved': 'बैकअप सहेजा गया',
   'The backup could not be saved.': 'बैकअप सहेजा नहीं जा सका।',
@@ -363,8 +358,6 @@ const Map<String, String> stringsHi = {
   'days left': 'दिन बाकी',
   'Set a budget': 'बजट तय करें',
   "Don't count this": 'इसे न गिनें',
-  "Not in the budget. Your partner won't see it.":
-      'बजट में नहीं। आपका साथी इसे नहीं देखेगा।',
   'Not counted': 'नहीं गिना',
   'Show my balance to my partner': 'मेरा बैलेंस साथी को दिखाएँ',
   'Waiting for your partner to switch it on.': 'साथी के चालू करने का इंतज़ार।',
@@ -379,4 +372,8 @@ const Map<String, String> stringsHi = {
   'Share one budget with your partner.': 'साथी के साथ एक बजट रखें।',
   'Start home sharing, or join with a code from your partner. You then share one budget and your spending.': 'घर साझा करना शुरू करें, या साथी के कोड से जुड़ें। फिर एक बजट और खर्च साझा होगा।',
   'of': 'कुल',
+  'Old backup password': 'पुराना बैकअप पासवर्ड',
+  'This was saved by an older version with a password. Enter it once.':
+      'इसे पुराने संस्करण ने पासवर्ड के साथ सहेजा था। एक बार डालें।',
+  'Save a file where you choose': 'अपनी चुनी जगह पर फ़ाइल सहेजें',
 };

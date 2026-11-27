@@ -46,10 +46,11 @@ void main() {
     expect((await b.repo.loanStatuses()).single.owed, 5000000);
   });
 
-  test('a protected file needs the right password', () async {
+  test('a file locked by an older version needs its password', () async {
     final a = await _filled();
+    // a file as an older version wrote it
     final vault = await testVault();
-    final file = await buildBackup(a.repo, vault: vault);
+    final file = await vault.encrypt(await buildBackup(a.repo));
     expect(Vault.isEncrypted(file), isTrue);
     final b = await newEnv(device: 'devB', opening: 77);
     final before = await dump(b.repo);

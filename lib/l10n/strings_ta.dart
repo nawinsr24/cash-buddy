@@ -92,9 +92,7 @@ const Map<String, String> stringsTa = {
   'How do you track your money?': 'உங்கள் பணத்தை எப்படி கண்காணிக்கிறீர்கள்?',
   'Bank balance': 'வங்கி இருப்பு',
   'Monthly income (optional)': 'மாத வருமானம் (விரும்பினால்)',
-  'Protect your backups': 'உங்கள் காப்புப்பிரதிகளைப் பாதுகாக்கவும்',
   'Passphrase': 'கடவுச்சொற்றொடர்',
-  'Type it again': 'மீண்டும் தட்டச்சு செய்யவும்',
   '✨ Your performance': '✨ உங்கள் செயல்திறன்',
   'Money Health': 'பண ஆரோக்கியம்',
   'Take a tour of Settings': 'அமைப்புகளைச் சுற்றிப் பாருங்கள்',
@@ -171,7 +169,6 @@ const Map<String, String> stringsTa = {
   'Check my data': 'என் தரவைச் சரிபார்',
   'Back up now': 'இப்போது காப்புப்பிரதி எடு',
   'Backup password': 'காப்புப்பிரதி கடவுச்சொல்',
-  'Show password': 'கடவுச்சொல்லைக் காட்டு',
   'Automatic entries': 'தானியங்கி பதிவுகள்',
   'Add entries from bank messages': 'வங்கிச் செய்திகளிலிருந்து பதிவுகளைச் சேர்',
   'Cash++ turns your bank alerts into entries you confirm.': 'Cash++ உங்கள் வங்கி அறிவிப்புகளை நீங்கள் உறுதிசெய்யும் பதிவுகளாக மாற்றுகிறது.',
@@ -279,8 +276,6 @@ const Map<String, String> stringsTa = {
   'Access has been turned off': 'உங்கள் அணுகல் நிறுத்தப்பட்டுள்ளது',
   'Your data is still on this phone.': 'உங்கள் தரவு இந்தப் போனிலேயே உள்ளது.',
   'Check again': 'மீண்டும் சரிபார்',
-  'Save a protected file where you choose':
-      'நீங்கள் தேர்ந்தெடுக்கும் இடத்தில் பாதுகாப்பான கோப்பைச் சேமி',
   'Restore from a file': 'கோப்பிலிருந்து மீட்டெடு',
   'Backup saved': 'காப்பு சேமிக்கப்பட்டது',
   'The backup could not be saved.': 'காப்பைச் சேமிக்க முடியவில்லை.',
@@ -365,8 +360,6 @@ const Map<String, String> stringsTa = {
   'days left': 'நாட்கள் மீதம்',
   'Set a budget': 'பட்ஜெட் அமை',
   "Don't count this": 'இதைக் கணக்கில் சேர்க்காதே',
-  "Not in the budget. Your partner won't see it.":
-      'பட்ஜெட்டில் சேராது. உங்கள் துணைக்குத் தெரியாது.',
   'Not counted': 'கணக்கில் இல்லை',
   'Show my balance to my partner': 'என் இருப்பைத் துணைக்குக் காட்டு',
   'Waiting for your partner to switch it on.': 'துணை இயக்கக் காத்திருக்கிறது.',
@@ -380,4 +373,9 @@ const Map<String, String> stringsTa = {
   'Share one budget with your partner.': 'துணையுடன் ஒரே பட்ஜெட்டைப் பகிரவும்.',
   'Start home sharing, or join with a code from your partner. You then share one budget and your spending.': 'வீட்டுப் பகிர்வைத் தொடங்கவும், அல்லது துணையின் குறியீட்டால் சேரவும். பிறகு ஒரே பட்ஜெட்டும் செலவும் பகிரப்படும்.',
   'of': 'மொத்தம்',
+  'Old backup password': 'பழைய காப்பு கடவுச்சொல்',
+  'This was saved by an older version with a password. Enter it once.':
+      'இது பழைய பதிப்பால் கடவுச்சொல்லுடன் சேமிக்கப்பட்டது. ஒருமுறை உள்ளிடவும்.',
+  'Save a file where you choose':
+      'நீங்கள் தேர்ந்தெடுக்கும் இடத்தில் கோப்பைச் சேமி',
 };

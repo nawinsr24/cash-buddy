@@ -12,13 +12,20 @@ import '../providers.dart';
 import 'group.dart';
 
 /// Sends my changes and fetches the partner's. A second round follows when
-/// what arrived (such as consent to share balances) gives me more to send.
-Future<void> updateGroup(GroupService group, Repo repo) async {
-  await group.change(repo.publishHome);
-  await group.sync();
-  await group.change(repo.publishHome);
-  if ((await group.open())!.disk.outbox.isNotEmpty) await group.sync();
+/// what arrived (consent to share balances, or a request to send again) gives
+/// me more to send. Calls take turns, so two never work on the group at once.
+Future<void> updateGroup(GroupService group, Repo repo) {
+  final next = _turn.catchError((_) {}).then((_) async {
+    await group.change(repo.publishHome);
+    await group.sync();
+    await group.change(repo.publishHome);
+    if ((await group.open())!.disk.outbox.isNotEmpty) await group.sync();
+    groupSynced.value++;
+  });
+  return _turn = next;
 }
+
+Future<void> _turn = Future.value();
 
 /// For buttons: update now, ignoring being offline.
 final groupUpdateProvider = Provider<Future<void> Function()>((ref) {
@@ -101,7 +108,6 @@ class _GroupKeeperState extends ConsumerState<GroupKeeper>
       await updateGroup(group, repo);
       if (!mounted) return;
       ref.invalidate(budgetStatusProvider);
-      groupSynced.value++;
     } catch (_) {
       // offline or signed out: tried again next time
     } finally {

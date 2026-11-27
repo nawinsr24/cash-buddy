@@ -104,8 +104,8 @@ class SyncEngine {
   final String deviceId;
   final SyncProgressFn? onProgress;
 
-  /// When set, every file is encrypted before it leaves the phone. Older
-  /// unencrypted files are still readable.
+  /// Only to read files an older version locked with a password. New files are
+  /// not password-locked: they sit in the app's private folder in Drive.
   final Vault? vault;
   SyncEngine(
     this.repo,
@@ -210,10 +210,7 @@ class SyncEngine {
     });
     final name = 'seg/$deviceId/${seq.toString().padLeft(8, '0')}.json.gz';
     final packed = gzipEncode(utf8.encode(envelope));
-    await remote.write(
-      name,
-      vault == null ? packed : await vault!.encrypt(packed),
-    );
+    await remote.write(name, packed);
     // Only advance the cursor after the upload succeeded.
     await repo.setSetting('segSeq', '$seq');
     await repo.setSetting('lastPushedHlc', maxHlc);

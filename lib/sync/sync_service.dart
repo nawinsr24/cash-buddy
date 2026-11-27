@@ -61,7 +61,6 @@ class SyncService with WidgetsBindingObserver {
   final Vault vault;
 
   /// Error text that tells the screen to ask for a backup passphrase first.
-  static const needsPassphrase = 'PASSPHRASE_NEEDED';
 
   /// The account signed in during this session (display only).
   String? signedInEmail;
@@ -108,7 +107,6 @@ class SyncService with WidgetsBindingObserver {
 
   /// Interactive: sign in, take a safety backup, enable Online Mode and merge.
   Future<SyncResult> goOnline() async {
-    if (!await vault.isSet) return const SyncResult(0, 0, 0, needsPassphrase);
     final ({RemoteStore remote, String? email})? signed;
     try {
       signed = await _signIn();
@@ -116,7 +114,7 @@ class SyncService with WidgetsBindingObserver {
       return SyncResult(0, 0, 0, e.message);
     }
     if (signed == null) return const SyncResult(0, 0, 0, 'Sign-in cancelled');
-    await createBackup(repo, vault: vault);
+    await createBackup(repo);
     _remote = signed.remote;
     signedInEmail = signed.email;
     await repo.setSetting('dataMode', 'online');
@@ -127,9 +125,6 @@ class SyncService with WidgetsBindingObserver {
   /// nothing locally; Online Mode is only switched on by [finishSetupOnline]
   /// or [restoreFromDrive].
   Future<SetupSignIn> signInForSetup() async {
-    if (!await vault.isSet) {
-      return const SetupSignIn(ok: false, error: needsPassphrase);
-    }
     _report(SyncStage.signingIn, 0, 0);
     try {
       final signed = await _signIn();
@@ -193,9 +188,6 @@ class SyncService with WidgetsBindingObserver {
     if (_running) return const SyncResult(0, 0, 0, 'Sync already running');
     if (!force && await repo.dataMode != 'online') {
       return const SyncResult(0, 0, 0);
-    }
-    if (!await vault.isSet) {
-      return const SyncResult(0, 0, 0, needsPassphrase);
     }
     final remote = _remote ??= await DriveRemote.restore();
     if (remote == null) {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -56,18 +58,24 @@ class _GroupPageState extends ConsumerState<GroupPage> {
   Replica? _group;
   var _loading = true;
   String? _problem;
+  Timer? _poll;
 
   GroupService get _service => ref.read(groupServiceProvider)!;
 
   @override
   void initState() {
     super.initState();
+    // While this screen is open, keep looking for the other phone.
+    _poll = Timer.periodic(const Duration(seconds: 10), (_) {
+      if (_group != null) _sync();
+    });
     groupSynced.addListener(_redraw);
     _open();
   }
 
   @override
   void dispose() {
+    _poll?.cancel();
     groupSynced.removeListener(_redraw);
     super.dispose();
   }
@@ -90,7 +98,9 @@ class _GroupPageState extends ConsumerState<GroupPage> {
   Future<void> _sync() async {
     String? problem;
     try {
-      await _service.sync();
+      final token = await ref.read(pushProvider).token();
+      if (token != null) await _service.registerPush(token);
+      await updateGroup(_service, ref.read(repoProvider));
     } on GroupProblem catch (e) {
       problem = e.message;
     }

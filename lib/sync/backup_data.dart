@@ -47,8 +47,8 @@ _tables(AppDatabase db) => {
   'budget_items': (db.budgetItems, BudgetItem.fromJson),
 };
 
-/// The backup file's bytes, encrypted when a backup password is set.
-Future<Uint8List> buildBackup(Repo repo, {Vault? vault}) async {
+/// The backup file's bytes. No password: whoever has the file can read it.
+Future<Uint8List> buildBackup(Repo repo) async {
   final db = repo.db;
   final data = <String, Object?>{
     'app': 'cash-buddy',
@@ -71,9 +71,7 @@ Future<Uint8List> buildBackup(Repo repo, {Vault? vault}) async {
       'payload': payload,
     }),
   );
-  return vault != null && await vault.isSet
-      ? await vault.encrypt(body)
-      : Uint8List.fromList(body);
+  return Uint8List.fromList(body);
 }
 
 /// Replaces this phone's data with the backup's. All or nothing: a damaged

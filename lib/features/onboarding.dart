@@ -90,11 +90,6 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       return;
     }
     final sync = ref.read(syncServiceProvider);
-    if (!await ensurePassphrase(context, sync.vault)) {
-      if (mounted) setState(() => _dataMode = 'offline');
-      return;
-    }
-    if (!mounted) return;
     setState(() => _signingIn = true);
     final r = await sync.signInForSetup();
     if (!mounted) return;
@@ -146,10 +141,12 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       if (restore == true) {
         if (!mounted) return;
         setState(() => _restoring = true);
-        final res = await sync.restoreFromDrive();
+        var res = await sync.restoreFromDrive();
         if (!mounted) return;
         if (!res.ok && (res.error ?? '').contains('password')) {
-          await sync.vault.clear(); // ask again next time
+          if (await askOldPassword(context, sync.vault)) {
+            res = await sync.restoreFromDrive();
+          }
           if (!mounted) return;
         }
         if (res.ok) {
@@ -289,7 +286,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                         'online',
                         Icons.cloud_sync_outlined,
                         'Back up to Google Drive',
-                        'Your data stays on this phone and is also saved, encrypted, in your own Google Drive.',
+                        'Your data stays on this phone and is also saved in your own Google Drive.',
                       ),
                     ],
                     value: _dataMode,

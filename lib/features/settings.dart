@@ -74,7 +74,7 @@ class SettingsPage extends ConsumerWidget {
                     ),
                     subtitle: Text(
                       s.online
-                          ? 'Your data is also saved, encrypted, in your Google Drive'
+                          ? 'Your data is also saved in your Google Drive'
                           : 'Your data stays on this phone',
                     ),
                     trailing: Switch.adaptive(
@@ -144,9 +144,7 @@ class SettingsPage extends ConsumerWidget {
                   ListTile(
                     leading: const Icon(Icons.save_alt),
                     title: Text(tr('Back up now')),
-                    subtitle: Text(
-                      tr('Save a protected file where you choose'),
-                    ),
+                    subtitle: Text(tr('Save a file where you choose')),
                     onTap: () => saveBackup(context, ref),
                   ),
                   ListTile(
@@ -672,10 +670,14 @@ class SettingsPage extends ConsumerWidget {
     );
     if (ok != true) return;
     if (!context.mounted) return;
-    final vault = ref.read(syncServiceProvider).vault;
-    if (!await ensurePassphrase(context, vault)) return;
+    final sync = ref.read(syncServiceProvider);
     AppLockGate.holdOff(const Duration(minutes: 2));
-    final r = await ref.read(syncServiceProvider).goOnline();
+    var r = await sync.goOnline();
+    if (!r.ok && (r.error ?? '').contains('password') && context.mounted) {
+      if (await askOldPassword(context, sync.vault)) {
+        r = await sync.syncNow(force: true);
+      }
+    }
     if (context.mounted) {
       toast(
         context,
