@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "wrangler dev --local",
     "keys": "node scripts/keys.js",
-    "test": "node --experimental-sqlite --test test/*.test.js && sh scripts/live_test.sh"
+    "test": "node --experimental-sqlite --test test/*.test.js && sh scripts/live_test.sh && cd .. && node --experimental-sqlite server/test/serve.js flutter test test/sync/group_service_test.dart"
   },
   "devDependencies": {
     "wrangler": "^4.169.0"

@@ -164,8 +164,10 @@ Map<String, Entry> entriesOf(Iterable<Note> notes) {
 }
 
 /// Money is never sent as a total; it is always added up from the entries.
-int totalMinor(Map<String, Entry> entries) =>
-    entries.values.fold(0, (sum, e) => sum + (e.data['amountMinor'] as int));
+int totalMinor(Map<String, Entry> entries) => entries.values.fold(
+  0,
+  (sum, e) => sum + (e.data['amountMinor'] as int? ?? 0),
+);
 
 enum ChangeKind { added, changed, settled, deleted }
 

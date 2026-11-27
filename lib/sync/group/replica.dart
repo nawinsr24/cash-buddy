@@ -1,6 +1,8 @@
 /// One phone's side of the shared group, and the post box it talks to.
 library;
 
+import 'dart:async';
+
 import '../../domain/hlc.dart';
 import 'note.dart';
 
@@ -97,6 +99,11 @@ class Replica {
     return ids;
   }
 
+  /// An entry with a known ID (a member's name, the group budget): creates it
+  /// the first time, edits it after that.
+  void put(String id, Map<String, Object?> data) =>
+      entries.containsKey(id) ? edit(id, data) : _write([Op(id, data: data)]);
+
   /// Editing an entry that needs review also settles it.
   void edit(String id, Map<String, Object?> changes) {
     final e = entries[id];
@@ -145,13 +152,13 @@ class Replica {
 
   /// Safe to interrupt anywhere and run again. [step] is called between
   /// saved steps (tests crash there).
-  Future<void> sync(PostBox box, {void Function()? step}) async {
-    final pause = step ?? () {};
+  Future<void> sync(PostBox box, {FutureOr<void> Function()? step}) async {
+    Future<void> pause() async => await step?.call();
     for (final id in disk.outbox.toList()) {
       await box.upload(disk.member, id, disk.notes[id]!);
-      pause();
+      await pause();
       disk.outbox.remove(id);
-      pause();
+      await pause();
     }
 
     for (final sealed in await box.fetch(disk.member)) {
@@ -162,9 +169,9 @@ class Replica {
         _clock.observe(n.stamp);
         _cache = null;
       }
-      pause();
+      await pause();
       await box.ack(disk.member, n.id);
-      pause();
+      await pause();
     }
 
     // Send again whatever a partner is missing; it goes out next time.
@@ -176,7 +183,7 @@ class Replica {
         }
       }
     }
-    pause();
+    await pause();
 
     // Ask for what the box has seen but this phone does not hold: a note that
     // expired while away, or one made after a restored backup.

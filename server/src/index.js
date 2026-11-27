@@ -2,6 +2,7 @@
 // nobody else can block or unblock a phone. Signing in with Google links the
 // phone to an account, so that a block survives reinstalling.
 import { verifyGoogleToken } from './google.js';
+import { groups } from './groups.js';
 
 /** Install IDs the app makes. Anything else is refused. */
 const DEVICE = /^in_[A-Za-z0-9_-]{6,64}$/;
@@ -107,6 +108,26 @@ async function signIn(request, env) {
   return json({ email: who.email, session, ...reply });
 }
 
+/** The account behind a session we issued, unless expired or blocked. */
+async function sessionAccount(request, env) {
+  try {
+    const { payload, signature } = JSON.parse(
+      atob(request.headers.get('x-session') ?? ''));
+    const secret = await crypto.subtle.importKey(
+      'pkcs8', bytes(env.SIGNING_KEY), { name: 'Ed25519' }, true, ['sign']);
+    const { x } = await crypto.subtle.exportKey('jwk', secret);
+    const open = await crypto.subtle.importKey(
+      'jwk', { kty: 'OKP', crv: 'Ed25519', x }, { name: 'Ed25519' }, false, ['verify']);
+    const genuine = await crypto.subtle.verify(
+      'Ed25519', open, bytes(signature), new TextEncoder().encode(payload));
+    const claims = JSON.parse(payload);
+    if (!genuine || !claims.sub || !(claims.exp > Date.now())) return null;
+    return (await isBlocked(env, claims.device)) ? null : claims.sub;
+  } catch {
+    return null;
+  }
+}
+
 async function admin(request, env, url) {
   if (!(await isAdmin(request, env))) return json({ error: 'no' }, 401);
   if (url.pathname === '/admin/devices' && request.method === 'GET') {
@@ -147,6 +168,10 @@ export default {
     }
     if (url.pathname === '/signin' && request.method === 'POST') {
       return signIn(request, env);
+    }
+    if (url.pathname.startsWith('/group/')) {
+      const who = await sessionAccount(request, env);
+      return who ? groups(request, env, url, who) : json({ error: 'sign in' }, 401);
     }
     if (url.pathname.startsWith('/admin/')) return admin(request, env, url);
     return json({ error: 'not found' }, 404);

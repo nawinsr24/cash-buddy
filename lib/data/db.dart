@@ -215,6 +215,16 @@ class SmsInbox extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// The shared group's notes on this phone (see sync/group). Not part of
+/// personal sync or backup.
+class GroupNotes extends Table {
+  TextColumn get id => text()();
+  TextColumn get body => text()();
+  BoolColumn get pending => boolean().withDefault(const Constant(false))();
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 /// Device-local key/value settings.
 class Settings extends Table {
   TextColumn get key => text()();
@@ -235,6 +245,7 @@ class Settings extends Table {
     BudgetItems,
     SmsInbox,
     Settings,
+    GroupNotes,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -251,7 +262,7 @@ class AppDatabase extends _$AppDatabase {
   static AppDatabase open() => AppDatabase(openAppDatabase());
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -311,6 +322,9 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(debts, debts.emiMinor);
         await m.addColumn(debts, debts.emiDay);
         await m.addColumn(debts, debts.emiInBudget);
+      }
+      if (from < 11) {
+        await m.createTable(groupNotes);
       }
       if (from < 3) {
         // Chit funds became custom monthly plans: instalment = monthly amount,

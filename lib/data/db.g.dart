@@ -7749,6 +7749,265 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
   }
 }
 
+class $GroupNotesTable extends GroupNotes
+    with TableInfo<$GroupNotesTable, GroupNote> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $GroupNotesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bodyMeta = const VerificationMeta('body');
+  @override
+  late final GeneratedColumn<String> body = GeneratedColumn<String>(
+    'body',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _pendingMeta = const VerificationMeta(
+    'pending',
+  );
+  @override
+  late final GeneratedColumn<bool> pending = GeneratedColumn<bool>(
+    'pending',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("pending" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, body, pending];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'group_notes';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<GroupNote> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('body')) {
+      context.handle(
+        _bodyMeta,
+        body.isAcceptableOrUnknown(data['body']!, _bodyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bodyMeta);
+    }
+    if (data.containsKey('pending')) {
+      context.handle(
+        _pendingMeta,
+        pending.isAcceptableOrUnknown(data['pending']!, _pendingMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  GroupNote map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return GroupNote(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      body: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}body'],
+      )!,
+      pending: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}pending'],
+      )!,
+    );
+  }
+
+  @override
+  $GroupNotesTable createAlias(String alias) {
+    return $GroupNotesTable(attachedDatabase, alias);
+  }
+}
+
+class GroupNote extends DataClass implements Insertable<GroupNote> {
+  final String id;
+  final String body;
+  final bool pending;
+  const GroupNote({
+    required this.id,
+    required this.body,
+    required this.pending,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['body'] = Variable<String>(body);
+    map['pending'] = Variable<bool>(pending);
+    return map;
+  }
+
+  GroupNotesCompanion toCompanion(bool nullToAbsent) {
+    return GroupNotesCompanion(
+      id: Value(id),
+      body: Value(body),
+      pending: Value(pending),
+    );
+  }
+
+  factory GroupNote.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return GroupNote(
+      id: serializer.fromJson<String>(json['id']),
+      body: serializer.fromJson<String>(json['body']),
+      pending: serializer.fromJson<bool>(json['pending']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'body': serializer.toJson<String>(body),
+      'pending': serializer.toJson<bool>(pending),
+    };
+  }
+
+  GroupNote copyWith({String? id, String? body, bool? pending}) => GroupNote(
+    id: id ?? this.id,
+    body: body ?? this.body,
+    pending: pending ?? this.pending,
+  );
+  GroupNote copyWithCompanion(GroupNotesCompanion data) {
+    return GroupNote(
+      id: data.id.present ? data.id.value : this.id,
+      body: data.body.present ? data.body.value : this.body,
+      pending: data.pending.present ? data.pending.value : this.pending,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('GroupNote(')
+          ..write('id: $id, ')
+          ..write('body: $body, ')
+          ..write('pending: $pending')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, body, pending);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is GroupNote &&
+          other.id == this.id &&
+          other.body == this.body &&
+          other.pending == this.pending);
+}
+
+class GroupNotesCompanion extends UpdateCompanion<GroupNote> {
+  final Value<String> id;
+  final Value<String> body;
+  final Value<bool> pending;
+  final Value<int> rowid;
+  const GroupNotesCompanion({
+    this.id = const Value.absent(),
+    this.body = const Value.absent(),
+    this.pending = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  GroupNotesCompanion.insert({
+    required String id,
+    required String body,
+    this.pending = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       body = Value(body);
+  static Insertable<GroupNote> custom({
+    Expression<String>? id,
+    Expression<String>? body,
+    Expression<bool>? pending,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (body != null) 'body': body,
+      if (pending != null) 'pending': pending,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  GroupNotesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? body,
+    Value<bool>? pending,
+    Value<int>? rowid,
+  }) {
+    return GroupNotesCompanion(
+      id: id ?? this.id,
+      body: body ?? this.body,
+      pending: pending ?? this.pending,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (body.present) {
+      map['body'] = Variable<String>(body.value);
+    }
+    if (pending.present) {
+      map['pending'] = Variable<bool>(pending.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('GroupNotesCompanion(')
+          ..write('id: $id, ')
+          ..write('body: $body, ')
+          ..write('pending: $pending, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -7763,6 +8022,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $BudgetItemsTable budgetItems = $BudgetItemsTable(this);
   late final $SmsInboxTable smsInbox = $SmsInboxTable(this);
   late final $SettingsTable settings = $SettingsTable(this);
+  late final $GroupNotesTable groupNotes = $GroupNotesTable(this);
   late final Index txnDate = Index(
     'txn_date',
     'CREATE INDEX txn_date ON transactions (date)',
@@ -7802,6 +8062,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     budgetItems,
     smsInbox,
     settings,
+    groupNotes,
     txnDate,
     txnCatDate,
     txnAccDate,
@@ -11515,6 +11776,172 @@ typedef $$SettingsTableProcessedTableManager =
       Setting,
       PrefetchHooks Function()
     >;
+typedef $$GroupNotesTableCreateCompanionBuilder = GroupNotesCompanion Function({
+  required String id,
+  required String body,
+  Value<bool> pending,
+  Value<int> rowid,
+});
+typedef $$GroupNotesTableUpdateCompanionBuilder = GroupNotesCompanion Function({
+  Value<String> id,
+  Value<String> body,
+  Value<bool> pending,
+  Value<int> rowid,
+});
+
+class $$GroupNotesTableFilterComposer
+    extends Composer<_$AppDatabase, $GroupNotesTable> {
+  $$GroupNotesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get pending => $composableBuilder(
+    column: $table.pending,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$GroupNotesTableOrderingComposer
+    extends Composer<_$AppDatabase, $GroupNotesTable> {
+  $$GroupNotesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get pending => $composableBuilder(
+    column: $table.pending,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$GroupNotesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $GroupNotesTable> {
+  $$GroupNotesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get body =>
+      $composableBuilder(column: $table.body, builder: (column) => column);
+
+  GeneratedColumn<bool> get pending =>
+      $composableBuilder(column: $table.pending, builder: (column) => column);
+}
+
+class $$GroupNotesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $GroupNotesTable,
+          GroupNote,
+          $$GroupNotesTableFilterComposer,
+          $$GroupNotesTableOrderingComposer,
+          $$GroupNotesTableAnnotationComposer,
+          $$GroupNotesTableCreateCompanionBuilder,
+          $$GroupNotesTableUpdateCompanionBuilder,
+          (
+            GroupNote,
+            BaseReferences<_$AppDatabase, $GroupNotesTable, GroupNote>,
+          ),
+          GroupNote,
+          PrefetchHooks Function()
+        > {
+  $$GroupNotesTableTableManager(_$AppDatabase db, $GroupNotesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$GroupNotesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$GroupNotesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$GroupNotesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> body = const Value.absent(),
+                Value<bool> pending = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => GroupNotesCompanion(
+                id: id,
+                body: body,
+                pending: pending,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String body,
+                Value<bool> pending = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => GroupNotesCompanion.insert(
+                id: id,
+                body: body,
+                pending: pending,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$GroupNotesTable, GroupNote>(table),
+                  BaseReferences<_$AppDatabase, $GroupNotesTable, GroupNote>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$GroupNotesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $GroupNotesTable,
+      GroupNote,
+      $$GroupNotesTableFilterComposer,
+      $$GroupNotesTableOrderingComposer,
+      $$GroupNotesTableAnnotationComposer,
+      $$GroupNotesTableCreateCompanionBuilder,
+      $$GroupNotesTableUpdateCompanionBuilder,
+      (GroupNote, BaseReferences<_$AppDatabase, $GroupNotesTable, GroupNote>),
+      GroupNote,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -11539,4 +11966,6 @@ class $AppDatabaseManager {
       $$SmsInboxTableTableManager(_db, _db.smsInbox);
   $$SettingsTableTableManager get settings =>
       $$SettingsTableTableManager(_db, _db.settings);
+  $$GroupNotesTableTableManager get groupNotes =>
+      $$GroupNotesTableTableManager(_db, _db.groupNotes);
 }
