@@ -15,6 +15,7 @@ import '../platform/sms_reader.dart';
 import '../providers.dart';
 import 'account_tile.dart';
 import 'backup_actions.dart';
+import 'group.dart';
 import '../domain/currency.dart';
 import 'inbox.dart' show ImportSheet;
 import 'locale_pickers.dart';
@@ -157,6 +158,7 @@ class SettingsPage extends ConsumerWidget {
               ),
             ),
             const AccountCard(),
+            const GroupCard(),
             const _Group('Accounts'),
             Card(
               child: Column(

@@ -1,3 +1,5 @@
+import 'group_share.dart';
+
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
@@ -277,6 +279,12 @@ extension BudgetRepo on Repo {
       final v = pay.read<int>('s');
       if (v > 0) out['_cardbill'] = v;
     }
+    // only my share of the shared group counts against my own budget
+    final group = (await myGroupShare(
+      r.startStr,
+      r.endStr,
+    )).values.fold<int>(0, (a, b) => a + b);
+    if (group > 0) out['_group'] = group;
     return out;
   }
 
@@ -408,6 +416,9 @@ extension BudgetRepo on Repo {
         final d = x.read<String>('d');
         byDay[d] = (byDay[d] ?? 0) + x.read<int>('s');
       }
+    }
+    for (final e in (await myGroupShare(r.startStr, r.endStr)).entries) {
+      byDay[e.key] = (byDay[e.key] ?? 0) + e.value;
     }
     var run = 0;
     final out = <int>[];
