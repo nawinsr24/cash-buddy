@@ -13,16 +13,23 @@ import '../ui/art.dart';
 import '../ui/motion.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
+import 'cards.dart';
 
 class DebtsPage extends ConsumerStatefulWidget {
-  const DebtsPage({super.key});
+  /// 0 Credit cards, 1 Receivables, 2 Liabilities. Cards come first.
+  final int initialTab;
+  const DebtsPage({super.key, this.initialTab = 0});
   @override
   ConsumerState<DebtsPage> createState() => _DebtsPageState();
 }
 
 class _DebtsPageState extends ConsumerState<DebtsPage>
     with SingleTickerProviderStateMixin {
-  late final _tabs = TabController(length: 2, vsync: this);
+  late final _tabs = TabController(
+    length: 3,
+    vsync: this,
+    initialIndex: widget.initialTab,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -31,25 +38,35 @@ class _DebtsPageState extends ConsumerState<DebtsPage>
         title: Text(tr('Debts')),
         bottom: TabBar(
           controller: _tabs,
-          tabs: const [
-            Tab(text: 'Receivables'),
-            Tab(text: 'Liabilities'),
+          tabs: [
+            Tab(text: tr('Credit cards')),
+            Tab(text: tr('Receivables')),
+            Tab(text: tr('Liabilities')),
           ],
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => showSheet(
-          context,
-          (_) => AddDebtSheet(
-            direction: _tabs.index == 0 ? 'receivable' : 'liability',
-          ),
-        ),
+        onPressed: () => _tabs.index == 0
+            ? showSheet(context, (_) => const AddCardSheet())
+            : showSheet(
+                context,
+                (_) => AddDebtSheet(
+                  direction: _tabs.index == 1 ? 'receivable' : 'liability',
+                ),
+              ),
         icon: const Icon(Icons.add),
-        label: Text(_tabs.index == 0 ? 'I lent' : 'I borrowed'),
+        label: Text(
+          _tabs.index == 0
+              ? 'Add card'
+              : _tabs.index == 1
+              ? 'I lent'
+              : 'I borrowed',
+        ),
       ),
       body: TabBarView(
         controller: _tabs,
         children: const [
+          CardsList(),
           _DebtList(direction: 'receivable'),
           _DebtList(direction: 'liability'),
         ],

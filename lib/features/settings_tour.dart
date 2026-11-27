@@ -43,7 +43,7 @@ const _steps = <_Step>[
   _Step(
     '🏆',
     'Monthly title',
-    'At month end you get a fun title based on how you spent. Choose a friendly or an honest and funny tone here.',
+    'At month end you get a fun title based on how you spent. It is honest and funny, but we never joke about health or family spending.',
   ),
   _Step(
     '🎨',

@@ -203,6 +203,7 @@ void main() {
         );
       });
       await tapText(tester, 'Debts', last: true);
+      await tapText(tester, 'Receivables');
       expect(find.text('Ravi'), findsOneWidget);
       expect(find.text('₹2,000.00'), findsWidgets);
       await tapText(tester, 'Ravi');
@@ -301,36 +302,26 @@ void main() {
     expect(find.text('Added money'), findsOneWidget);
   });
 
-  testWidgets('split: withdraw cash moves bank to cash, not spending', (
+  testWidgets('split: Home has no cash buttons; transfer moves bank to cash', (
     tester,
   ) async {
     final env = await pump(tester, accountMode: 'split', opening: 1000000);
-    // the helper puts the opening balance in the cash account
+    expect(find.textContaining('Withdraw cash'), findsNothing);
+    expect(find.textContaining('Deposit cash'), findsNothing);
     final before = await tester.runAsync(() => env.repo.totalBalance());
-    await tester.tap(find.textContaining('Withdraw cash').first);
-    await settle(tester);
-    await tester.enterText(find.byType(TextField).first, '2000');
-    await tester.tap(find.widgetWithText(FilledButton, 'Withdraw cash'));
+    await tester.runAsync(
+      () => env.repo.addTransaction(
+        type: 'transfer',
+        amountMinor: 200000,
+        accountId: 'acc_bank',
+        toAccountId: 'acc_cash',
+      ),
+    );
     await settle(tester);
     final bal = (await tester.runAsync(() => env.repo.balances()))!;
     expect(bal['acc_cash'], 1200000);
     expect(bal['acc_bank'], -200000);
     expect(await tester.runAsync(() => env.repo.totalBalance()), before);
-    final d = await tester.runAsync(
-      () => env.repo.dashboard(DateRange.thisMonth(env.repo.today)),
-    );
-    expect(d!.spending, 0);
-    expect(d.income, 0);
-    // and back again
-    await tester.tap(find.textContaining('Deposit cash').first);
-    await settle(tester);
-    await tester.enterText(find.byType(TextField).first, '500');
-    await tester.tap(find.widgetWithText(FilledButton, 'Deposit cash'));
-    await settle(tester);
-    expect(
-      (await tester.runAsync(() => env.repo.balances()))!['acc_cash'],
-      1150000,
-    );
   });
 
   testWidgets('month-end banner opens the title with a health note', (
@@ -481,25 +472,6 @@ void main() {
     await settle(tester);
     final total = await tester.runAsync(() => env.repo.balances());
     expect(total!.values.fold<int>(0, (a, b) => a + b), 6000000);
-  });
-
-  testWidgets('tone is explained with an example of each style', (
-    tester,
-  ) async {
-    await pump(tester);
-    await tapText(tester, 'Settings', last: true);
-    await tester.scrollUntilVisible(
-      find.text('How we talk to you'),
-      200,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.tap(find.text('How we talk to you'));
-    await settle(tester);
-    expect(find.textContaining('gives you a title'), findsOneWidget);
-    expect(find.text('Friendly'), findsWidgets);
-    expect(find.text('Honest and funny'), findsWidgets);
-    expect(find.textContaining('Where is the extra money'), findsOneWidget);
-    expect(find.textContaining('never joke about health'), findsOneWidget);
   });
 
   testWidgets('online mode asks for confirmation before Google sign-in', (

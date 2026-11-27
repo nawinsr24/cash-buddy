@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 
 import '../domain/dates.dart';
 import '../domain/grade.dart';
+import 'card_repo.dart';
 import 'db.dart';
 import 'budget_repo.dart';
 import 'invest_repo.dart';
@@ -63,8 +64,9 @@ String monthKey(int year, int month) =>
     '$year-${month.toString().padLeft(2, '0')}';
 
 extension InsightsRepo on Repo {
-  Future<bool> get roastMode async =>
-      (await getSetting('roastMode') ?? '1') == '1';
+  /// Titles and tips are always honest and funny. Health and family spending
+  /// is never joked about; that rule lives in the wording itself.
+  Future<bool> get roastMode async => true;
 
   DateRange _monthRange(int y, int m) =>
       DateRange(Dates.day(y, m, 1), Dates.day(y, m, Dates.daysInMonth(y, m)));
@@ -382,7 +384,8 @@ extension InsightsRepo on Repo {
         await totalBalance() +
         inv.fold<int>(0, (a, i) => a + i.currentValue) +
         rec.fold<int>(0, (a, d) => a + d.state.outstanding) -
-        lia.fold<int>(0, (a, d) => a + d.state.outstanding);
+        lia.fold<int>(0, (a, d) => a + d.state.outstanding) -
+        (await cardStatuses()).fold<int>(0, (a, c) => a + c.owed);
 
     return InsightsData(
       spentSoFar: s.spending,

@@ -79,7 +79,21 @@ typedef SyncProgressFn = void Function(SyncStage stage, int done, int total);
 ///    Derived debt data (accruals, allocations, ledger legs) is deterministic
 ///    and re-reconciled after every pull, so concurrent edits converge.
 class SyncEngine {
-  static const schema = 1;
+  /// Format of uploaded segments. Raise it whenever a synced table gains a
+  /// field: older apps then ask to be updated instead of silently dropping the
+  /// field and uploading the row without it. Older formats are always read; add
+  /// the new field to [_addedLater].
+  ///
+  /// 2: credit card fields on accounts.
+  static const schema = 2;
+
+  /// Required fields that segments from earlier releases may not have, with
+  /// the value they get when this phone has no copy of the row either.
+  static const _addedLater = <String, Map<String, Object>>{
+    'accounts': {'interestBps': 0, 'ratePeriod': 'month', 'graceDays': 0},
+    'debts': {'affectsBalance': true},
+    'investments': {'recurring': false, 'everyN': 1},
+  };
   final Repo repo;
   final RemoteStore remote;
   final String deviceId;
@@ -278,42 +292,50 @@ class SyncEngine {
     final incoming = json['hlc'] as String;
     clock.observe(incoming);
     final id = json['id'] as String;
-    String? local;
+    Object? existing;
     switch (table) {
       case 'accounts':
-        local = (await (db.select(
+        existing = await (db.select(
           db.accounts,
-        )..where((t) => t.id.equals(id))).getSingleOrNull())?.hlc;
+        )..where((t) => t.id.equals(id))).getSingleOrNull();
       case 'categories':
-        local = (await (db.select(
+        existing = await (db.select(
           db.categories,
-        )..where((t) => t.id.equals(id))).getSingleOrNull())?.hlc;
+        )..where((t) => t.id.equals(id))).getSingleOrNull();
       case 'transactions':
-        local = (await (db.select(
+        existing = await (db.select(
           db.transactions,
-        )..where((t) => t.id.equals(id))).getSingleOrNull())?.hlc;
+        )..where((t) => t.id.equals(id))).getSingleOrNull();
       case 'debts':
-        local = (await (db.select(
+        existing = await (db.select(
           db.debts,
-        )..where((t) => t.id.equals(id))).getSingleOrNull())?.hlc;
+        )..where((t) => t.id.equals(id))).getSingleOrNull();
       case 'debt_events':
-        local = (await (db.select(
+        existing = await (db.select(
           db.debtEvents,
-        )..where((t) => t.id.equals(id))).getSingleOrNull())?.hlc;
+        )..where((t) => t.id.equals(id))).getSingleOrNull();
       case 'investments':
-        local = (await (db.select(
+        existing = await (db.select(
           db.investments,
-        )..where((t) => t.id.equals(id))).getSingleOrNull())?.hlc;
+        )..where((t) => t.id.equals(id))).getSingleOrNull();
       case 'investment_entries':
-        local = (await (db.select(
+        existing = await (db.select(
           db.investmentEntries,
-        )..where((t) => t.id.equals(id))).getSingleOrNull())?.hlc;
+        )..where((t) => t.id.equals(id))).getSingleOrNull();
       case 'budget_items':
-        local = (await (db.select(
+        existing = await (db.select(
           db.budgetItems,
-        )..where((t) => t.id.equals(id))).getSingleOrNull())?.hlc;
+        )..where((t) => t.id.equals(id))).getSingleOrNull();
     }
-    if (local != null && local.compareTo(incoming) >= 0) return false;
+    final local = existing == null
+        ? null
+        : (existing as dynamic).toJson() as Map<String, dynamic>;
+    if (local != null && (local['hlc'] as String).compareTo(incoming) >= 0) {
+      return false;
+    }
+    // A field the sender does not know about keeps this phone's value. A field
+    // sent as null is a real null and still overwrites.
+    json = {...?(local ?? _addedLater[table]), ...json};
     switch (table) {
       case 'accounts':
         await db

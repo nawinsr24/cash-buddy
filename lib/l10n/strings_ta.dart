@@ -31,12 +31,8 @@ const Map<String, String> stringsTa = {
   'View all': 'அனைத்தையும் பார்',
   'Nothing outstanding': 'நிலுவை எதுவும் இல்லை',
   'Received vs spent': 'பெற்றது vs செலவு',
-  'Nothing to show for this period yet':
-      'இந்தக் காலத்திற்கு இன்னும் எதுவும் இல்லை',
   'Main categories': 'முக்கிய வகைகள்',
   'Sub-categories': 'துணை வகைகள்',
-  'Withdraw cash': 'பணம் எடு',
-  'Deposit cash': 'பணம் செலுத்து',
   'Charge interest': 'வட்டி விதி',
   'Simple': 'எளிய',
   'Compound': 'கூட்டு',
@@ -88,20 +84,14 @@ const Map<String, String> stringsTa = {
   'Skip': 'தவிர்',
   'Remind me every day': 'தினமும் நினைவூட்டு',
   'Time': 'நேரம்',
-  'Tone': 'தொனி',
   'Friendly': 'நட்பாக',
-  'Honest and funny': 'நேர்மையாக, நகைச்சுவையாக',
   'Theme': 'தீம்',
   'System': 'கணினி',
   'Light': 'ஒளி',
   'Dark': 'இருள்',
   'Lock the app': 'செயலியைப் பூட்டு',
   'Where should your data live?': 'உங்கள் தரவு எங்கே இருக்க வேண்டும்?',
-  'You can change this later in Settings.':
-      'இதை பின்னர் அமைப்புகளில் மாற்றலாம்.',
   'How do you track your money?': 'உங்கள் பணத்தை எப்படி கண்காணிக்கிறீர்கள்?',
-  'Switch any time without losing history.':
-      'வரலாற்றை இழக்காமல் எப்போது வேண்டுமானாலும் மாற்றலாம்.',
   'Bank balance': 'வங்கி இருப்பு',
   'Monthly income (optional)': 'மாத வருமானம் (விரும்பினால்)',
   'Protect your backups': 'உங்கள் காப்புப்பிரதிகளைப் பாதுகாக்கவும்',
@@ -149,13 +139,9 @@ const Map<String, String> stringsTa = {
   'To account': 'கணக்கிற்கு',
   'Merchant / person (optional)': 'கடை / நபர் (விரும்பினால்)',
   'Cash++ is locked': 'Cash++ பூட்டப்பட்டுள்ளது',
-  'Your finances are hidden until you unlock.':
-      'திறக்கும் வரை உங்கள் நிதி விவரங்கள் மறைக்கப்பட்டுள்ளன.',
   'Unlock': 'திற',
   'Cash': 'பணம்',
   'Restoring your money': 'உங்கள் பணத்தை மீட்டெடுக்கிறோம்',
-  'Please keep the app open. This takes a moment.':
-      'தயவுசெய்து செயலியைத் திறந்து வைக்கவும். சிறிது நேரம் ஆகும்.',
   'Welcome back': 'மீண்டும் வருக',
   'Something went wrong': 'ஏதோ தவறு நடந்துவிட்டது',
   'Add bank messages automatically': 'வங்கிச் செய்திகளைத் தானாகச் சேர்',
@@ -176,8 +162,6 @@ const Map<String, String> stringsTa = {
   'Incoming Debts': 'வரவிருக்கும் கடன்கள்',
   'Budget': 'பட்ஜெட்',
   'Building…': 'உருவாகிறது…',
-  'Add 10 entries to see your score.':
-      'மதிப்பெண்ணைக் காண 10 பதிவுகளைச் சேர்க்கவும்.',
   'Offline Mode': 'ஆஃப்லைன் பயன்முறை',
   'Online Mode': 'ஆன்லைன் பயன்முறை',
   'Quarter': 'காலாண்டு',
@@ -187,11 +171,7 @@ const Map<String, String> stringsTa = {
   'Keep on this phone': 'இந்தத் தொலைபேசியிலேயே வைத்திரு',
   'Help and troubleshooting': 'உதவி மற்றும் சிக்கல் தீர்வு',
   'Check my data': 'என் தரவைச் சரிபார்',
-  'Makes sure your balances add up':
-      'உங்கள் இருப்புகள் சரியாகக் கூடுகின்றனவா என்று உறுதி செய்கிறது',
   'Back up now': 'இப்போது காப்புப்பிரதி எடு',
-  'Saves a protected copy on this phone':
-      'இந்தத் தொலைபேசியில் பாதுகாக்கப்பட்ட நகலைச் சேமிக்கிறது',
   'Backup password': 'காப்புப்பிரதி கடவுச்சொல்',
   'Show password': 'கடவுச்சொல்லைக் காட்டு',
   'Automatic entries': 'தானியங்கி பதிவுகள்',
@@ -201,15 +181,9 @@ const Map<String, String> stringsTa = {
   'Hide Cash++ when switching apps': 'செயலிகளை மாற்றும்போது Cash++-ஐ மறை',
   'Month-end title': 'மாத இறுதிப் பட்டம்',
   'Your titles': 'உங்கள் பட்டங்கள்',
-  'The title you earned each month, from your first month to now.':
-      'ஒவ்வொரு மாதமும் நீங்கள் பெற்ற பட்டம், முதல் மாதம் முதல் இன்று வரை.',
-  'How we talk to you': 'நாங்கள் உங்களிடம் எப்படிப் பேசுவது',
-  'How should we talk to you?': 'நாங்கள் உங்களிடம் எப்படிப் பேச வேண்டும்?',
   'One balance': 'ஒரே இருப்பு',
   'Separate balances': 'தனித்தனி இருப்புகள்',
   'Cash and bank together in one total.': 'பணமும் வங்கியும் ஒரே மொத்தமாக.',
-  'Cash and each bank account kept apart.':
-      'பணமும் ஒவ்வொரு வங்கிக் கணக்கும் தனித்தனியாக.',
   'Waive an amount': 'ஒரு தொகையைத் தள்ளுபடி செய்',
   'No category': 'வகை இல்லை',
   'Money to receive': 'பெற வேண்டிய பணம்',
@@ -220,4 +194,27 @@ const Map<String, String> stringsTa = {
   'Starting balance': 'தொடக்க இருப்பு',
   'Turn on notification access': 'அறிவிப்பு அணுகலை இயக்கு',
   'Check for new alerts': 'புதிய அறிவிப்புகளைச் சரிபார்',
+  'Credit cards': 'கிரெடிட் கார்டுகள்',
+  'Add card': 'கார்டைச் சேர்',
+  'No credit cards yet': 'இன்னும் கிரெடிட் கார்டுகள் இல்லை',
+  'Card bills you owe': 'நீங்கள் செலுத்த வேண்டிய கார்டு பில்கள்',
+  'You owe': 'நீங்கள் செலுத்த வேண்டியது',
+  'Mark bill paid': 'பில் செலுத்தப்பட்டது எனக் குறி',
+  'Add a spend': 'செலவைச் சேர்',
+  'Recent': 'சமீபத்தியவை',
+  'Card name': 'கார்டு பெயர்',
+  'Interest if you pay late': 'தாமதமாகச் செலுத்தினால் வட்டி',
+  'Paid with': 'எதன் மூலம் செலுத்தியது',
+  'Paid from': 'எங்கிருந்து செலுத்தியது',
+  'Card spending and my budget': 'கார்டு செலவு மற்றும் என் பட்ஜெட்',
+  'Not until I pay the bill': 'நான் பில் செலுத்தும் வரை இல்லை',
+  'Right when I swipe': 'ஸ்வைப் செய்யும்போதே',
+  'Add 10 entries to see your score.':
+      'மதிப்பெண்ணைக் காண 10 பதிவுகளைச் சேர்க்கவும்.',
+  'Nothing to show for this period yet':
+      'இந்தக் காலத்திற்கு இன்னும் எதுவும் இல்லை',
+  'Switch any time without losing history.':
+      'வரலாற்றை இழக்காமல் எப்போது வேண்டுமானாலும் மாற்றலாம்.',
+  'Cash and each bank account kept apart.':
+      'பணமும் ஒவ்வொரு வங்கிக் கணக்கும் தனித்தனியாக.',
 };

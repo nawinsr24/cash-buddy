@@ -111,11 +111,11 @@ void main() {
     },
   );
 
-  test('roast mode defaults on and can be switched off', () async {
+  test('titles are always honest and funny (no friendly option)', () async {
     final e = await newEnv();
     expect(await e.repo.roastMode, isTrue);
-    await e.repo.setSetting('roastMode', '0');
-    expect(await e.repo.roastMode, isFalse);
+    await e.repo.setSetting('roastMode', '0'); // an old setting changes nothing
+    expect(await e.repo.roastMode, isTrue);
   });
 
   test('insights: forecast, net worth and recurring bills', () async {

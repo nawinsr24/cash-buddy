@@ -869,10 +869,13 @@ class _TxnFormState extends ConsumerState<_TxnForm> {
   Widget build(BuildContext context) {
     final settings = ref.watch(settingsProvider).value;
     final accounts = ref.watch(accountsProvider).value ?? [];
+    final cards = ref.watch(cardsProvider).value ?? const <Account>[];
     final cats = (ref.watch(categoriesProvider).value ?? [])
         .where((c) => c.kind == type)
         .toList();
     final split = settings?.split ?? false;
+    // Spending can be paid with a credit card; transfers stay between accounts.
+    final payFrom = type == 'transfer' ? accounts : [...accounts, ...cards];
     final c = context.cash;
     return SafeArea(
       child: SingleChildScrollView(
@@ -903,6 +906,9 @@ class _TxnFormState extends ConsumerState<_TxnForm> {
               onSelectionChanged: (s) => setState(() {
                 type = s.first;
                 categoryId = null;
+                if (type == 'transfer' && cards.any((c) => c.id == accountId)) {
+                  accountId = null;
+                }
               }),
             ),
             const SizedBox(height: Sp.x4),
@@ -935,17 +941,20 @@ class _TxnFormState extends ConsumerState<_TxnForm> {
                 onChanged: (v) => setState(() => categoryId = v),
               ),
             ],
-            if (split) ...[
+            if (split || (cards.isNotEmpty && type != 'transfer')) ...[
               const SizedBox(height: Sp.x4),
               DropdownButtonFormField<String>(
                 initialValue:
-                    accountId ??
-                    (accounts.isNotEmpty ? accounts.first.id : null),
+                    accountId ?? (payFrom.isNotEmpty ? payFrom.first.id : null),
                 decoration: InputDecoration(
-                  labelText: type == 'transfer' ? 'From account' : 'Account',
+                  labelText: type == 'transfer'
+                      ? 'From account'
+                      : cards.isNotEmpty
+                      ? 'Paid with'
+                      : 'Account',
                 ),
                 items: [
-                  for (final a in accounts)
+                  for (final a in payFrom)
                     DropdownMenuItem(value: a.id, child: Text(a.name)),
                 ],
                 onChanged: (v) => setState(() => accountId = v),

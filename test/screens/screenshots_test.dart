@@ -7,6 +7,7 @@ import 'dart:ui' as ui;
 
 import 'package:cash_buddy/app.dart';
 import 'package:cash_buddy/data/budget_repo.dart';
+import 'package:cash_buddy/data/card_repo.dart';
 import 'package:cash_buddy/data/invest_repo.dart';
 import 'package:cash_buddy/domain/dates.dart';
 import 'package:cash_buddy/features/shell.dart' show ShellState;
@@ -336,11 +337,24 @@ void main() {
       await shot(tester, '$p-2-dashboard-scrolled');
       await tester.drag(find.byType(Scrollable).first, const Offset(0, -700));
       await shot(tester, '$p-2b-insights');
-      await tester.drag(find.byType(Scrollable).first, const Offset(0, -500));
-      await tapText(tester, 'Sub-categories');
+      await tester.scrollUntilVisible(
+        find.text('Sub-categories'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.ensureVisible(find.text('Sub-categories'));
+      await settle(tester);
+      await tester.tap(find.text('Sub-categories'));
       await tester.pump(const Duration(seconds: 1));
       await shot(tester, '$p-2c-money-went-sub');
-      await tapText(tester, 'Groceries');
+      await tester.scrollUntilVisible(
+        find.text('Groceries'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.ensureVisible(find.text('Groceries'));
+      await settle(tester);
+      await tester.tap(find.text('Groceries'));
       await tester.pump(const Duration(seconds: 2));
       await shot(tester, '$p-2d-category-insight');
       await tester.tap(find.byTooltip('Back'));
@@ -663,9 +677,158 @@ void loaderShot() {
 
       await scrollTo('AUTOMATIC ENTRIES', '$p-w3-settings-automatic');
       await scrollTo('MONTH-END TITLE', '$p-w4-settings-titles');
-      await tester.tap(find.text('How we talk to you'));
+    });
+  }
+
+  for (final dark in [false, true]) {
+    testWidgets('credit cards ${dark ? 'dark' : 'light'}', (tester) async {
+      await tester.runAsync(loadFonts);
+      tester.view.physicalSize = const Size(390 * 2, 844 * 2);
+      tester.view.devicePixelRatio = 2;
+      tester.platformDispatcher.platformBrightnessTestValue = dark
+          ? Brightness.dark
+          : Brightness.light;
+      addTearDown(() {
+        tester.view.reset();
+        tester.platformDispatcher.clearAllTestValues();
+      });
+      late TestEnv env;
+      late String hdfc;
+      await tester.runAsync(() async {
+        env = await newEnv(opening: 8500000, now: DateTime(2026, 11, 5, 10));
+        final r = env.repo;
+        await r.setBudget(5000000);
+        hdfc = await r.addCard(
+          name: 'HDFC Regalia',
+          bank: 'HDFC',
+          last4: '1234',
+          limitMinor: 20000000,
+          dueDay: 25,
+          interestBps: 350,
+        );
+        final icici = await r.addCard(
+          name: 'ICICI Amazon',
+          last4: '5678',
+          limitMinor: 10000000,
+          dueDay: 28,
+        );
+        Future<void> sp(String c, int a, String cat, int day, String m) => r
+            .addTransaction(
+              type: 'debit',
+              amountMinor: a,
+              accountId: c,
+              categoryId: cat,
+              merchant: m,
+              date: Dates.day(2026, 11, day),
+            )
+            .then((_) {});
+        await r.addTransaction(
+          type: 'debit',
+          amountMinor: 1000000,
+          accountId: hdfc,
+          categoryId: 'cat_shopping',
+          merchant: 'Croma',
+          date: Dates.day(2026, 10, 10),
+        );
+        await sp(hdfc, 450000, 'cat_food_dining', 2, 'Restaurant');
+        await sp(icici, 320000, 'cat_shopping', 3, 'Amazon');
+      });
+      addTearDown(() => tester.runAsync(() => env.db.close()));
+      await tester.pumpWidget(
+        RepaintBoundary(
+          key: _key,
+          child: ProviderScope(
+            overrides: [repoProvider.overrideWithValue(env.repo)],
+            child: const CashBuddyApp(),
+          ),
+        ),
+      );
       await settle(tester);
-      await shot(tester, '$p-w5-tone-sheet');
+      final p = dark ? 'dark' : 'light';
+      for (var i = 0; i < 3; i++) {
+        await settle(tester);
+      }
+      if (find.byTooltip('Close').evaluate().isNotEmpty) {
+        await tester.tap(find.byTooltip('Close'));
+        await settle(tester);
+      }
+      await shot(tester, '$p-c1-home-warning');
+      await tapText(tester, 'Debts', last: true);
+      await tapText(tester, 'Credit cards');
+      await shot(tester, '$p-c2-cards-list');
+      await tester.tap(find.textContaining('HDFC Regalia').first);
+      await settle(tester);
+      await shot(tester, '$p-c3-card-page');
+      await tester.tap(find.widgetWithText(FilledButton, 'Mark bill paid'));
+      await settle(tester);
+      await shot(tester, '$p-c4-pay-bill');
+      await tester.binding.handlePopRoute();
+      await settle(tester);
+      await tester.tap(find.byTooltip('Back'));
+      await settle(tester);
+      await tester.tap(find.text('Card spending and my budget'));
+      await settle(tester);
+      await shot(tester, '$p-c5-budget-choice');
+      await tester.binding.handlePopRoute();
+      await settle(tester);
+      await tester.tap(find.widgetWithText(FloatingActionButton, 'Add card'));
+      await settle(tester);
+      await shot(tester, '$p-c6-add-card');
+    });
+  }
+
+  for (final dark in [false, true]) {
+    testWidgets('home single account ${dark ? 'dark' : 'light'}', (
+      tester,
+    ) async {
+      await tester.runAsync(loadFonts);
+      tester.view.physicalSize = const Size(390 * 2, 844 * 2);
+      tester.view.devicePixelRatio = 2;
+      tester.platformDispatcher.platformBrightnessTestValue = dark
+          ? Brightness.dark
+          : Brightness.light;
+      addTearDown(() {
+        tester.view.reset();
+        tester.platformDispatcher.clearAllTestValues();
+      });
+      late TestEnv env;
+      await tester.runAsync(() async {
+        env = await newEnv(opening: 18450000, now: DateTime(2026, 11, 14, 10));
+        final r = env.repo;
+        await r.setBudget(3000000);
+        Future<void> d(int a, String c, int day, String m) => r
+            .addTransaction(
+              type: 'debit',
+              amountMinor: a,
+              categoryId: c,
+              merchant: m,
+              date: Dates.day(2026, 11, day),
+            )
+            .then((_) {});
+        await d(450000, 'cat_food_dining', 12, 'Restaurant');
+        await d(320000, 'cat_shopping', 10, 'Amazon');
+        await d(860000, 'cat_bills', 5, 'Rent');
+        await r.addTransaction(
+          type: 'credit',
+          amountMinor: 5000000,
+          categoryId: 'cat_salary',
+          date: Dates.day(2026, 11, 1),
+        );
+      });
+      addTearDown(() => tester.runAsync(() => env.db.close()));
+      await tester.pumpWidget(
+        RepaintBoundary(
+          key: _key,
+          child: ProviderScope(
+            overrides: [repoProvider.overrideWithValue(env.repo)],
+            child: const CashBuddyApp(),
+          ),
+        ),
+      );
+      await settle(tester);
+      await settle(tester);
+      final p = dark ? 'dark' : 'light';
+      await shot(tester, '$p-h1-home-single');
     });
   }
 }

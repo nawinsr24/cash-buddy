@@ -240,7 +240,13 @@ extension BudgetRepo on Repo {
     }
   }
 
+  /// Card spends stay out of the budget until the bill is paid, unless the
+  /// user chose to count them at once (see [CardRepo.cardBudgetMode]).
+  Future<bool> _cardsWaitForBill() async =>
+      (await getSetting('cardBudgetMode')) != 'swipe';
+
   Future<Map<String, int>> _spentByMainCategory(DateRange r) async {
+    final waits = await _cardsWaitForBill();
     final rows = await db
         .customSelect(
           '''SELECT COALESCE(p.id, c.id, '_none') AS cid, SUM(t.amount_minor) AS s
@@ -249,12 +255,29 @@ extension BudgetRepo on Repo {
              LEFT JOIN categories p ON p.id = c.parent_id
              WHERE t.type='debit' AND t.source NOT IN ('debt','invest')
                AND t.deleted_at IS NULL AND t.date BETWEEN ? AND ?
+               ${waits ? "AND t.account_id NOT IN (SELECT id FROM accounts WHERE kind = 'card')" : ''}
              GROUP BY COALESCE(p.id, c.id, '_none')''',
           variables: [Variable(r.startStr), Variable(r.endStr)],
-          readsFrom: {db.transactions, db.categories},
+          readsFrom: {db.transactions, db.categories, db.accounts},
         )
         .get();
-    return {for (final x in rows) x.read<String>('cid'): x.read<int>('s')};
+    final out = {for (final x in rows) x.read<String>('cid'): x.read<int>('s')};
+    if (waits) {
+      // a card bill counts in the month it is paid
+      final pay = await db
+          .customSelect(
+            '''SELECT COALESCE(SUM(t.amount_minor),0) AS s FROM transactions t
+               WHERE t.type='transfer' AND t.deleted_at IS NULL
+                 AND t.date BETWEEN ? AND ?
+                 AND t.to_account_id IN (SELECT id FROM accounts WHERE kind = 'card')''',
+            variables: [Variable(r.startStr), Variable(r.endStr)],
+            readsFrom: {db.transactions, db.accounts},
+          )
+          .getSingle();
+      final v = pay.read<int>('s');
+      if (v > 0) out['_cardbill'] = v;
+    }
+    return out;
   }
 
   /// null when no budget is set for that month.
@@ -364,14 +387,28 @@ extension BudgetRepo on Repo {
     final last = now.isBefore(r.start)
         ? 0
         : (now.isAfter(r.end) ? r.days : now.difference(r.start).inDays + 1);
+    final waits = await _cardsWaitForBill();
     final rows = await db
         .customSelect(
-          "SELECT date AS d, SUM(amount_minor) AS s FROM transactions WHERE type='debit' AND source NOT IN ('debt','invest') AND deleted_at IS NULL AND date BETWEEN ? AND ? GROUP BY date",
+          "SELECT date AS d, SUM(amount_minor) AS s FROM transactions WHERE type='debit' AND source NOT IN ('debt','invest') AND deleted_at IS NULL AND date BETWEEN ? AND ? ${waits ? "AND account_id NOT IN (SELECT id FROM accounts WHERE kind = 'card')" : ''} GROUP BY date",
           variables: [Variable(r.startStr), Variable(r.endStr)],
-          readsFrom: {db.transactions},
+          readsFrom: {db.transactions, db.accounts},
         )
         .get();
     final byDay = {for (final x in rows) x.read<String>('d'): x.read<int>('s')};
+    if (waits) {
+      final pay = await db
+          .customSelect(
+            "SELECT date AS d, SUM(amount_minor) AS s FROM transactions WHERE type='transfer' AND deleted_at IS NULL AND date BETWEEN ? AND ? AND to_account_id IN (SELECT id FROM accounts WHERE kind = 'card') GROUP BY date",
+            variables: [Variable(r.startStr), Variable(r.endStr)],
+            readsFrom: {db.transactions, db.accounts},
+          )
+          .get();
+      for (final x in pay) {
+        final d = x.read<String>('d');
+        byDay[d] = (byDay[d] ?? 0) + x.read<int>('s');
+      }
+    }
     var run = 0;
     final out = <int>[];
     for (var i = 0; i < last; i++) {

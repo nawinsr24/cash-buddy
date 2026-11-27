@@ -10,12 +10,20 @@ part 'db.g.dart';
 class Accounts extends Table {
   TextColumn get id => text()();
   TextColumn get name => text()();
-  TextColumn get kind => text()(); // cash | bank | overall
+  TextColumn get kind => text()(); // cash | bank | overall | card
   IntColumn get colorValue => integer()();
   IntColumn get openingMinor => integer().withDefault(const Constant(0))();
   TextColumn get last4 => text().nullable()();
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
   BoolColumn get archived => boolean().withDefault(const Constant(false))();
+  // Credit cards (kind = 'card'): spends are debits on the card, so the
+  // balance is minus what is owed. These fields are unused for other kinds.
+  TextColumn get bank => text().nullable()();
+  IntColumn get limitMinor => integer().nullable()();
+  IntColumn get dueDay => integer().nullable()(); // day of month, 1-31
+  IntColumn get interestBps => integer().withDefault(const Constant(0))();
+  TextColumn get ratePeriod => text().withDefault(const Constant('month'))();
+  IntColumn get graceDays => integer().withDefault(const Constant(0))();
   TextColumn get hlc => text()();
   TextColumn get deletedAt => text().nullable()();
   @override
@@ -235,7 +243,7 @@ class AppDatabase extends _$AppDatabase {
   static AppDatabase open() => AppDatabase(openAppDatabase());
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -261,7 +269,9 @@ class AppDatabase extends _$AppDatabase {
       if (from < 5) {
         await m.addColumn(debtEvents, debtEvents.target);
       }
-      if (from < 6) {
+      // Version 1 had no investment tables: createTable above already made
+      // them with every column, so adding one again would fail.
+      if (from >= 2 && from < 6) {
         await m.addColumn(investmentEntries, investmentEntries.units);
       }
       if (from < 7) {
@@ -275,6 +285,14 @@ class AppDatabase extends _$AppDatabase {
           "UPDATE investment_entries SET post_to_balance = 0 WHERE "
           "(SELECT value FROM settings WHERE key = 'investReducesBalance') = '0'",
         );
+      }
+      if (from < 8) {
+        await m.addColumn(accounts, accounts.bank);
+        await m.addColumn(accounts, accounts.limitMinor);
+        await m.addColumn(accounts, accounts.dueDay);
+        await m.addColumn(accounts, accounts.interestBps);
+        await m.addColumn(accounts, accounts.ratePeriod);
+        await m.addColumn(accounts, accounts.graceDays);
       }
       if (from < 3) {
         // Chit funds became custom monthly plans: instalment = monthly amount,

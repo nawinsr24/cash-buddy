@@ -16,7 +16,6 @@ import '../providers.dart';
 import '../sync/backup.dart';
 import '../domain/currency.dart';
 import 'inbox.dart' show ImportSheet;
-import 'tone.dart';
 import 'locale_pickers.dart';
 import 'passphrase.dart';
 import '../sync/drive_remote.dart';
@@ -433,22 +432,6 @@ class SettingsPage extends ConsumerWidget {
             Card(
               child: Column(
                 children: [
-                  Consumer(
-                    builder: (context, ref, _) {
-                      final funny = ref.watch(roastModeProvider).value ?? false;
-                      return ListTile(
-                        leading: const Text(
-                          '💬',
-                          style: TextStyle(fontSize: 22),
-                        ),
-                        title: Text(tr('How we talk to you')),
-                        subtitle: Text(funny ? 'Honest and funny' : 'Friendly'),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () => showToneSheet(context),
-                      );
-                    },
-                  ),
-                  const Divider(height: 1),
                   ListTile(
                     leading: const Text('🏆', style: TextStyle(fontSize: 22)),
                     title: Text(tr('Your titles')),

@@ -40,11 +40,19 @@ class FakeReader implements SmsReader {
 
 void main() {
   final now = DateTime.now();
-  msg(String s, String b, {int minsAgo = 5}) => (
-    sender: s,
-    body: b,
-    receivedAt: now.subtract(Duration(minutes: minsAgo)),
-  );
+  // Never earlier than today's midnight: the first scan only reads today, and
+  // this test must not fail when it runs in the first minutes after midnight.
+  final midnight = DateTime(now.year, now.month, now.day);
+  msg(String s, String b, {int minsAgo = 5}) {
+    final t = now.subtract(Duration(minutes: minsAgo));
+    return (
+      sender: s,
+      body: b,
+      receivedAt: t.isAfter(midnight)
+          ? t
+          : midnight.add(const Duration(seconds: 1)),
+    );
+  }
 
   test('no permission: nothing is read and an error is reported', () async {
     final e = await newEnv();

@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'data/db.dart';
 import 'platform/features.dart';
 import 'data/budget_repo.dart';
+import 'data/card_repo.dart';
+import 'domain/card.dart';
 import 'data/insights_repo.dart';
 import 'data/invest_repo.dart';
 import 'data/repo.dart';
@@ -182,6 +184,31 @@ final dashboardProvider = FutureProvider.autoDispose<DashboardData>((
 final accountsProvider = FutureProvider.autoDispose<List<Account>>((ref) {
   return _tick(ref, () => ref.watch(repoProvider).accounts());
 });
+
+final cardsProvider = FutureProvider.autoDispose<List<Account>>((ref) {
+  return _tick(ref, () => ref.watch(repoProvider).cards());
+});
+
+final cardStatusesProvider = FutureProvider.autoDispose<List<CardStatus>>((
+  ref,
+) {
+  return _tick(ref, () => ref.watch(repoProvider).cardStatuses());
+});
+
+/// "After paying your card bills..." line for Home (null when not needed).
+final cardWarningProvider =
+    FutureProvider.autoDispose<({int due, int left, int after})?>((ref) {
+      return _tick(ref, () => ref.watch(repoProvider).cardWarning());
+    });
+
+final cardBudgetModeProvider = FutureProvider.autoDispose<String>((ref) {
+  return _tick(ref, () => ref.watch(repoProvider).cardBudgetMode());
+});
+
+final cardActivityProvider = FutureProvider.autoDispose
+    .family<List<Transaction>, String>((ref, id) {
+      return _tick(ref, () => ref.watch(repoProvider).cardActivity(id));
+    });
 
 final balancesProvider = FutureProvider.autoDispose<Map<String, int>>((ref) {
   return _tick(ref, () => ref.watch(repoProvider).balances());

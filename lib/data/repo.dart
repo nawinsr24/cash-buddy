@@ -581,11 +581,20 @@ class Repo {
       db.into(db.categories).insertOnConflictUpdate(c);
 
   // ───────────────────────── accounts ─────────────────────────
-  Future<List<Account>> accounts({bool includeArchived = false}) =>
+  /// Cash, bank and overall accounts. Credit cards are kept apart (see
+  /// [cards]) unless [includeCards] is set, so every balance screen and
+  /// picker that only knows real money accounts keeps working.
+  Future<List<Account>> accounts({
+    bool includeArchived = false,
+    bool includeCards = false,
+  }) =>
       (db.select(db.accounts)
             ..where(
               (a) =>
                   a.deletedAt.isNull() &
+                  (includeCards
+                      ? const Constant(true)
+                      : a.kind.equals('card').not()) &
                   (includeArchived
                       ? const Constant(true)
                       : a.archived.equals(false)),
@@ -662,6 +671,13 @@ class Repo {
   ///  * several banks, no match: the first bank, with [sure] false so the UI
   ///    can ask the user to confirm.
   Future<({String id, bool sure})?> accountForSms(String? accountRef) async {
+    // digits that belong to one of your credit cards: that card
+    if (accountRef != null && accountRef.isNotEmpty) {
+      final cardHit = (await accounts(includeCards: true))
+          .where((a) => a.kind == 'card' && a.last4 == accountRef)
+          .toList();
+      if (cardHit.length == 1) return (id: cardHit.first.id, sure: true);
+    }
     final accs = await accounts();
     if (accs.isEmpty) return null;
     if (accs.length == 1) return (id: accs.first.id, sure: true);
@@ -694,8 +710,16 @@ class Repo {
     return {for (final r in rows) r.read<String>('id'): r.read<int>('bal')};
   }
 
-  Future<int> totalBalance() async =>
-      (await balances()).values.fold<int>(0, (a, b) => a + b);
+  /// Money you have: every account except credit cards. A card balance is
+  /// minus what you owe, which is not yours to spend.
+  Future<int> totalBalance() async {
+    final bal = await balances();
+    var t = 0;
+    for (final a in await accounts(includeArchived: true)) {
+      t += bal[a.id] ?? 0;
+    }
+    return t;
+  }
 
   /// Switches Combined <-> Split without changing any balance.
   Future<void> setAccountMode(String mode) async {
@@ -1607,7 +1631,8 @@ class Repo {
         l.fold(0, (a, s) => a + f(s.state));
 
     final accs = {
-      for (final a in await accounts(includeArchived: true)) a.id: a.name,
+      for (final a in await accounts(includeArchived: true, includeCards: true))
+        a.id: a.name,
     };
     final perAcc = await db
         .customSelect(

@@ -15,9 +15,9 @@ import '../ui/motion.dart';
 import '../ui/theme.dart';
 import '../ui/emoji.dart';
 import 'budget.dart';
+import 'card_warning.dart';
 import 'category_insight_page.dart';
 import 'performance_sheet.dart';
-import 'cash_move.dart';
 import 'grade_ui.dart';
 import 'score_ui.dart';
 import 'invest.dart';
@@ -110,6 +110,7 @@ class DashboardPage extends ConsumerWidget {
             ),
             const SizedBox(height: Sp.x3),
             const BudgetCard(),
+            const CardWarningLine(),
             const SizedBox(height: Sp.x3),
             const PlusScoreCard(),
             const SizedBox(height: Sp.x3),
@@ -334,30 +335,6 @@ class _BalanceCard extends ConsumerWidget {
                         ),
                     ],
                   ),
-                  const SizedBox(height: Sp.x4),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _CashButton(
-                          icon: Icons.south_west,
-                          label: tr('Withdraw cash'),
-                          onTap: () =>
-                              showCashMoveSheet(context, withdraw: true),
-                          dark: true,
-                        ),
-                      ),
-                      const SizedBox(width: Sp.x2),
-                      Expanded(
-                        child: _CashButton(
-                          icon: Icons.north_east,
-                          label: tr('Deposit cash'),
-                          onTap: () =>
-                              showCashMoveSheet(context, withdraw: false),
-                          dark: true,
-                        ),
-                      ),
-                    ],
-                  ),
                 ],
               ],
             ),
@@ -385,63 +362,6 @@ Widget _chip(String text, {bool strong = false, bool dark = true}) => Container(
     ),
   ),
 );
-
-class _CashButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final bool dark;
-  const _CashButton({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.dark = true,
-  });
-  @override
-  Widget build(BuildContext context) => Pressable(
-    onTap: () {
-      haptic();
-      onTap();
-    },
-    child: Container(
-      padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 8),
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: (dark ? Colors.white : const Color(0xFF3B4BD8)).withValues(
-          alpha: 0.1,
-        ),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: (dark ? Colors.white : const Color(0xFF3B4BD8)).withValues(
-            alpha: 0.18,
-          ),
-        ),
-      ),
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 16,
-              color: dark ? Colors.white : const Color(0xFF14172B),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                color: dark ? Colors.white : const Color(0xFF14172B),
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
-              ),
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
-}
 
 class PillarCard extends StatelessWidget {
   final Pillar pillar;

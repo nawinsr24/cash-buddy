@@ -94,6 +94,71 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _bankMeta = const VerificationMeta('bank');
+  @override
+  late final GeneratedColumn<String> bank = GeneratedColumn<String>(
+    'bank',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _limitMinorMeta = const VerificationMeta(
+    'limitMinor',
+  );
+  @override
+  late final GeneratedColumn<int> limitMinor = GeneratedColumn<int>(
+    'limit_minor',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _dueDayMeta = const VerificationMeta('dueDay');
+  @override
+  late final GeneratedColumn<int> dueDay = GeneratedColumn<int>(
+    'due_day',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _interestBpsMeta = const VerificationMeta(
+    'interestBps',
+  );
+  @override
+  late final GeneratedColumn<int> interestBps = GeneratedColumn<int>(
+    'interest_bps',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _ratePeriodMeta = const VerificationMeta(
+    'ratePeriod',
+  );
+  @override
+  late final GeneratedColumn<String> ratePeriod = GeneratedColumn<String>(
+    'rate_period',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('month'),
+  );
+  static const VerificationMeta _graceDaysMeta = const VerificationMeta(
+    'graceDays',
+  );
+  @override
+  late final GeneratedColumn<int> graceDays = GeneratedColumn<int>(
+    'grace_days',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _hlcMeta = const VerificationMeta('hlc');
   @override
   late final GeneratedColumn<String> hlc = GeneratedColumn<String>(
@@ -124,6 +189,12 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
     last4,
     sortOrder,
     archived,
+    bank,
+    limitMinor,
+    dueDay,
+    interestBps,
+    ratePeriod,
+    graceDays,
     hlc,
     deletedAt,
   ];
@@ -195,6 +266,45 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
         archived.isAcceptableOrUnknown(data['archived']!, _archivedMeta),
       );
     }
+    if (data.containsKey('bank')) {
+      context.handle(
+        _bankMeta,
+        bank.isAcceptableOrUnknown(data['bank']!, _bankMeta),
+      );
+    }
+    if (data.containsKey('limit_minor')) {
+      context.handle(
+        _limitMinorMeta,
+        limitMinor.isAcceptableOrUnknown(data['limit_minor']!, _limitMinorMeta),
+      );
+    }
+    if (data.containsKey('due_day')) {
+      context.handle(
+        _dueDayMeta,
+        dueDay.isAcceptableOrUnknown(data['due_day']!, _dueDayMeta),
+      );
+    }
+    if (data.containsKey('interest_bps')) {
+      context.handle(
+        _interestBpsMeta,
+        interestBps.isAcceptableOrUnknown(
+          data['interest_bps']!,
+          _interestBpsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('rate_period')) {
+      context.handle(
+        _ratePeriodMeta,
+        ratePeriod.isAcceptableOrUnknown(data['rate_period']!, _ratePeriodMeta),
+      );
+    }
+    if (data.containsKey('grace_days')) {
+      context.handle(
+        _graceDaysMeta,
+        graceDays.isAcceptableOrUnknown(data['grace_days']!, _graceDaysMeta),
+      );
+    }
     if (data.containsKey('hlc')) {
       context.handle(
         _hlcMeta,
@@ -250,6 +360,30 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
         DriftSqlType.bool,
         data['${effectivePrefix}archived'],
       )!,
+      bank: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bank'],
+      ),
+      limitMinor: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}limit_minor'],
+      ),
+      dueDay: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}due_day'],
+      ),
+      interestBps: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}interest_bps'],
+      )!,
+      ratePeriod: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}rate_period'],
+      )!,
+      graceDays: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}grace_days'],
+      )!,
       hlc: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}hlc'],
@@ -276,6 +410,12 @@ class Account extends DataClass implements Insertable<Account> {
   final String? last4;
   final int sortOrder;
   final bool archived;
+  final String? bank;
+  final int? limitMinor;
+  final int? dueDay;
+  final int interestBps;
+  final String ratePeriod;
+  final int graceDays;
   final String hlc;
   final String? deletedAt;
   const Account({
@@ -287,6 +427,12 @@ class Account extends DataClass implements Insertable<Account> {
     this.last4,
     required this.sortOrder,
     required this.archived,
+    this.bank,
+    this.limitMinor,
+    this.dueDay,
+    required this.interestBps,
+    required this.ratePeriod,
+    required this.graceDays,
     required this.hlc,
     this.deletedAt,
   });
@@ -303,6 +449,18 @@ class Account extends DataClass implements Insertable<Account> {
     }
     map['sort_order'] = Variable<int>(sortOrder);
     map['archived'] = Variable<bool>(archived);
+    if (!nullToAbsent || bank != null) {
+      map['bank'] = Variable<String>(bank);
+    }
+    if (!nullToAbsent || limitMinor != null) {
+      map['limit_minor'] = Variable<int>(limitMinor);
+    }
+    if (!nullToAbsent || dueDay != null) {
+      map['due_day'] = Variable<int>(dueDay);
+    }
+    map['interest_bps'] = Variable<int>(interestBps);
+    map['rate_period'] = Variable<String>(ratePeriod);
+    map['grace_days'] = Variable<int>(graceDays);
     map['hlc'] = Variable<String>(hlc);
     if (!nullToAbsent || deletedAt != null) {
       map['deleted_at'] = Variable<String>(deletedAt);
@@ -322,6 +480,16 @@ class Account extends DataClass implements Insertable<Account> {
           : Value(last4),
       sortOrder: Value(sortOrder),
       archived: Value(archived),
+      bank: bank == null && nullToAbsent ? const Value.absent() : Value(bank),
+      limitMinor: limitMinor == null && nullToAbsent
+          ? const Value.absent()
+          : Value(limitMinor),
+      dueDay: dueDay == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dueDay),
+      interestBps: Value(interestBps),
+      ratePeriod: Value(ratePeriod),
+      graceDays: Value(graceDays),
       hlc: Value(hlc),
       deletedAt: deletedAt == null && nullToAbsent
           ? const Value.absent()
@@ -343,6 +511,12 @@ class Account extends DataClass implements Insertable<Account> {
       last4: serializer.fromJson<String?>(json['last4']),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
       archived: serializer.fromJson<bool>(json['archived']),
+      bank: serializer.fromJson<String?>(json['bank']),
+      limitMinor: serializer.fromJson<int?>(json['limitMinor']),
+      dueDay: serializer.fromJson<int?>(json['dueDay']),
+      interestBps: serializer.fromJson<int>(json['interestBps']),
+      ratePeriod: serializer.fromJson<String>(json['ratePeriod']),
+      graceDays: serializer.fromJson<int>(json['graceDays']),
       hlc: serializer.fromJson<String>(json['hlc']),
       deletedAt: serializer.fromJson<String?>(json['deletedAt']),
     );
@@ -359,6 +533,12 @@ class Account extends DataClass implements Insertable<Account> {
       'last4': serializer.toJson<String?>(last4),
       'sortOrder': serializer.toJson<int>(sortOrder),
       'archived': serializer.toJson<bool>(archived),
+      'bank': serializer.toJson<String?>(bank),
+      'limitMinor': serializer.toJson<int?>(limitMinor),
+      'dueDay': serializer.toJson<int?>(dueDay),
+      'interestBps': serializer.toJson<int>(interestBps),
+      'ratePeriod': serializer.toJson<String>(ratePeriod),
+      'graceDays': serializer.toJson<int>(graceDays),
       'hlc': serializer.toJson<String>(hlc),
       'deletedAt': serializer.toJson<String?>(deletedAt),
     };
@@ -373,6 +553,12 @@ class Account extends DataClass implements Insertable<Account> {
     Value<String?> last4 = const Value.absent(),
     int? sortOrder,
     bool? archived,
+    Value<String?> bank = const Value.absent(),
+    Value<int?> limitMinor = const Value.absent(),
+    Value<int?> dueDay = const Value.absent(),
+    int? interestBps,
+    String? ratePeriod,
+    int? graceDays,
     String? hlc,
     Value<String?> deletedAt = const Value.absent(),
   }) => Account(
@@ -384,6 +570,12 @@ class Account extends DataClass implements Insertable<Account> {
     last4: last4.present ? last4.value : this.last4,
     sortOrder: sortOrder ?? this.sortOrder,
     archived: archived ?? this.archived,
+    bank: bank.present ? bank.value : this.bank,
+    limitMinor: limitMinor.present ? limitMinor.value : this.limitMinor,
+    dueDay: dueDay.present ? dueDay.value : this.dueDay,
+    interestBps: interestBps ?? this.interestBps,
+    ratePeriod: ratePeriod ?? this.ratePeriod,
+    graceDays: graceDays ?? this.graceDays,
     hlc: hlc ?? this.hlc,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
   );
@@ -401,6 +593,18 @@ class Account extends DataClass implements Insertable<Account> {
       last4: data.last4.present ? data.last4.value : this.last4,
       sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
       archived: data.archived.present ? data.archived.value : this.archived,
+      bank: data.bank.present ? data.bank.value : this.bank,
+      limitMinor: data.limitMinor.present
+          ? data.limitMinor.value
+          : this.limitMinor,
+      dueDay: data.dueDay.present ? data.dueDay.value : this.dueDay,
+      interestBps: data.interestBps.present
+          ? data.interestBps.value
+          : this.interestBps,
+      ratePeriod: data.ratePeriod.present
+          ? data.ratePeriod.value
+          : this.ratePeriod,
+      graceDays: data.graceDays.present ? data.graceDays.value : this.graceDays,
       hlc: data.hlc.present ? data.hlc.value : this.hlc,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
     );
@@ -417,6 +621,12 @@ class Account extends DataClass implements Insertable<Account> {
           ..write('last4: $last4, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('archived: $archived, ')
+          ..write('bank: $bank, ')
+          ..write('limitMinor: $limitMinor, ')
+          ..write('dueDay: $dueDay, ')
+          ..write('interestBps: $interestBps, ')
+          ..write('ratePeriod: $ratePeriod, ')
+          ..write('graceDays: $graceDays, ')
           ..write('hlc: $hlc, ')
           ..write('deletedAt: $deletedAt')
           ..write(')'))
@@ -433,6 +643,12 @@ class Account extends DataClass implements Insertable<Account> {
     last4,
     sortOrder,
     archived,
+    bank,
+    limitMinor,
+    dueDay,
+    interestBps,
+    ratePeriod,
+    graceDays,
     hlc,
     deletedAt,
   );
@@ -448,6 +664,12 @@ class Account extends DataClass implements Insertable<Account> {
           other.last4 == this.last4 &&
           other.sortOrder == this.sortOrder &&
           other.archived == this.archived &&
+          other.bank == this.bank &&
+          other.limitMinor == this.limitMinor &&
+          other.dueDay == this.dueDay &&
+          other.interestBps == this.interestBps &&
+          other.ratePeriod == this.ratePeriod &&
+          other.graceDays == this.graceDays &&
           other.hlc == this.hlc &&
           other.deletedAt == this.deletedAt);
 }
@@ -461,6 +683,12 @@ class AccountsCompanion extends UpdateCompanion<Account> {
   final Value<String?> last4;
   final Value<int> sortOrder;
   final Value<bool> archived;
+  final Value<String?> bank;
+  final Value<int?> limitMinor;
+  final Value<int?> dueDay;
+  final Value<int> interestBps;
+  final Value<String> ratePeriod;
+  final Value<int> graceDays;
   final Value<String> hlc;
   final Value<String?> deletedAt;
   final Value<int> rowid;
@@ -473,6 +701,12 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     this.last4 = const Value.absent(),
     this.sortOrder = const Value.absent(),
     this.archived = const Value.absent(),
+    this.bank = const Value.absent(),
+    this.limitMinor = const Value.absent(),
+    this.dueDay = const Value.absent(),
+    this.interestBps = const Value.absent(),
+    this.ratePeriod = const Value.absent(),
+    this.graceDays = const Value.absent(),
     this.hlc = const Value.absent(),
     this.deletedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -486,6 +720,12 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     this.last4 = const Value.absent(),
     this.sortOrder = const Value.absent(),
     this.archived = const Value.absent(),
+    this.bank = const Value.absent(),
+    this.limitMinor = const Value.absent(),
+    this.dueDay = const Value.absent(),
+    this.interestBps = const Value.absent(),
+    this.ratePeriod = const Value.absent(),
+    this.graceDays = const Value.absent(),
     required String hlc,
     this.deletedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -503,6 +743,12 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     Expression<String>? last4,
     Expression<int>? sortOrder,
     Expression<bool>? archived,
+    Expression<String>? bank,
+    Expression<int>? limitMinor,
+    Expression<int>? dueDay,
+    Expression<int>? interestBps,
+    Expression<String>? ratePeriod,
+    Expression<int>? graceDays,
     Expression<String>? hlc,
     Expression<String>? deletedAt,
     Expression<int>? rowid,
@@ -516,6 +762,12 @@ class AccountsCompanion extends UpdateCompanion<Account> {
       if (last4 != null) 'last4': last4,
       if (sortOrder != null) 'sort_order': sortOrder,
       if (archived != null) 'archived': archived,
+      if (bank != null) 'bank': bank,
+      if (limitMinor != null) 'limit_minor': limitMinor,
+      if (dueDay != null) 'due_day': dueDay,
+      if (interestBps != null) 'interest_bps': interestBps,
+      if (ratePeriod != null) 'rate_period': ratePeriod,
+      if (graceDays != null) 'grace_days': graceDays,
       if (hlc != null) 'hlc': hlc,
       if (deletedAt != null) 'deleted_at': deletedAt,
       if (rowid != null) 'rowid': rowid,
@@ -531,6 +783,12 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     Value<String?>? last4,
     Value<int>? sortOrder,
     Value<bool>? archived,
+    Value<String?>? bank,
+    Value<int?>? limitMinor,
+    Value<int?>? dueDay,
+    Value<int>? interestBps,
+    Value<String>? ratePeriod,
+    Value<int>? graceDays,
     Value<String>? hlc,
     Value<String?>? deletedAt,
     Value<int>? rowid,
@@ -544,6 +802,12 @@ class AccountsCompanion extends UpdateCompanion<Account> {
       last4: last4 ?? this.last4,
       sortOrder: sortOrder ?? this.sortOrder,
       archived: archived ?? this.archived,
+      bank: bank ?? this.bank,
+      limitMinor: limitMinor ?? this.limitMinor,
+      dueDay: dueDay ?? this.dueDay,
+      interestBps: interestBps ?? this.interestBps,
+      ratePeriod: ratePeriod ?? this.ratePeriod,
+      graceDays: graceDays ?? this.graceDays,
       hlc: hlc ?? this.hlc,
       deletedAt: deletedAt ?? this.deletedAt,
       rowid: rowid ?? this.rowid,
@@ -577,6 +841,24 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     if (archived.present) {
       map['archived'] = Variable<bool>(archived.value);
     }
+    if (bank.present) {
+      map['bank'] = Variable<String>(bank.value);
+    }
+    if (limitMinor.present) {
+      map['limit_minor'] = Variable<int>(limitMinor.value);
+    }
+    if (dueDay.present) {
+      map['due_day'] = Variable<int>(dueDay.value);
+    }
+    if (interestBps.present) {
+      map['interest_bps'] = Variable<int>(interestBps.value);
+    }
+    if (ratePeriod.present) {
+      map['rate_period'] = Variable<String>(ratePeriod.value);
+    }
+    if (graceDays.present) {
+      map['grace_days'] = Variable<int>(graceDays.value);
+    }
     if (hlc.present) {
       map['hlc'] = Variable<String>(hlc.value);
     }
@@ -600,6 +882,12 @@ class AccountsCompanion extends UpdateCompanion<Account> {
           ..write('last4: $last4, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('archived: $archived, ')
+          ..write('bank: $bank, ')
+          ..write('limitMinor: $limitMinor, ')
+          ..write('dueDay: $dueDay, ')
+          ..write('interestBps: $interestBps, ')
+          ..write('ratePeriod: $ratePeriod, ')
+          ..write('graceDays: $graceDays, ')
           ..write('hlc: $hlc, ')
           ..write('deletedAt: $deletedAt, ')
           ..write('rowid: $rowid')
@@ -7230,6 +7518,12 @@ typedef $$AccountsTableCreateCompanionBuilder = AccountsCompanion Function({
   Value<String?> last4,
   Value<int> sortOrder,
   Value<bool> archived,
+  Value<String?> bank,
+  Value<int?> limitMinor,
+  Value<int?> dueDay,
+  Value<int> interestBps,
+  Value<String> ratePeriod,
+  Value<int> graceDays,
   required String hlc,
   Value<String?> deletedAt,
   Value<int> rowid,
@@ -7243,6 +7537,12 @@ typedef $$AccountsTableUpdateCompanionBuilder = AccountsCompanion Function({
   Value<String?> last4,
   Value<int> sortOrder,
   Value<bool> archived,
+  Value<String?> bank,
+  Value<int?> limitMinor,
+  Value<int?> dueDay,
+  Value<int> interestBps,
+  Value<String> ratePeriod,
+  Value<int> graceDays,
   Value<String> hlc,
   Value<String?> deletedAt,
   Value<int> rowid,
@@ -7294,6 +7594,36 @@ class $$AccountsTableFilterComposer
 
   ColumnFilters<bool> get archived => $composableBuilder(
     column: $table.archived,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bank => $composableBuilder(
+    column: $table.bank,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get limitMinor => $composableBuilder(
+    column: $table.limitMinor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get dueDay => $composableBuilder(
+    column: $table.dueDay,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get interestBps => $composableBuilder(
+    column: $table.interestBps,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ratePeriod => $composableBuilder(
+    column: $table.ratePeriod,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get graceDays => $composableBuilder(
+    column: $table.graceDays,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7357,6 +7687,36 @@ class $$AccountsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get bank => $composableBuilder(
+    column: $table.bank,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get limitMinor => $composableBuilder(
+    column: $table.limitMinor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get dueDay => $composableBuilder(
+    column: $table.dueDay,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get interestBps => $composableBuilder(
+    column: $table.interestBps,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ratePeriod => $composableBuilder(
+    column: $table.ratePeriod,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get graceDays => $composableBuilder(
+    column: $table.graceDays,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get hlc => $composableBuilder(
     column: $table.hlc,
     builder: (column) => ColumnOrderings(column),
@@ -7405,6 +7765,30 @@ class $$AccountsTableAnnotationComposer
   GeneratedColumn<bool> get archived =>
       $composableBuilder(column: $table.archived, builder: (column) => column);
 
+  GeneratedColumn<String> get bank =>
+      $composableBuilder(column: $table.bank, builder: (column) => column);
+
+  GeneratedColumn<int> get limitMinor => $composableBuilder(
+    column: $table.limitMinor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get dueDay =>
+      $composableBuilder(column: $table.dueDay, builder: (column) => column);
+
+  GeneratedColumn<int> get interestBps => $composableBuilder(
+    column: $table.interestBps,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get ratePeriod => $composableBuilder(
+    column: $table.ratePeriod,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get graceDays =>
+      $composableBuilder(column: $table.graceDays, builder: (column) => column);
+
   GeneratedColumn<String> get hlc =>
       $composableBuilder(column: $table.hlc, builder: (column) => column);
 
@@ -7448,6 +7832,12 @@ class $$AccountsTableTableManager
                 Value<String?> last4 = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 Value<bool> archived = const Value.absent(),
+                Value<String?> bank = const Value.absent(),
+                Value<int?> limitMinor = const Value.absent(),
+                Value<int?> dueDay = const Value.absent(),
+                Value<int> interestBps = const Value.absent(),
+                Value<String> ratePeriod = const Value.absent(),
+                Value<int> graceDays = const Value.absent(),
                 Value<String> hlc = const Value.absent(),
                 Value<String?> deletedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -7460,6 +7850,12 @@ class $$AccountsTableTableManager
                 last4: last4,
                 sortOrder: sortOrder,
                 archived: archived,
+                bank: bank,
+                limitMinor: limitMinor,
+                dueDay: dueDay,
+                interestBps: interestBps,
+                ratePeriod: ratePeriod,
+                graceDays: graceDays,
                 hlc: hlc,
                 deletedAt: deletedAt,
                 rowid: rowid,
@@ -7474,6 +7870,12 @@ class $$AccountsTableTableManager
                 Value<String?> last4 = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 Value<bool> archived = const Value.absent(),
+                Value<String?> bank = const Value.absent(),
+                Value<int?> limitMinor = const Value.absent(),
+                Value<int?> dueDay = const Value.absent(),
+                Value<int> interestBps = const Value.absent(),
+                Value<String> ratePeriod = const Value.absent(),
+                Value<int> graceDays = const Value.absent(),
                 required String hlc,
                 Value<String?> deletedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -7486,6 +7888,12 @@ class $$AccountsTableTableManager
                 last4: last4,
                 sortOrder: sortOrder,
                 archived: archived,
+                bank: bank,
+                limitMinor: limitMinor,
+                dueDay: dueDay,
+                interestBps: interestBps,
+                ratePeriod: ratePeriod,
+                graceDays: graceDays,
                 hlc: hlc,
                 deletedAt: deletedAt,
                 rowid: rowid,

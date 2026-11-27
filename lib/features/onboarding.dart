@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../domain/money.dart';
 import '../domain/currency.dart';
@@ -16,7 +15,6 @@ import '../providers.dart';
 import 'budget_editor.dart';
 import 'locale_pickers.dart';
 import 'passphrase.dart';
-import 'tone.dart';
 import '../data/repo.dart' show TxnFilter;
 import '../ui/art.dart';
 import '../ui/loaders.dart';
@@ -37,14 +35,11 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   @override
   void initState() {
     super.initState();
-    // Pre-select the phone's language and region currency (changeable).
+    // Pre-select the phone's language. The currency starts as the Indian
+    // rupee; both can be changed on this screen and later in Settings.
     final dl = WidgetsBinding.instance.platformDispatcher.locale;
     L10n.use(dl.languageCode);
-    final code = NumberFormat.simpleCurrency(locale: dl.toString())
-        .currencyName;
-    Money.configure(
-      code: allCurrencies.any((c) => c.code == code) ? code! : 'INR',
-    );
+    Money.configure();
     _lang = L10n.lang;
     _cur = Money.code;
   }
@@ -68,7 +63,6 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   bool _remind = false;
   TimeOfDay _remindAt = const TimeOfDay(hour: 20, minute: 0);
   final _income = TextEditingController();
-  bool _funny = false;
   String _theme = 'system';
   bool _lock = false;
 
@@ -212,7 +206,6 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       }
       await repo.setSetting('language', _lang);
       await repo.setSetting('currency', _cur);
-      await repo.setSetting('roastMode', _funny ? '1' : '0');
       await repo.setSetting('themeMode', _theme);
       if (_lock) {
         await repo.setSetting('appLock', '1');
@@ -681,12 +674,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   Widget _lookPage() => ListView(
     padding: const EdgeInsets.symmetric(horizontal: Sp.x6),
     children: [
-      _header(
-        'How should we talk to you?',
-        'You can change this, and the theme, later in Settings.',
-      ),
-      ToneChooser(funny: _funny, onChanged: (v) => setState(() => _funny = v)),
-      const SizedBox(height: Sp.x6),
+      _header('Pick your theme', 'You can change this later in Settings.'),
       Text(tr('Theme'), style: context.text.titleSmall),
       const SizedBox(height: Sp.x2),
       SegmentedButton<String>(

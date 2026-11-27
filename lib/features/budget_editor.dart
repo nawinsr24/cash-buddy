@@ -14,6 +14,7 @@ import '../providers.dart';
 import '../ui/emoji.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
+import 'cards.dart' show showCardBudgetChoice;
 
 Future<void> showBudgetSheet(BuildContext context) => showSheet(
   context,
@@ -58,7 +59,12 @@ class _BudgetEditorState extends ConsumerState<BudgetEditor> {
     final repo = ref.read(repoProvider);
     final now = repo.today;
     final key = monthKey(now.year, now.month);
-    final all = await repo.categories(kind: 'debit');
+    var all = await repo.categories(kind: 'debit');
+    if (all.isEmpty) {
+      // first-run setup: the categories are not saved until setup finishes
+      await repo.seedCategories();
+      all = await repo.categories(kind: 'debit');
+    }
     cats = all.where((c) => c.parentId == null).toList();
     for (final c in cats) {
       rows[c.id] = TextEditingController();
@@ -191,6 +197,19 @@ class _BudgetEditorState extends ConsumerState<BudgetEditor> {
                   '${Money.format(free)} of your income is not budgeted.',
                   style: context.text.bodySmall?.copyWith(color: c.textMuted),
                 ),
+              ),
+            if ((ref.watch(cardsProvider).value ?? const []).isNotEmpty)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.credit_card),
+                title: const Text('Credit card spending'),
+                subtitle: Text(
+                  (ref.watch(cardBudgetModeProvider).value ?? 'pay') == 'swipe'
+                      ? 'Reduces your budget when you swipe'
+                      : 'Counts when you pay the bill',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => showCardBudgetChoice(context),
               ),
             const SizedBox(height: Sp.x4),
             SegmentedButton<bool>(
