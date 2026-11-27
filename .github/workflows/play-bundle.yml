@@ -52,7 +52,7 @@ jobs:
       - name: Build APK (retries on flaky downloads)
         run: |
           for attempt in 1 2 3; do
-            if flutter build appbundle --release --flavor play --dart-define=STORE=play --obfuscate --split-debug-info=build/symbols; then exit 0; fi
+            if flutter build appbundle --release --flavor play --dart-define=STORE=play --dart-define=ACCESS_URL=https://cash-buddy.cash-buddy-server.workers.dev/status --dart-define=ACCESS_KEY=tuq+4DrC0Zc+pqJspNEiT3zXRq2jD7vP4WyMRl5jDYs= --obfuscate --split-debug-info=build/symbols; then exit 0; fi
             echo "Build attempt $attempt failed; retrying in 20s"
             sleep 20
           done

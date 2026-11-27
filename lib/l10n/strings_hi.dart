@@ -358,4 +358,12 @@ const Map<String, String> stringsHi = {
   'The group is full.': 'समूह भर गया है।',
   'This invite has expired. Ask for a new one.':
       'यह आमंत्रण पुराना हो गया। नया माँगें।',
+  'Before you continue': 'आगे बढ़ने से पहले',
+  'Cash++ now checks with its server that it may run.':
+      'Cash++ अब अपने सर्वर से पूछता है कि वह चल सकता है या नहीं।',
+  'It sends a random ID for this phone. The server notes when it connected.':
+      'यह इस फ़ोन की एक रैंडम ID भेजता है। सर्वर कनेक्शन का समय लिखता है।',
+  'Your entries, balances and notes are not sent.':
+      'आपकी प्रविष्टियाँ, बैलेंस और नोट नहीं भेजे जाते।',
+  'Access to the app can be turned off.': 'ऐप की पहुँच बंद की जा सकती है।',
 };

@@ -26,6 +26,7 @@ class AccessGate extends ConsumerStatefulWidget {
 class _AccessGateState extends ConsumerState<AccessGate>
     with WidgetsBindingObserver {
   var _blocked = false;
+  var _needsNotice = false;
 
   @override
   void initState() {
@@ -53,12 +54,67 @@ class _AccessGateState extends ConsumerState<AccessGate>
     final access = ref.read(accessProvider);
     if (access == null) return;
     if (startup) _show(await access.isBlocked); // what was saved
+    // Nothing is sent before the user has been told and agreed.
+    if (await access.repo.getSetting('serverNotice') != '1') {
+      if (mounted) setState(() => _needsNotice = true);
+      return;
+    }
     _show(await access.check());
   }
 
+  Future<void> _agree() async {
+    await ref.read(accessProvider)!.repo.setSetting('serverNotice', '1');
+    if (!mounted) return;
+    setState(() => _needsNotice = false);
+    await _check();
+  }
+
   @override
-  Widget build(BuildContext context) =>
-      _blocked ? _BlockedScreen(onRetry: _check) : widget.child;
+  Widget build(BuildContext context) {
+    if (_blocked) return _BlockedScreen(onRetry: _check);
+    return _needsNotice ? _NoticeScreen(onAgree: _agree) : widget.child;
+  }
+}
+
+/// Shown once, before the app first contacts its server.
+class _NoticeScreen extends StatelessWidget {
+  final VoidCallback onAgree;
+  const _NoticeScreen({required this.onAgree});
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    body: SafeArea(
+      child: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(Sp.x5),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                tr('Before you continue'),
+                style: context.text.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              for (final line in [
+                'Cash++ now checks with its server that it may run.',
+                'It sends a random ID for this phone. The server notes when it connected.',
+                'Your entries, balances and notes are not sent.',
+                'Access to the app can be turned off.',
+              ])
+                Padding(
+                  padding: const EdgeInsets.only(top: Sp.x3),
+                  child: Text(tr(line)),
+                ),
+              const SizedBox(height: Sp.x5),
+              FilledButton(onPressed: onAgree, child: Text(tr('I agree'))),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
 }
 
 class _BlockedScreen extends ConsumerWidget {

@@ -361,4 +361,11 @@ const Map<String, String> stringsTa = {
   'The group is full.': 'குழு நிரம்பிவிட்டது.',
   'This invite has expired. Ask for a new one.':
       'அழைப்பு காலாவதியானது. புதியதைக் கேளுங்கள்.',
+  'Before you continue': 'தொடரும் முன்',
+  'Cash++ now checks with its server that it may run.':
+      'Cash++ இயங்கலாமா என இப்போது அதன் சர்வரிடம் சரிபார்க்கும்.',
+  'It sends a random ID for this phone. The server notes when it connected.': 'இது இந்தப் போனின் ஒரு தற்செயல் ID-ஐ அனுப்பும். இணைந்த நேரத்தை சர்வர் குறித்துக்கொள்ளும்.',
+  'Your entries, balances and notes are not sent.':
+      'உங்கள் பதிவுகள், இருப்பு, குறிப்புகள் அனுப்பப்படாது.',
+  'Access to the app can be turned off.': 'ஆப்பின் அணுகல் நிறுத்தப்படலாம்.',
 };
