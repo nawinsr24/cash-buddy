@@ -24,7 +24,7 @@ const termsText = <(String, String)>[
     'Sharing a home',
     'If you share a home, your partner sees the spending you do not mark "Don\'t count this", from the date you choose, and your balance only if you both switch that on. What they have already received stays on their phone.',
   ),
-  ('No guarantee', 'The app is provided as it is. Keep your own backups.'),
+  ('No guarantee', 'The app is provided as it is.'),
 ];
 
 const privacyText = <(String, String)>[
@@ -38,11 +38,7 @@ const privacyText = <(String, String)>[
   ),
   (
     'Your Google Drive',
-    'If you switch on backup, your data is copied to a private app folder in your own Drive. It has no separate password.',
-  ),
-  (
-    'Backup files',
-    'A backup file you save is not protected. Anyone who has it can read it.',
+    'If you switch on backup, your data is copied to a private app folder in your own Google Drive.',
   ),
   (
     'Permissions',

@@ -8,7 +8,6 @@ import '../platform/access.dart';
 import '../platform/account.dart';
 import '../providers.dart';
 import '../ui/theme.dart';
-import 'backup_actions.dart';
 import 'legal.dart';
 
 /// Null (the usual build) means there is no server and nothing to check.
@@ -145,10 +144,6 @@ class _BlockedScreen extends ConsumerWidget {
               ),
               const SizedBox(height: Sp.x5),
               FilledButton(onPressed: onRetry, child: Text(tr('Check again'))),
-              TextButton(
-                onPressed: () => saveBackup(context, ref),
-                child: Text(tr('Back up now')),
-              ),
             ],
           ),
         ),

@@ -7,7 +7,6 @@ import '../data/db.dart';
 import '../data/repo.dart';
 import '../domain/hlc.dart';
 import 'gzip_codec.dart';
-import 'vault.dart';
 
 /// Minimal immutable-object store (Google Drive appDataFolder in production,
 /// in-memory in tests). Files are write-once: no remote file is ever rewritten.
@@ -104,16 +103,7 @@ class SyncEngine {
   final String deviceId;
   final SyncProgressFn? onProgress;
 
-  /// Only to read files an older version locked with a password. New files are
-  /// not password-locked: they sit in the app's private folder in Drive.
-  final Vault? vault;
-  SyncEngine(
-    this.repo,
-    this.remote,
-    this.deviceId, {
-    this.onProgress,
-    this.vault,
-  });
+  SyncEngine(this.repo, this.remote, this.deviceId, {this.onProgress});
   void _p(SyncStage s, [int done = 0, int total = 0]) =>
       onProgress?.call(s, done, total);
 
@@ -138,7 +128,12 @@ class SyncEngine {
       final pull = await _pull();
       pulled = pull.$1;
       segs = pull.$2;
+      // Once: upload everything again, so nothing in Drive depends on the
+      // password older versions used.
+      final first = await repo.getSetting('plainUpload') != '1';
+      if (first) await repo.setSetting('lastPushedHlc', '');
       pushed = await _push();
+      if (first) await repo.setSetting('plainUpload', '1');
       await repo.setSetting('lastSyncAt', repo.now().toUtc().toIso8601String());
       await repo.setSetting('lastSyncError', '');
       return SyncResult(pushed, pulled, segs);
@@ -228,6 +223,14 @@ class SyncEngine {
     await remote.write('ignore/$id.json', utf8.encode(jsonEncode(old)));
   }
 
+  /// The marker at the start of a password-locked file.
+  static bool _locked(List<int> b) =>
+      b.length > 4 &&
+      b[0] == 0x43 &&
+      b[1] == 0x42 &&
+      b[2] == 0x45 &&
+      b[3] == 0x31;
+
   // ───────────── pull ─────────────
   Future<(int, int)> _pull() async {
     final applied = (jsonDecode(
@@ -255,15 +258,13 @@ class SyncEngine {
     for (final name in pending) {
       _p(SyncStage.downloading, segs, pending.length);
       final bytes = await remote.read(name);
-      var raw = bytes;
-      if (Vault.isEncrypted(raw)) {
-        if (vault == null) {
-          throw VaultException(
-            'Your cloud data is protected with a backup password. Enter it to continue.',
-          );
-        }
-        raw = await vault!.decrypt(raw);
+      // Files an older version locked with a password are left alone: this
+      // phone uploads everything again without one (see [sync]).
+      if (_locked(bytes)) {
+        applied.add(name);
+        continue;
       }
+      final raw = bytes;
       final env =
           jsonDecode(utf8.decode(gzipDecode(raw))) as Map<String, dynamic>;
       final payload = env['payload'] as String;

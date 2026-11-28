@@ -16,7 +16,6 @@ import 'budget_editor.dart';
 import 'locale_pickers.dart';
 import 'account_tile.dart';
 import 'legal.dart';
-import 'passphrase.dart';
 import '../data/repo.dart' show TxnFilter;
 import '../ui/art.dart';
 import '../ui/loaders.dart';
@@ -155,14 +154,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       if (restore == true) {
         if (!mounted) return;
         setState(() => _restoring = true);
-        var res = await sync.restoreFromDrive();
+        final res = await sync.restoreFromDrive();
         if (!mounted) return;
-        if (!res.ok && (res.error ?? '').contains('password')) {
-          if (await askOldPassword(context, sync.vault)) {
-            res = await sync.restoreFromDrive();
-          }
-          if (!mounted) return;
-        }
         if (res.ok) {
           final repo = ref.read(repoProvider);
           final accounts = (await repo.accounts()).length;

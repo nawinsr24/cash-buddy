@@ -92,7 +92,6 @@ const Map<String, String> stringsTa = {
   'How do you track your money?': 'உங்கள் பணத்தை எப்படி கண்காணிக்கிறீர்கள்?',
   'Bank balance': 'வங்கி இருப்பு',
   'Monthly income (optional)': 'மாத வருமானம் (விரும்பினால்)',
-  'Passphrase': 'கடவுச்சொற்றொடர்',
   '✨ Your performance': '✨ உங்கள் செயல்திறன்',
   'Money Health': 'பண ஆரோக்கியம்',
   'Take a tour of Settings': 'அமைப்புகளைச் சுற்றிப் பாருங்கள்',
@@ -167,8 +166,6 @@ const Map<String, String> stringsTa = {
   'Keep on this phone': 'இந்தத் தொலைபேசியிலேயே வைத்திரு',
   'Help and troubleshooting': 'உதவி மற்றும் சிக்கல் தீர்வு',
   'Check my data': 'என் தரவைச் சரிபார்',
-  'Back up now': 'இப்போது காப்புப்பிரதி எடு',
-  'Backup password': 'காப்புப்பிரதி கடவுச்சொல்',
   'Automatic entries': 'தானியங்கி பதிவுகள்',
   'Add entries from bank messages': 'வங்கிச் செய்திகளிலிருந்து பதிவுகளைச் சேர்',
   'Cash++ turns your bank alerts into entries you confirm.': 'Cash++ உங்கள் வங்கி அறிவிப்புகளை நீங்கள் உறுதிசெய்யும் பதிவுகளாக மாற்றுகிறது.',
@@ -276,16 +273,6 @@ const Map<String, String> stringsTa = {
   'Access has been turned off': 'உங்கள் அணுகல் நிறுத்தப்பட்டுள்ளது',
   'Your data is still on this phone.': 'உங்கள் தரவு இந்தப் போனிலேயே உள்ளது.',
   'Check again': 'மீண்டும் சரிபார்',
-  'Restore from a file': 'கோப்பிலிருந்து மீட்டெடு',
-  'Backup saved': 'காப்பு சேமிக்கப்பட்டது',
-  'The backup could not be saved.': 'காப்பைச் சேமிக்க முடியவில்லை.',
-  'Replace everything on this phone?':
-      'இந்தப் போனில் உள்ள அனைத்தையும் மாற்றவா?',
-  'Entries on this phone that are not in the file will be lost.':
-      'கோப்பில் இல்லாத பதிவுகள் அழிந்துவிடும்.',
-  'Backup restored': 'காப்பு மீட்டெடுக்கப்பட்டது',
-  'This is not a backup file, or it is damaged.':
-      'இது காப்புக் கோப்பு அல்ல, அல்லது சேதமடைந்துள்ளது.',
   'I agree': 'ஒப்புக்கொள்கிறேன்',
   'Sign in with Google': 'Google மூலம் உள்நுழை',
   'Needed only for a shared group': 'பகிர்ந்த குழுவுக்கு மட்டுமே தேவை',
@@ -355,11 +342,6 @@ const Map<String, String> stringsTa = {
       'இருவரின் செலவும் ஒரே பட்ஜெட்டில் சேரும்.',
   'Share one budget with your partner.': 'துணையுடன் ஒரே பட்ஜெட்டைப் பகிரவும்.',
   'of': 'மொத்தம்',
-  'Old backup password': 'பழைய காப்பு கடவுச்சொல்',
-  'This was saved by an older version with a password. Enter it once.':
-      'இது பழைய பதிப்பால் கடவுச்சொல்லுடன் சேமிக்கப்பட்டது. ஒருமுறை உள்ளிடவும்.',
-  'Save a file where you choose':
-      'நீங்கள் தேர்ந்தெடுக்கும் இடத்தில் கோப்பைச் சேமி',
   'Invite QR code': 'அழைப்பு QR குறியீடு',
   'Ask your partner to scan this': 'துணையை இதை ஸ்கேன் செய்யச் சொல்லுங்கள்',
   'Valid for one day. Anyone who scans it can join your home.':

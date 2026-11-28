@@ -3,12 +3,9 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 
 import '../data/repo.dart';
-import 'backup.dart';
 import 'drive_remote.dart';
 import '../platform/google_identity.dart';
-import '../data/db_key.dart';
 import 'sync_engine.dart';
-import 'vault.dart';
 
 /// Wires the sync engine to Google Drive and decides *when* to sync:
 /// on foreground, and debounced after local changes. No polling, no timers
@@ -54,14 +51,8 @@ class SetupSignIn {
 class SyncService with WidgetsBindingObserver {
   final Repo repo;
   final SignInFn _signIn;
-  SyncService(this.repo, {SignInFn? signIn, Vault? vault})
-    : _signIn = signIn ?? _googleSignIn,
-      vault = vault ?? Vault(const SecureSecretStore());
-
-  /// Encrypts everything sent to Drive and every backup file.
-  final Vault vault;
-
-  /// Error text that tells the screen to ask for a backup passphrase first.
+  SyncService(this.repo, {SignInFn? signIn})
+    : _signIn = signIn ?? _googleSignIn;
 
   /// The account signed in during this session (display only).
   String? signedInEmail;
@@ -106,7 +97,7 @@ class SyncService with WidgetsBindingObserver {
     _debounce = Timer(const Duration(seconds: 45), () => unawaited(syncNow()));
   }
 
-  /// Interactive: sign in, take a safety backup, enable Online Mode and merge.
+  /// Interactive: sign in, enable Online Mode and merge.
   Future<SyncResult> goOnline() async {
     final ({RemoteStore remote, String? email})? signed;
     try {
@@ -117,7 +108,6 @@ class SyncService with WidgetsBindingObserver {
     if (signed == null) return const SyncResult(0, 0, 0, 'Sign-in cancelled');
     final wrong = await _otherAccount(signed.remote, signed.email);
     if (wrong != null) return SyncResult(0, 0, 0, wrong);
-    await createBackup(repo);
     _remote = signed.remote;
     signedInEmail = signed.email;
     await repo.setSetting('dataMode', 'online');
@@ -226,13 +216,7 @@ class SyncService with WidgetsBindingObserver {
     _running = true;
     try {
       final device = await repo.getSetting('deviceId') ?? 'dev';
-      return await SyncEngine(
-        repo,
-        remote,
-        device,
-        onProgress: _report,
-        vault: vault,
-      ).sync();
+      return await SyncEngine(repo, remote, device, onProgress: _report).sync();
     } finally {
       _running = false;
       _end();

@@ -93,7 +93,6 @@ const Map<String, String> stringsHi = {
   'Switch any time without losing history.': 'इतिहास खोए बिना कभी भी बदलें।',
   'Bank balance': 'बैंक बैलेंस',
   'Monthly income (optional)': 'मासिक आय (वैकल्पिक)',
-  'Passphrase': 'पासफ़्रेज़',
   '✨ Your performance': '✨ आपका प्रदर्शन',
   'Money Health': 'मनी हेल्थ',
   'Take a tour of Settings': 'सेटिंग्स का टूर लें',
@@ -169,8 +168,6 @@ const Map<String, String> stringsHi = {
   'Keep on this phone': 'इसी फ़ोन पर रखें',
   'Help and troubleshooting': 'मदद और समस्या समाधान',
   'Check my data': 'मेरा डेटा जांचें',
-  'Back up now': 'अभी बैकअप लें',
-  'Backup password': 'बैकअप पासवर्ड',
   'Automatic entries': 'अपने आप बनने वाली एंट्री',
   'Add entries from bank messages': 'बैंक संदेशों से एंट्री जोड़ें',
   'Cash++ turns your bank alerts into entries you confirm.': 'Cash++ आपके बैंक अलर्ट को ऐसी एंट्री में बदलता है जिन्हें आप पक्का करते हैं।',
@@ -273,15 +270,6 @@ const Map<String, String> stringsHi = {
   'Access has been turned off': 'आपकी पहुँच बंद कर दी गई है',
   'Your data is still on this phone.': 'आपका डेटा इस फ़ोन में सुरक्षित है।',
   'Check again': 'फिर जाँचें',
-  'Restore from a file': 'फ़ाइल से वापस लाएँ',
-  'Backup saved': 'बैकअप सहेजा गया',
-  'The backup could not be saved.': 'बैकअप सहेजा नहीं जा सका।',
-  'Replace everything on this phone?': 'इस फ़ोन का सब कुछ बदलें?',
-  'Entries on this phone that are not in the file will be lost.':
-      'जो प्रविष्टियाँ फ़ाइल में नहीं हैं, वे मिट जाएँगी।',
-  'Backup restored': 'बैकअप वापस आ गया',
-  'This is not a backup file, or it is damaged.':
-      'यह बैकअप फ़ाइल नहीं है, या खराब है।',
   'I agree': 'मैं सहमत हूँ',
   'Sign in with Google': 'Google से साइन इन करें',
   'Needed only for a shared group': 'केवल साझा समूह के लिए ज़रूरी',
@@ -352,10 +340,6 @@ const Map<String, String> stringsHi = {
       'आप दोनों का खर्च एक ही बजट में गिना जाता है।',
   'Share one budget with your partner.': 'साथी के साथ एक बजट रखें।',
   'of': 'कुल',
-  'Old backup password': 'पुराना बैकअप पासवर्ड',
-  'This was saved by an older version with a password. Enter it once.':
-      'इसे पुराने संस्करण ने पासवर्ड के साथ सहेजा था। एक बार डालें।',
-  'Save a file where you choose': 'अपनी चुनी जगह पर फ़ाइल सहेजें',
   'Invite QR code': 'आमंत्रण QR कोड',
   'Ask your partner to scan this': 'साथी से इसे स्कैन करने को कहें',
   'Valid for one day. Anyone who scans it can join your home.':

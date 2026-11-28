@@ -15,13 +15,11 @@ import '../platform/reminders.dart';
 import '../platform/sms_reader.dart';
 import '../providers.dart';
 import 'account_tile.dart';
-import 'backup_actions.dart';
 import 'legal.dart';
 import 'group.dart';
 import '../domain/currency.dart';
 import 'inbox.dart' show ImportSheet;
 import 'locale_pickers.dart';
-import 'passphrase.dart';
 import '../sync/drive_remote.dart';
 import '../sync/sync_service.dart';
 import '../ui/emoji.dart';
@@ -142,18 +140,6 @@ class SettingsPage extends ConsumerWidget {
                       ),
                     ),
                   ],
-                  const Divider(height: 1),
-                  ListTile(
-                    leading: const Icon(Icons.save_alt),
-                    title: Text(tr('Back up now')),
-                    subtitle: Text(tr('Save a file where you choose')),
-                    onTap: () => saveBackup(context, ref),
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.restore),
-                    title: Text(tr('Restore from a file')),
-                    onTap: () => restoreFromFile(context, ref),
-                  ),
                 ],
               ),
             ),
@@ -682,11 +668,6 @@ class SettingsPage extends ConsumerWidget {
     final sync = ref.read(syncServiceProvider);
     AppLockGate.holdOff(const Duration(minutes: 2));
     var r = await sync.goOnline();
-    if (!r.ok && (r.error ?? '').contains('password') && context.mounted) {
-      if (await askOldPassword(context, sync.vault)) {
-        r = await sync.syncNow(force: true);
-      }
-    }
     final account = ref.read(accountProvider);
     if (r.ok &&
         context.mounted &&

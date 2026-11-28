@@ -5,7 +5,6 @@ import 'package:cash_buddy/sync/sync_engine.dart';
 import 'package:cash_buddy/sync/sync_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cash_buddy/sync/vault.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../data/helpers.dart';
@@ -19,9 +18,7 @@ Future<TestEnv> pumpFresh(WidgetTester tester, SignInFn signIn) async {
   addTearDown(tester.view.reset);
   addTearDown(tester.platformDispatcher.clearLocaleTestValue);
   late TestEnv env;
-  late Vault vault;
   await tester.runAsync(() async {
-    vault = await testVault();
     env = await newEnv(device: 'devB');
     await env.db.delete(env.db.settings).go();
     await env.db.delete(env.db.accounts).go();
@@ -33,7 +30,7 @@ Future<TestEnv> pumpFresh(WidgetTester tester, SignInFn signIn) async {
       overrides: [
         repoProvider.overrideWithValue(env.repo),
         syncServiceProvider.overrideWith((ref) {
-          final s = SyncService(env.repo, signIn: signIn, vault: vault);
+          final s = SyncService(env.repo, signIn: signIn);
           ref.onDispose(s.dispose);
           return s;
         }),
