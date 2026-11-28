@@ -217,6 +217,17 @@ class SyncEngine {
     return count;
   }
 
+  /// "Start fresh": everything in the cloud now is left out from here on, on
+  /// this phone and on any that restores later. Nothing is deleted.
+  static Future<void> startFresh(RemoteStore remote, String id) async {
+    final old = [
+      for (final n in await remote.list())
+        if (n.startsWith('seg/')) n,
+    ];
+    if (old.isEmpty) return;
+    await remote.write('ignore/$id.json', utf8.encode(jsonEncode(old)));
+  }
+
   // ───────────── pull ─────────────
   Future<(int, int)> _pull() async {
     final applied = (jsonDecode(
@@ -225,11 +236,20 @@ class SyncEngine {
     var rows = 0, segs = 0;
     final touchedDebts = <String>{};
     _p(SyncStage.finding);
+    final names = await remote.list();
+    // Files somebody chose to leave behind by starting fresh.
+    final ignored = <String>{
+      for (final n in names)
+        if (n.startsWith('ignore/'))
+          ...(jsonDecode(utf8.decode(await remote.read(n))) as List)
+              .cast<String>(),
+    };
     final pending = [
-      for (final name in await remote.list())
+      for (final name in names)
         if (name.startsWith('seg/') &&
             !name.startsWith('seg/$deviceId/') &&
-            !applied.contains(name))
+            !applied.contains(name) &&
+            !ignored.contains(name))
           name,
     ];
     for (final name in pending) {

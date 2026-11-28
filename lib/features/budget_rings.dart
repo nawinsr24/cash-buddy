@@ -10,7 +10,7 @@ import '../ui/motion.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
 import 'budget.dart';
-import 'group.dart';
+import 'home_budget.dart';
 
 /// This month's budget as a round card, shared by both while home sharing is
 /// on. With no budget it shows only a plus.
@@ -37,40 +37,8 @@ class BudgetRings extends ConsumerWidget {
       daysLeft: days,
       onTap: home == null
           ? () => pushReveal(context, const BudgetPage())
-          : () => _setHomeBudget(context, ref, budget),
+          : () => pushReveal(context, const HomeBudgetPage()),
     );
-  }
-
-  Future<void> _setHomeBudget(
-    BuildContext context,
-    WidgetRef ref,
-    int? current,
-  ) async {
-    final c = TextEditingController(
-      text: current == null ? '' : Money.edit(current),
-    );
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (d) => AlertDialog(
-        title: Text(tr('Budget')),
-        content: AmountField(controller: c, autofocus: true),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(d, false),
-            child: Text(tr('Cancel')),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(d, true),
-            child: Text(tr('Save')),
-          ),
-        ],
-      ),
-    );
-    final v = Money.parse(c.text);
-    if (ok != true || v == null) return;
-    await ref
-        .read(groupServiceProvider)
-        ?.change((g) => g.put('budget', {'kind': 'budget', 'limitMinor': v}));
   }
 }
 

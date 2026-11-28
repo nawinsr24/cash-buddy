@@ -128,6 +128,19 @@ async function sessionAccount(request, env) {
   }
 }
 
+/** A new 30-day session for one that is still good. */
+async function renew(request, env) {
+  const { session } = await request.json().catch(() => ({}));
+  const header = btoa(JSON.stringify(session ?? {}));
+  const who = await sessionAccount(
+    new Request(request.url, { headers: { 'x-session': header } }), env);
+  if (!who) return json({ error: 'sign in' }, 401);
+  const { device } = JSON.parse(session.payload);
+  return json({
+    session: await sign(env, { sub: who, device, exp: Date.now() + 30 * DAY }),
+  });
+}
+
 async function admin(request, env, url) {
   if (!(await isAdmin(request, env))) return json({ error: 'no' }, 401);
   if (url.pathname === '/admin/devices' && request.method === 'GET') {
@@ -168,6 +181,9 @@ export default {
     }
     if (url.pathname === '/signin' && request.method === 'POST') {
       return signIn(request, env);
+    }
+    if (url.pathname === '/renew' && request.method === 'POST') {
+      return renew(request, env);
     }
     if (url.pathname.startsWith('/group/')) {
       const who = await sessionAccount(request, env);

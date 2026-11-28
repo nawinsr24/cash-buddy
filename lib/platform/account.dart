@@ -10,6 +10,7 @@ import 'package:http/http.dart' as http;
 import '../sync/drive_remote.dart';
 import 'access.dart';
 import 'diag.dart';
+import 'google_identity.dart';
 
 /// Raised with a message fit to show.
 class SignInProblem implements Exception {
@@ -60,8 +61,10 @@ class Account {
   Future<String?> get email => access.repo.getSetting('accountEmail');
 
   /// Call only after the user has agreed. False when they back out of Google.
-  Future<bool> signIn() async {
-    final token = await idToken();
+  /// [have] is the token from a sign-in just made, so Google is not asked
+  /// twice.
+  Future<bool> signIn({String? have}) async {
+    final token = have ?? await idToken();
     if (token == null) return false;
     final device = await access.installId();
     final int status;
@@ -85,14 +88,41 @@ class Account {
       throw SignInProblem('The server did not accept the sign-in.');
     }
     final repo = access.repo;
+    final problem = await useGoogleAccount(repo, reply['email'] as String);
+    if (problem != null) throw SignInProblem(problem);
     await repo.setSetting('accountEmail', reply['email'] as String);
     await repo.setSetting('accountSession', jsonEncode(reply['session']));
     await access.check();
     return true;
   }
 
+  /// Renews the sign-in quietly while it is still good, so Google is not
+  /// needed again every month. Any trouble leaves things as they are.
+  Future<void> renew() async {
+    try {
+      final repo = access.repo;
+      final raw = await repo.getSetting('accountSession') ?? '';
+      if (raw.isEmpty) return;
+      final claims =
+          jsonDecode((jsonDecode(raw) as Map)['payload'] as String) as Map;
+      final left = (claims['exp'] as int) - repo.now().millisecondsSinceEpoch;
+      if (left > const Duration(days: 15).inMilliseconds) return;
+      final (code, body) = await post(
+        Uri.parse(access.config.url).resolve('renew'),
+        jsonEncode({'session': jsonDecode(raw)}),
+      );
+      if (code == 200) {
+        await repo.setSetting(
+          'accountSession',
+          jsonEncode((jsonDecode(body) as Map)['session']),
+        );
+      }
+    } catch (_) {}
+  }
+
   /// Forgets the sign-in on this phone. A block already in force stays.
   Future<void> signOut() async {
+    await access.repo.setSetting('googleEmail', '');
     await access.repo.setSetting('accountEmail', '');
     await access.repo.setSetting('accountSession', '');
   }

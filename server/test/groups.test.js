@@ -41,3 +41,13 @@ test('invite, deliver, delete; strangers stay out', async () => {
   assert.equal((await send(a, 'invite', { ...ma, join: 't' })).status, 200);
   assert.equal((await send(c, 'join', { ...mc, join: 't' })).status, 200);
 });
+
+test('a good sign-in can be renewed, a bad one cannot', async () => {
+  const header = await session('9', 'in_renew0001');
+  const value = JSON.parse(Buffer.from(header, 'base64').toString());
+  const renew = (s) => call('/renew', { method: 'POST', body: JSON.stringify({ session: s }) });
+  const ok = await renew(value);
+  assert.equal(ok.status, 200);
+  assert.ok((await ok.json()).session.payload);
+  assert.equal((await renew({ ...value, signature: 'AAAA' })).status, 401);
+});

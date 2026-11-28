@@ -694,6 +694,15 @@ class SettingsPage extends ConsumerWidget {
         r = await sync.syncNow(force: true);
       }
     }
+    final account = ref.read(accountProvider);
+    if (r.ok &&
+        context.mounted &&
+        account != null &&
+        sync.lastIdToken != null &&
+        (await account.email ?? '').isEmpty &&
+        context.mounted) {
+      await signInWithConsent(context, account, have: sync.lastIdToken);
+    }
     if (context.mounted) {
       toast(
         context,

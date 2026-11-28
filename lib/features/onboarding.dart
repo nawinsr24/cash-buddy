@@ -14,6 +14,7 @@ import '../platform/sms_reader.dart';
 import '../providers.dart';
 import 'budget_editor.dart';
 import 'locale_pickers.dart';
+import 'account_tile.dart';
 import 'passphrase.dart';
 import '../data/repo.dart' show TxnFilter;
 import '../ui/art.dart';
@@ -117,6 +118,12 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       return;
     }
     setState(() => _signedInAs = r.email ?? 'your Google account');
+    // the same sign-in also covers home sharing, so it is not asked again
+    final account = ref.read(accountProvider);
+    if (account != null && sync.lastIdToken != null) {
+      await signInWithConsent(context, account, have: sync.lastIdToken);
+      if (!mounted) return;
+    }
     if (r.hasData) {
       final restore = await showDialog<bool>(
         context: context,
@@ -169,6 +176,18 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         setState(() => _restoring = false);
         toast(context, 'Could not restore: ${res.error}');
         return;
+      }
+      // "Start fresh": leave the old Drive data behind for good.
+      if (restore == false) {
+        try {
+          await sync.startFreshInDrive();
+        } catch (_) {
+          if (mounted) {
+            toast(context, 'Could not reach Google Drive. Try again.');
+            setState(() => _signedInAs = null);
+          }
+          return;
+        }
       }
     }
     if (mounted) _go(2);

@@ -48,6 +48,10 @@ class DriveRemote implements RemoteStore {
   static const notConfiguredMessage =
       'Google sign-in is not set up in this version of the app yet, so Google Drive backup cannot start. Your data stays safely on this phone.';
 
+  /// Proof of who signed in just now, so the same sign-in also covers the
+  /// app's server. Short lived.
+  String? idToken;
+
   /// Interactive sign-in + scope grant. Returns null if the user cancels;
   /// throws a readable [DriveSignInException] for any other failure.
   static Future<DriveRemote?> signIn() async {
@@ -57,7 +61,8 @@ class DriveRemote implements RemoteStore {
       await gs.initialize(serverClientId: serverClientId);
       final account = await gs.authenticate(scopeHint: [scope]);
       final authz = await account.authorizationClient.authorizeScopes([scope]);
-      return DriveRemote._(_BearerClient(authz.accessToken), account.email);
+      return DriveRemote._(_BearerClient(authz.accessToken), account.email)
+        ..idToken = account.authentication.idToken;
     } on GoogleSignInException catch (e) {
       if (e.code == GoogleSignInExceptionCode.canceled) return null;
       throw DriveSignInException(

@@ -55,6 +55,9 @@ class HomeSummary {
   /// The part of [spends] both phones have: what the budget is measured on.
   final int sharedTotal;
   final int? budget;
+
+  /// Family budget per main category name.
+  final Map<String, int> splits;
   final List<CatSlice> main, subs;
   final bool showMyBalance;
   final List<PartnerBalance> partnerBalances;
@@ -63,6 +66,7 @@ class HomeSummary {
     required this.spends,
     required this.sharedTotal,
     required this.budget,
+    this.splits = const {},
     required this.main,
     required this.subs,
     required this.showMyBalance,
@@ -231,6 +235,9 @@ extension HomeRepo on Repo {
       spends: spends,
       sharedTotal: shared,
       budget: entries['budget']?.data['limitMinor'] as int?,
+      splits:
+          (entries['budget']?.data['splits'] as Map?)?.cast<String, int>() ??
+          const {},
       main: slices(false),
       subs: slices(true),
       showMyBalance: share,

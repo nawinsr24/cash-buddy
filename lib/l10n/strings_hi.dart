@@ -290,7 +290,6 @@ const Map<String, String> stringsHi = {
       'यह किसी खाते या फ़ोन के लिए ऐप बंद कर सकता है।',
   'I agree': 'मैं सहमत हूँ',
   'Sign in with Google': 'Google से साइन इन करें',
-  'Signed in': 'साइन इन है',
   'Needed only for a shared group': 'केवल साझा समूह के लिए ज़रूरी',
   'Sign out': 'साइन आउट',
   'Google sign-in is not available in this version.':
@@ -390,4 +389,9 @@ const Map<String, String> stringsHi = {
       'यहाँ से शुरू करें, फिर साथी स्कैन करे',
   'Your partner already shows one': 'साथी पहले से QR दिखा रहा है',
   "Scan partner's QR": 'साथी का QR स्कैन करें',
+  'Family budget': 'परिवार का बजट',
+  'For the whole month': 'पूरे महीने के लिए',
+  'Set aside in categories': 'श्रेणियों में रखा',
+  'more than the month': 'महीने से ज़्यादा',
+  'Google account': 'Google खाता',
 };

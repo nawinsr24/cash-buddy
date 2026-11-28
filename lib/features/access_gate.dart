@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../l10n/l10n.dart';
 import '../platform/access.dart';
+import '../platform/account.dart';
 import '../providers.dart';
 import '../ui/theme.dart';
 import 'backup_actions.dart';
@@ -60,6 +61,7 @@ class _AccessGateState extends ConsumerState<AccessGate>
       return;
     }
     _show(await access.check());
+    await Account(access).renew();
   }
 
   Future<void> _agree() async {

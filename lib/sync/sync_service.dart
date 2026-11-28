@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import '../data/repo.dart';
 import 'backup.dart';
 import 'drive_remote.dart';
+import '../platform/google_identity.dart';
 import '../data/db_key.dart';
 import 'sync_engine.dart';
 import 'vault.dart';
@@ -114,6 +115,8 @@ class SyncService with WidgetsBindingObserver {
       return SyncResult(0, 0, 0, e.message);
     }
     if (signed == null) return const SyncResult(0, 0, 0, 'Sign-in cancelled');
+    final wrong = await _otherAccount(signed.remote, signed.email);
+    if (wrong != null) return SyncResult(0, 0, 0, wrong);
     await createBackup(repo);
     _remote = signed.remote;
     signedInEmail = signed.email;
@@ -131,6 +134,8 @@ class SyncService with WidgetsBindingObserver {
       if (signed == null) {
         return const SetupSignIn(ok: false, error: 'Sign-in was cancelled.');
       }
+      final wrong = await _otherAccount(signed.remote, signed.email);
+      if (wrong != null) return SetupSignIn(ok: false, error: wrong);
       _report(SyncStage.finding, 0, 0);
       final names = await signed.remote.list();
       _remote = signed.remote;
@@ -150,6 +155,27 @@ class SyncService with WidgetsBindingObserver {
     } finally {
       _end();
     }
+  }
+
+  /// The token from the last Google sign-in, if it gave one.
+  String? lastIdToken;
+
+  /// Null when [email] is the app's account (or becomes it); else why not.
+  Future<String?> _otherAccount(RemoteStore remote, String? email) async {
+    final problem = await useGoogleAccount(repo, email);
+    if (problem != null) {
+      if (remote is DriveRemote) await DriveRemote.signOut();
+      return problem;
+    }
+    lastIdToken = remote is DriveRemote ? remote.idToken : null;
+    return null;
+  }
+
+  /// Leaves what is already in Drive behind.
+  Future<void> startFreshInDrive() async {
+    final remote = _remote;
+    if (remote == null) return;
+    await SyncEngine.startFresh(remote, '${repo.now().millisecondsSinceEpoch}');
   }
 
   /// Setup finished as a new user: switch on Online Mode and merge in the

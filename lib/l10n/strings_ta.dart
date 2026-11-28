@@ -294,7 +294,6 @@ const Map<String, String> stringsTa = {
       'ஒரு கணக்கு அல்லது போனுக்கான அணுகலை அது நிறுத்த முடியும்.',
   'I agree': 'ஒப்புக்கொள்கிறேன்',
   'Sign in with Google': 'Google மூலம் உள்நுழை',
-  'Signed in': 'உள்நுழைந்துள்ளீர்கள்',
   'Needed only for a shared group': 'பகிர்ந்த குழுவுக்கு மட்டுமே தேவை',
   'Sign out': 'வெளியேறு',
   'Google sign-in is not available in this version.':
@@ -392,4 +391,9 @@ const Map<String, String> stringsTa = {
       'இங்கே தொடங்கி, துணை ஸ்கேன் செய்யட்டும்',
   'Your partner already shows one': 'துணை ஏற்கனவே QR காட்டுகிறார்',
   "Scan partner's QR": 'துணையின் QR-ஐ ஸ்கேன் செய்',
+  'Family budget': 'குடும்ப பட்ஜெட்',
+  'For the whole month': 'முழு மாதத்திற்கும்',
+  'Set aside in categories': 'வகைகளில் ஒதுக்கியது',
+  'more than the month': 'மாதத்தை விட அதிகம்',
+  'Google account': 'Google கணக்கு',
 };
