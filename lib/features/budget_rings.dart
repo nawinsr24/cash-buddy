@@ -72,6 +72,7 @@ class _Ring extends StatelessWidget {
     return Pressable(
       onTap: onTap,
       child: Card(
+        color: context.scheme.primaryContainer,
         child: Padding(
           padding: const EdgeInsets.all(Sp.x4),
           // laid out like the Money Health card below it
@@ -87,7 +88,7 @@ class _Ring extends StatelessWidget {
                       strokeWidth: 7,
                       strokeCap: StrokeCap.round,
                       color: color,
-                      backgroundColor: context.scheme.primaryContainer,
+                      backgroundColor: context.cash.surfaceRaised.withValues(alpha: 0.7),
                     ),
                     Center(
                       child: set
@@ -157,7 +158,7 @@ class _Ring extends StatelessWidget {
                           children: [
                             Text(
                               Money.format((limit - spent).abs()),
-                              style: context.text.headlineSmall?.copyWith(
+                              style: context.text.headlineMedium?.copyWith(
                                 fontWeight: FontWeight.w800,
                                 color: over ? color : null,
                               ),

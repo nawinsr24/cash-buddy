@@ -100,7 +100,7 @@ class _ShowCodePageState extends State<ShowCodePage> {
           gradient: const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFF5232E0), Color(0xFF1E9AD0)],
+            colors: [Color(0xFFF17B03), Color(0xFFF3AD3D)],
           ),
         ),
         child: Container(

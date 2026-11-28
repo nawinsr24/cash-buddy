@@ -24,38 +24,38 @@ class CashColors extends ThemeExtension<CashColors> {
   });
 
   static const light = CashColors(
-    income: Color(0xFF0B8A5F),
-    spending: Color(0xFFD91A45),
+    income: Color(0xFF1D8272),
+    spending: Color(0xFFB34F1B),
     debtIn: Color(0xFFB45309),
     liability: Color(0xFF7C3AED),
     surfaceRaised: Color(0xFFFFFFFF),
-    textMuted: Color(0xFF596070),
-    positiveBg: Color(0xFFE7F7F0),
-    negativeBg: Color(0xFFFDEBEF),
+    textMuted: Color(0xFF64625A),
+    positiveBg: Color(0xFFD8E9E2),
+    negativeBg: Color(0xFFF8E2D6),
   );
   static const dark = CashColors(
-    income: Color(0xFF34D399),
-    spending: Color(0xFFFB7185),
+    income: Color(0xFF8EE0C1),
+    spending: Color(0xFFFFBD8B),
     debtIn: Color(0xFFFBBF24),
     liability: Color(0xFFA78BFA),
-    surfaceRaised: Color(0xFF181729),
-    textMuted: Color(0xFF9AA1AD),
-    positiveBg: Color(0xFF0F2A21),
-    negativeBg: Color(0xFF331820),
+    surfaceRaised: Color(0xFF292923),
+    textMuted: Color(0xFFAAA79C),
+    positiveBg: Color(0xFF203A33),
+    negativeBg: Color(0xFF3A2619),
   );
 
   /// Soft pastel tiles (peach, mint, lavender, sky) for stat cards.
   static const _tilesLight = [
+    Color(0xFFF9E4B2),
+    Color(0xFFD8E9E2),
     Color(0xFFFFE9DB),
-    Color(0xFFD8F5EC),
-    Color(0xFFE9E3FF),
-    Color(0xFFDDEEFF),
+    Color(0xFFE9E7DF),
   ];
   static const _tilesDark = [
+    Color(0xFF49391F),
+    Color(0xFF203A33),
     Color(0xFF3A2621),
-    Color(0xFF15332D),
-    Color(0xFF2B2650),
-    Color(0xFF172E44),
+    Color(0xFF33322B),
   ];
   static Color tile(int i, Brightness b) =>
       (b == Brightness.dark ? _tilesDark : _tilesLight)[i % 4];
@@ -117,25 +117,28 @@ class Sp {
 class AppTheme {
   /// Ink-and-indigo: neutral surfaces, one accent, colour only where it means
   /// something (money in, money out, status).
-  static const accentLight = Color(0xFF5B3FE0);
-  static const accentDark = Color(0xFFA793FF);
+  static const accentLight = Color(0xFFA64D00);
+
+  /// Bright fill for buttons and the Add button (with ink text on it).
+  static const fillLight = Color(0xFFF17B03);
+  static const accentDark = Color(0xFFF3AD3D);
 
   static ThemeData build(Brightness b) {
     final dark = b == Brightness.dark;
     final accent = dark ? accentDark : accentLight;
-    final ink = dark ? const Color(0xFFF4F5F7) : const Color(0xFF0F1115);
-    final bg = dark ? const Color(0xFF0E0D16) : const Color(0xFFF5F3FF);
-    final hairline = dark ? const Color(0xFF282640) : const Color(0xFFE6E1FA);
+    final ink = dark ? const Color(0xFFF1EFE7) : const Color(0xFF0E0D0B);
+    final bg = dark ? const Color(0xFF1D1D19) : const Color(0xFFEFEDE5);
+    final hairline = dark ? const Color(0xFF3C3B34) : const Color(0xFFE5E2D9);
     final scheme = ColorScheme.fromSeed(seedColor: accentLight, brightness: b)
         .copyWith(
           primary: accent,
-          onPrimary: dark ? const Color(0xFF0E0D16) : Colors.white,
-          primaryContainer: accent.withValues(alpha: dark ? 0.22 : 0.12),
+          onPrimary: dark ? const Color(0xFF0E0D0B) : Colors.white,
+          primaryContainer: dark ? const Color(0xFF49391F) : const Color(0xFFF9E4B2),
           onPrimaryContainer: ink,
           surface: bg,
           onSurface: ink,
           outlineVariant: hairline,
-          outline: dark ? const Color(0xFF3A3E47) : const Color(0xFFC9CCD3),
+          outline: dark ? const Color(0xFF46453D) : const Color(0xFFC6C4BA),
         );
     final colors = dark ? CashColors.dark : CashColors.light;
     final base = ThemeData(
@@ -194,7 +197,7 @@ class AppTheme {
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(Sp.rCard),
-          side: BorderSide(color: hairline),
+          side: BorderSide.none,
         ),
       ),
       dividerTheme: DividerThemeData(color: hairline, space: 1, thickness: 1),
@@ -262,6 +265,8 @@ class AppTheme {
           minimumSize: const Size.fromHeight(54),
           elevation: 0,
           textStyle: tt.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+          backgroundColor: dark ? accent : fillLight,
+          foregroundColor: const Color(0xFF0E0D0B),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(Sp.rField),
           ),
@@ -285,10 +290,8 @@ class AppTheme {
         ),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: dark
-            ? const Color(0xFF6B4FE6)
-            : const Color(0xFF5B3DF5),
-        foregroundColor: Colors.white,
+        backgroundColor: dark ? accent : fillLight,
+        foregroundColor: const Color(0xFF0E0D0B),
         elevation: 0,
         highlightElevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
@@ -385,22 +388,22 @@ const moneyFeatures = [FontFeature.tabularFigures()];
 class ChartColors {
   ChartColors._();
   static const _light = [
-    Color(0xFF6366F1), // indigo
-    Color(0xFF14B8A6), // teal
-    Color(0xFFF59E0B), // amber
-    Color(0xFFEC4899), // pink
-    Color(0xFF0EA5E9), // sky
-    Color(0xFF8B5CF6), // violet
-    Color(0xFF22C55E), // green
+    Color(0xFFF17B03), // orange
+    Color(0xFF1D8272), // teal
+    Color(0xFFF3AD3D), // amber
+    Color(0xFFB34F1B), // rust
+    Color(0xFF4F7CAC), // slate blue
+    Color(0xFF8E6BBF), // plum
+    Color(0xFF6E9F3A), // olive
   ];
   static const _dark = [
-    Color(0xFF8B93FF),
-    Color(0xFF2DD4BF),
-    Color(0xFFFBBF24),
-    Color(0xFFF472B6),
-    Color(0xFF38BDF8),
-    Color(0xFFA78BFA),
-    Color(0xFF4ADE80),
+    Color(0xFFF7943A),
+    Color(0xFF4FB3A2),
+    Color(0xFFF3C06A),
+    Color(0xFFD9774A),
+    Color(0xFF7FA6D1),
+    Color(0xFFB596DE),
+    Color(0xFF9BC46A),
   ];
 
   static int get count => _light.length;
@@ -409,8 +412,8 @@ class ChartColors {
   static Color at(int i, Brightness b, {bool others = false}) {
     if (others) {
       return b == Brightness.dark
-          ? const Color(0xFF64748B)
-          : const Color(0xFF94A3B8);
+          ? const Color(0xFF6F6D65)
+          : const Color(0xFFB8B7AD);
     }
     return (b == Brightness.dark ? _dark : _light)[i % _light.length];
   }

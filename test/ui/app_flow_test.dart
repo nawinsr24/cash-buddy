@@ -85,6 +85,17 @@ Future<void> tapText(
   bool last = false,
 }) async {
   final f = find.text(text);
+  // Home is a long list: bring the text into view first
+  if (f.evaluate().isEmpty && find.byType(Scrollable).evaluate().isNotEmpty) {
+    try {
+      await tester.scrollUntilVisible(
+        f,
+        300,
+        scrollable: find.byType(Scrollable).first,
+        maxScrolls: 20,
+      );
+    } catch (_) {}
+  }
   expect(f, findsWidgets, reason: 'expected to find "$text"');
   await tester.tap(last ? f.last : f.first, warnIfMissed: false);
   await settle(tester);
@@ -480,6 +491,11 @@ void main() {
     tester,
   ) async {
     await pump(tester, opening: 1000000);
+    await tester.scrollUntilVisible(
+      find.text('MONEY HEALTH'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('MONEY HEALTH'), findsOneWidget);
     expect(find.text('Building…'), findsOneWidget);
     await tester.scrollUntilVisible(
@@ -701,6 +717,11 @@ void main() {
       () => env.repo.addTransaction(type: 'debit', amountMinor: 12300),
     );
     await settle(tester);
+    await tester.scrollUntilVisible(
+      find.bySemanticsLabel(RegExp(r'Total Spending')),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(
       find.bySemanticsLabel(
         RegExp(r'Total Spending ₹123\.00.*Tap for details'),

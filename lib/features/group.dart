@@ -322,7 +322,7 @@ class _GroupPageState extends ConsumerState<GroupPage> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(18),
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF5232E0), Color(0xFF1E9AD0)],
+                  colors: [Color(0xFFF17B03), Color(0xFFF3AD3D)],
                 ),
               ),
               child: Icon(icon, size: 36, color: Colors.white),

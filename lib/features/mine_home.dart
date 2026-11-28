@@ -31,9 +31,9 @@ class DontCountTile extends ConsumerWidget {
       controlAffinity: ListTileControlAffinity.leading,
       value: value,
       onChanged: (v) => onChanged(v ?? false),
-      title: Text(tr('Don\'t count this')),
+      title: Text(tr('Personal spending')),
       subtitle: Text(
-        tr('Not in the budget. Your partner won\'t see it.'),
+        tr('Not shared, not in the home budget'),
         style: TextStyle(color: context.cash.textMuted),
       ),
     );

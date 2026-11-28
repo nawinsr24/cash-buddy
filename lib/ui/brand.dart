@@ -19,7 +19,7 @@ class CashMarkPainter extends CustomPainter {
           ..shader = const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFF7C5CFF), Color(0xFF2F6BFF), Color(0xFF19C6C6)],
+            colors: [Color(0xFFF3AD3D), Color(0xFFF17B03), Color(0xFFB34F1B)],
           ).createShader(rect),
       );
       // soft top-left shine
@@ -101,7 +101,7 @@ class BrandLogo extends StatelessWidget {
         ),
         ShaderMask(
           shaderCallback: (r) => const LinearGradient(
-            colors: [Color(0xFF5B3DF5), Color(0xFF0A8FB0)],
+            colors: [Color(0xFFF17B03), Color(0xFFF3AD3D)],
           ).createShader(r),
           child: const Text(
             '++',

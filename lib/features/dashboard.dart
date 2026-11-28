@@ -14,6 +14,7 @@ import '../providers.dart';
 import '../ui/motion.dart';
 import '../ui/theme.dart';
 import '../ui/emoji.dart';
+import '../domain/budget.dart' show SplitRow;
 import 'budget_rings.dart';
 import 'home_share.dart';
 import 'partner_balance.dart';
@@ -68,7 +69,7 @@ class DashboardPage extends ConsumerWidget {
                   ),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [Color(0xFF5232E0), Color(0xFF7B5CF0)],
+                      colors: [Color(0xFF0E0D0B), Color(0xFF2A2822)],
                     ),
                     borderRadius: BorderRadius.circular(20),
                   ),
@@ -100,8 +101,6 @@ class DashboardPage extends ConsumerWidget {
         data: (d) => ListView(
           padding: const EdgeInsets.fromLTRB(Sp.x4, 0, Sp.x4, 96),
           children: [
-            const TitleBanner(),
-            const LiveTitleChip(),
             const PeriodBar(),
             const SizedBox(height: Sp.x3),
             if ((settings?.smsEnabled ?? false) && pending > 0)
@@ -117,7 +116,19 @@ class DashboardPage extends ConsumerWidget {
             const HomeInviteCard(),
             const BudgetRings(),
             const CardWarningLine(),
-            const SizedBox(height: Sp.x3),
+            const SectionTitle('Where your money went'),
+            // while sharing, one chart for both of us
+            MoneyWent(
+              main: homePeriod?.main ?? d.spendingByCategory,
+              subs: homePeriod?.subs ?? d.spendingBySub,
+              total: homePeriod?.total ?? d.spending,
+              range: d.range,
+              emptyText: 'No spending in this period',
+              tappable: homePeriod == null,
+            ),
+            const SizedBox(height: Sp.x4),
+            const TitleBanner(),
+            const LiveTitleChip(),
             const PlusScoreCard(),
             const SizedBox(height: Sp.x3),
             _PillarGrid(data: d),
@@ -130,16 +141,6 @@ class DashboardPage extends ConsumerWidget {
             ],
             const SectionTitle('Insights'),
             const InsightsStrip(),
-            const SectionTitle('Where your money went'),
-            // while sharing, one chart for both of us
-            MoneyWent(
-              main: homePeriod?.main ?? d.spendingByCategory,
-              subs: homePeriod?.subs ?? d.spendingBySub,
-              total: homePeriod?.total ?? d.spending,
-              range: d.range,
-              emptyText: 'No spending in this period',
-              tappable: homePeriod == null,
-            ),
           ],
         ),
       ),
@@ -273,8 +274,8 @@ class _BalanceCard extends ConsumerWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: dark
-              ? const [Color(0xFF4A32C8), Color(0xFF6046D8)]
-              : const [Color(0xFF5232E0), Color(0xFF6A4AE0)],
+              ? const [Color(0xFF0B0A08), Color(0xFF22211C)]
+              : const [Color(0xFF0E0D0B), Color(0xFF2A2822)],
         ),
       ),
       child: Stack(
@@ -576,6 +577,8 @@ class Sparkline extends StatelessWidget {
   }
 }
 
+typedef _Shown = ({String name, int minor, Color color, CatSlice? slice});
+
 class CategoryDonut extends StatelessWidget {
   final List<CatSlice> slices;
   final int total;
@@ -583,13 +586,25 @@ class CategoryDonut extends StatelessWidget {
 
   /// Tapping a row opens that category's page (null = rows are not tappable).
   final void Function(CatSlice slice)? onTapSlice;
+
+  /// Category budgets (by category id or name). A row with one shows its
+  /// progress against that budget instead of its share of the total.
+  final Map<String, int> limits;
   const CategoryDonut({
     super.key,
     required this.slices,
     required this.total,
     required this.emptyText,
     this.onTapSlice,
+    this.limits = const {},
   });
+
+  int? _limitOf(_Shown s) {
+    final sl = s.slice;
+    if (sl == null) return null;
+    final l = limits[sl.categoryId] ?? limits[sl.name];
+    return l == null || l <= 0 ? null : l;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -612,7 +627,7 @@ class CategoryDonut extends StatelessWidget {
         .skip(ChartColors.count)
         .fold<int>(0, (a, s) => a + s.totalMinor);
     final brightness = Theme.of(context).brightness;
-    final shown = <({String name, int minor, Color color, CatSlice? slice})>[
+    final shown = <_Shown>[
       for (var i = 0; i < top.length; i++)
         (
           name: top[i].name,
@@ -764,39 +779,72 @@ class CategoryDonut extends StatelessWidget {
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(4),
                                 child: TweenAnimationBuilder<double>(
-                                  tween: Tween(end: s.minor / total),
+                                  tween: Tween(
+                                    end: _limitOf(s) == null
+                                        ? s.minor / total
+                                        : (s.minor / _limitOf(s)!)
+                                              .clamp(0, 1)
+                                              .toDouble(),
+                                  ),
                                   duration: const Duration(milliseconds: 800),
                                   curve: Curves.easeOutCubic,
                                   builder: (_, v, _) => LinearProgressIndicator(
                                     value: v,
                                     minHeight: 5,
-                                    color: s.color,
+                                    color:
+                                        _limitOf(s) != null &&
+                                            s.minor > _limitOf(s)!
+                                        ? context.cash.spending
+                                        : s.color,
                                     backgroundColor: s.color.withValues(
                                       alpha: 0.14,
                                     ),
                                   ),
                                 ),
                               ),
+                              if (_limitOf(s) != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 3),
+                                  child: Text(
+                                    s.minor > _limitOf(s)!
+                                        ? '${Money.format(s.minor - _limitOf(s)!)} ${tr('over budget')}'
+                                        : '${(s.minor * 100 / _limitOf(s)!).round()}% ${tr('of')} ${Money.format(_limitOf(s)!)}',
+                                    overflow: TextOverflow.ellipsis,
+                                    style: context.text.labelSmall?.copyWith(
+                                      color: s.minor > _limitOf(s)!
+                                          ? context.cash.spending
+                                          : context.cash.textMuted,
+                                    ),
+                                  ),
+                                ),
                             ],
                           ),
                         ),
                         const SizedBox(width: Sp.x3),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            MoneyText(
-                              s.minor,
-                              style: context.text.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
+                        // big amounts and large text shrink instead of
+                        // pushing the row off the screen
+                        Flexible(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerRight,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                MoneyText(
+                                  s.minor,
+                                  style: context.text.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                Text(
+                                  '${(s.minor * 100 / total).round()}%',
+                                  style: context.text.labelSmall?.copyWith(
+                                    color: context.cash.textMuted,
+                                  ),
+                                ),
+                              ],
                             ),
-                            Text(
-                              '${(s.minor * 100 / total).round()}%',
-                              style: context.text.labelSmall?.copyWith(
-                                color: context.cash.textMuted,
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
                         if (s.slice != null &&
                             onTapSlice != null &&
@@ -1270,7 +1318,7 @@ class _PillarGrid extends StatelessWidget {
 
 /// "Where your money went": main categories or sub-categories, tap any row
 /// for that category's full analysis.
-class MoneyWent extends StatefulWidget {
+class MoneyWent extends ConsumerStatefulWidget {
   final List<CatSlice> main, subs;
   final int total;
   final DateRange range;
@@ -1288,13 +1336,22 @@ class MoneyWent extends StatefulWidget {
     required this.emptyText,
   });
   @override
-  State<MoneyWent> createState() => _MoneyWentState();
+  ConsumerState<MoneyWent> createState() => _MoneyWentState();
 }
 
-class _MoneyWentState extends State<MoneyWent> {
+class _MoneyWentState extends ConsumerState<MoneyWent> {
   bool _sub = false;
   @override
   Widget build(BuildContext context) {
+    // category budgets, shown as progress on each row (this month only)
+    final b = ref.watch(budgetStatusProvider).value;
+    final limits = <String, int>{
+      for (final r in b?.splits ?? const <SplitRow>[])
+        if (!r.isElse && r.allocated > 0) ...{
+          r.id: r.allocated,
+          r.name: r.allocated,
+        },
+    };
     final hasSubs = widget.subs.any((s) => s.parentName != null);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1333,6 +1390,7 @@ class _MoneyWentState extends State<MoneyWent> {
             slices: _sub ? widget.subs : widget.main,
             total: widget.total,
             emptyText: widget.emptyText,
+            limits: _sub ? const {} : limits,
             onTapSlice: (s) {
               if (!widget.tappable) return;
               pushReveal(

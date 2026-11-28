@@ -329,7 +329,6 @@ const Map<String, String> stringsTa = {
   'From account': 'எந்தக் கணக்கிலிருந்து',
   'days left': 'நாட்கள் மீதம்',
   'Set a budget': 'பட்ஜெட் அமை',
-  "Don't count this": 'இதைக் கணக்கில் சேர்க்காதே',
   'Not counted': 'கணக்கில் இல்லை',
   'Show my balance to my partner': 'என் இருப்பைத் துணைக்குக் காட்டு',
   'Waiting for your partner to switch it on.': 'துணை இயக்கக் காத்திருக்கிறது.',

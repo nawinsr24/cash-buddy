@@ -326,7 +326,6 @@ const Map<String, String> stringsHi = {
   'From account': 'किस खाते से',
   'days left': 'दिन बाकी',
   'Set a budget': 'बजट तय करें',
-  "Don't count this": 'इसे न गिनें',
   'Not counted': 'नहीं गिना',
   'Show my balance to my partner': 'मेरा बैलेंस साथी को दिखाएँ',
   'Waiting for your partner to switch it on.': 'साथी के चालू करने का इंतज़ार।',

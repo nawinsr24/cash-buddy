@@ -22,7 +22,7 @@ const termsText = <(String, String)>[
   ),
   (
     'Sharing a home',
-    'If you share a home, your partner sees the spending you do not mark "Don\'t count this", from the date you choose, and your balance only if you both switch that on. What they have already received stays on their phone.',
+    'If you share a home, your partner sees the spending you do not mark "Personal spending", from the date you choose, and your balance only if you both switch that on. What they have already received stays on their phone.',
   ),
   ('No guarantee', 'The app is provided as it is.'),
 ];

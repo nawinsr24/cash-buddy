@@ -76,8 +76,8 @@ class _Body extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: dark
-                    ? const [Color(0xFF4A32C8), Color(0xFF6046D8)]
-                    : const [Color(0xFF5232E0), Color(0xFF6A4AE0)],
+                    ? const [Color(0xFF0B0A08), Color(0xFF22211C)]
+                    : const [Color(0xFF0E0D0B), Color(0xFF2A2822)],
               ),
             ),
             child: Column(
@@ -377,7 +377,7 @@ class _MonthsChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
-    final base = dark ? const Color(0xFFA793FF) : const Color(0xFF7C5CF0);
+    final base = dark ? const Color(0xFFF3AD3D) : const Color(0xFFF17B03);
     final maxV = x.monthly.fold<int>(0, (a, m) => m.minor > a ? m.minor : a);
     final avg = x.monthly.isEmpty
         ? 0

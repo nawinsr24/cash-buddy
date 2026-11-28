@@ -337,6 +337,8 @@ void main() {
       await shot(tester, '$p-2-dashboard-scrolled');
       await tester.drag(find.byType(Scrollable).first, const Offset(0, -700));
       await shot(tester, '$p-2b-insights');
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, 3000));
+      await settle(tester);
       await tester.scrollUntilVisible(
         find.text('Sub-categories'),
         200,
@@ -366,6 +368,7 @@ void main() {
       await shot(tester, '$p-2d-grade');
       await tester.tap(find.byTooltip('Back'));
       await settle(tester);
+      await tester.scrollUntilVisible(find.byKey(const ValueKey('my-budget')), -300, scrollable: find.byType(Scrollable).first);
       await tester.tap(find.byKey(const ValueKey('my-budget')));
       await settle(tester);
       await shot(tester, '$p-2e-budget');
