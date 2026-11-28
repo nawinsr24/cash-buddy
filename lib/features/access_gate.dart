@@ -9,6 +9,7 @@ import '../platform/account.dart';
 import '../providers.dart';
 import '../ui/theme.dart';
 import 'backup_actions.dart';
+import 'legal.dart';
 
 /// Null (the usual build) means there is no server and nothing to check.
 final accessProvider = Provider<Access?>((ref) {
@@ -56,7 +57,7 @@ class _AccessGateState extends ConsumerState<AccessGate>
     if (access == null) return;
     if (startup) _show(await access.isBlocked); // what was saved
     // Nothing is sent before the user has been told and agreed.
-    if (await access.repo.getSetting('serverNotice') != '1') {
+    if (!await hasAgreed(access.repo)) {
       if (mounted) setState(() => _needsNotice = true);
       return;
     }
@@ -65,7 +66,7 @@ class _AccessGateState extends ConsumerState<AccessGate>
   }
 
   Future<void> _agree() async {
-    await ref.read(accessProvider)!.repo.setSetting('serverNotice', '1');
+    await recordAgreement(ref.read(accessProvider)!.repo);
     if (!mounted) return;
     setState(() => _needsNotice = false);
     await _check();
@@ -78,41 +79,37 @@ class _AccessGateState extends ConsumerState<AccessGate>
   }
 }
 
-/// Shown once, before the app first contacts its server.
-class _NoticeScreen extends StatelessWidget {
+/// For installs set up before the tick existed: shown once.
+class _NoticeScreen extends StatefulWidget {
   final VoidCallback onAgree;
   const _NoticeScreen({required this.onAgree});
 
   @override
+  State<_NoticeScreen> createState() => _NoticeScreenState();
+}
+
+class _NoticeScreenState extends State<_NoticeScreen> {
+  var _ticked = false;
+
+  @override
   Widget build(BuildContext context) => Scaffold(
     body: SafeArea(
-      child: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(Sp.x5),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                tr('Before you continue'),
-                style: context.text.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              for (final line in [
-                'Cash++ now checks with its server that it may run.',
-                'It sends a random ID for this phone. The server notes when it connected.',
-                'Your entries, balances and notes are not sent.',
-                'Access to the app can be turned off.',
-              ])
-                Padding(
-                  padding: const EdgeInsets.only(top: Sp.x3),
-                  child: Text(tr(line)),
-                ),
-              const SizedBox(height: Sp.x5),
-              FilledButton(onPressed: onAgree, child: Text(tr('I agree'))),
-            ],
-          ),
+      child: Padding(
+        padding: const EdgeInsets.all(Sp.x5),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ConsentCheck(
+              value: _ticked,
+              onChanged: (v) => setState(() => _ticked = v),
+            ),
+            const SizedBox(height: Sp.x3),
+            FilledButton(
+              onPressed: _ticked ? widget.onAgree : null,
+              child: Text(tr('Continue')),
+            ),
+          ],
         ),
       ),
     ),

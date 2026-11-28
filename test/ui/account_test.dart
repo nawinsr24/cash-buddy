@@ -2,6 +2,7 @@ import 'package:cash_buddy/features/account_tile.dart';
 import 'package:cash_buddy/platform/access.dart';
 import 'package:cash_buddy/platform/account.dart';
 import 'package:cash_buddy/providers.dart';
+import 'package:cash_buddy/ui/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -28,15 +29,23 @@ void main() {
           repoProvider.overrideWithValue(env.repo),
           accountProvider.overrideWithValue(account),
         ],
-        child: const MaterialApp(home: Scaffold(body: AccountCard())),
+        child: MaterialApp(
+          theme: AppTheme.build(Brightness.light),
+          home: const Scaffold(body: AccountCard()),
+        ),
       ),
     );
     await settle(tester);
     await tapText(tester, 'Sign in with Google');
-    await tapText(tester, 'Cancel');
+    await tapText(tester, 'Continue'); // not ticked yet
     expect(asked, 0);
-    await tapText(tester, 'Sign in with Google');
-    await tapText(tester, 'I agree');
+    await tester.tap(find.byType(Checkbox));
+    await settle(tester);
+    await tapText(tester, 'Continue');
     expect(asked, 1);
+    // once ticked, never asked again
+    await tapText(tester, 'Sign in with Google');
+    expect(find.byType(Checkbox), findsNothing);
+    expect(asked, 2);
   });
 }

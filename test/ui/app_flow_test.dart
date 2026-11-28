@@ -476,18 +476,6 @@ void main() {
     expect(total!.values.fold<int>(0, (a, b) => a + b), 6000000);
   });
 
-  testWidgets('online mode asks for confirmation before Google sign-in', (
-    tester,
-  ) async {
-    await pump(tester);
-    await tapText(tester, 'Settings', last: true);
-    await tester.tap(find.byType(Switch).first);
-    await settle(tester);
-    expect(find.text('Back up to Google Drive?'), findsOneWidget);
-    await tapText(tester, 'Cancel');
-    expect(find.text('Back up to Google Drive?'), findsNothing);
-  });
-
   testWidgets('home shows the Money Grade and the insights strip', (
     tester,
   ) async {

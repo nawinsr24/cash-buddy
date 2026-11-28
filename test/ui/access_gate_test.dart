@@ -40,7 +40,7 @@ void main() {
     expect(find.text('the app'), findsNothing);
   });
 
-  testWidgets('nothing is sent until the notice is agreed to', (tester) async {
+  testWidgets('nothing is sent until the box is ticked', (tester) async {
     late TestEnv env;
     await tester.runAsync(() async => env = await newEnv());
     addTearDown(() => tester.runAsync(() => env.db.close()));
@@ -67,9 +67,13 @@ void main() {
       ),
     );
     await settle(tester);
-    expect(find.text('Before you continue'), findsOneWidget);
     expect(calls, 0);
-    await tapText(tester, 'I agree');
+    // the button does nothing without the tick
+    await tapText(tester, 'Continue');
+    expect(calls, 0);
+    await tester.tap(find.byType(Checkbox));
+    await settle(tester);
+    await tapText(tester, 'Continue');
     expect(find.text('the app'), findsOneWidget);
     expect(calls, 1);
   });

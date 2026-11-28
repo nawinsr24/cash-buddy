@@ -16,6 +16,7 @@ import '../platform/sms_reader.dart';
 import '../providers.dart';
 import 'account_tile.dart';
 import 'backup_actions.dart';
+import 'legal.dart';
 import 'group.dart';
 import '../domain/currency.dart';
 import 'inbox.dart' show ImportSheet;
@@ -547,6 +548,19 @@ class SettingsPage extends ConsumerWidget {
                 ],
               ),
             ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextButton(
+                  onPressed: () => LegalPage.open(context, privacy: false),
+                  child: Text(tr('Terms and Conditions')),
+                ),
+                TextButton(
+                  onPressed: () => LegalPage.open(context, privacy: true),
+                  child: Text(tr('Privacy Policy')),
+                ),
+              ],
+            ),
             // which APK this is; tap to copy
             TextButton(
               onPressed: () async {
@@ -665,27 +679,6 @@ class SettingsPage extends ConsumerWidget {
       );
       return;
     }
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (c) => AlertDialog(
-        title: const Text('Back up to Google Drive?'),
-        content: const Text(
-          'You will sign in with Google. A local backup is made first. Your data is then merged with any Cash++ data already in your private Drive app folder — nothing is overwritten or deleted.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(c, false),
-            child: Text(tr('Cancel')),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(c, true),
-            child: Text(tr('Continue')),
-          ),
-        ],
-      ),
-    );
-    if (ok != true) return;
-    if (!context.mounted) return;
     final sync = ref.read(syncServiceProvider);
     AppLockGate.holdOff(const Duration(minutes: 2));
     var r = await sync.goOnline();

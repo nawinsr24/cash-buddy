@@ -282,12 +282,6 @@ const Map<String, String> stringsHi = {
   'Backup restored': 'बैकअप वापस आ गया',
   'This is not a backup file, or it is damaged.':
       'यह बैकअप फ़ाइल नहीं है, या खराब है।',
-  'Before you sign in': 'साइन इन से पहले',
-  'Our server stores your Google email, an ID for this phone and when it last connected.': 'हमारा सर्वर आपका Google ईमेल, इस फ़ोन की ID और आखिरी कनेक्शन का समय रखता है।',
-  'It does not receive your entries, balances or notes.':
-      'इसे आपकी प्रविष्टियाँ, बैलेंस या नोट नहीं मिलते।',
-  'It can turn off access to the app for an account or phone.':
-      'यह किसी खाते या फ़ोन के लिए ऐप बंद कर सकता है।',
   'I agree': 'मैं सहमत हूँ',
   'Sign in with Google': 'Google से साइन इन करें',
   'Needed only for a shared group': 'केवल साझा समूह के लिए ज़रूरी',
@@ -329,14 +323,6 @@ const Map<String, String> stringsHi = {
   'The group is full.': 'समूह भर गया है।',
   'This invite has expired. Ask for a new one.':
       'यह आमंत्रण पुराना हो गया। नया माँगें।',
-  'Before you continue': 'आगे बढ़ने से पहले',
-  'Cash++ now checks with its server that it may run.':
-      'Cash++ अब अपने सर्वर से पूछता है कि वह चल सकता है या नहीं।',
-  'It sends a random ID for this phone. The server notes when it connected.':
-      'यह इस फ़ोन की एक रैंडम ID भेजता है। सर्वर कनेक्शन का समय लिखता है।',
-  'Your entries, balances and notes are not sent.':
-      'आपकी प्रविष्टियाँ, बैलेंस और नोट नहीं भेजे जाते।',
-  'Access to the app can be turned off.': 'ऐप की पहुँच बंद की जा सकती है।',
   'Set': 'तय करें',
   'left': 'बाकी',
   'Partner': 'साथी',
@@ -394,4 +380,8 @@ const Map<String, String> stringsHi = {
   'Set aside in categories': 'श्रेणियों में रखा',
   'more than the month': 'महीने से ज़्यादा',
   'Google account': 'Google खाता',
+  'I agree to the': 'मैं सहमत हूँ',
+  'Terms and Conditions': 'नियम और शर्तें',
+  'and': 'और',
+  'Privacy Policy': 'गोपनीयता नीति',
 };

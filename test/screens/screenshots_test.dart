@@ -416,7 +416,6 @@ void main() {
         scrollable: find.byType(Scrollable).first,
       );
       await tester.ensureVisible(find.text('Your titles'));
-      await tester.drag(find.byType(Scrollable).first, const Offset(0, -200));
       await settle(tester);
       await tapText(tester, 'Your titles');
       await shot(tester, '$p-13-trophies');

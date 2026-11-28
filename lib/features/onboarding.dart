@@ -15,6 +15,7 @@ import '../providers.dart';
 import 'budget_editor.dart';
 import 'locale_pickers.dart';
 import 'account_tile.dart';
+import 'legal.dart';
 import 'passphrase.dart';
 import '../data/repo.dart' show TxnFilter;
 import '../ui/art.dart';
@@ -67,8 +68,13 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   String _theme = 'system';
   bool _lock = false;
 
+  var _ticked = false;
+
+  /// Only builds that talk to a server need the agreement.
+  bool get _needsTick => ref.read(accountProvider) != null;
+
   bool get _canNext => switch (_step) {
-    1 => _dataMode != null,
+    1 => _dataMode != null && (!_needsTick || _ticked),
     2 => _accountMode != null,
     _ => true,
   };
@@ -82,6 +88,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   /// Choosing Online Mode asks for the Google sign-in right here, so the user
   /// is never left "online" without an account.
   Future<void> _continueFromDataMode() async {
+    if (_needsTick) await recordAgreement(ref.read(repoProvider));
     if (_dataMode != 'online') {
       _go(2);
       return;
@@ -341,6 +348,14 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 ],
               ),
             ),
+            if (_step == 1 && _needsTick)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: Sp.x4),
+                child: ConsentCheck(
+                  value: _ticked,
+                  onChanged: (v) => setState(() => _ticked = v),
+                ),
+              ),
             Padding(
               padding: const EdgeInsets.all(Sp.x6),
               child: Row(

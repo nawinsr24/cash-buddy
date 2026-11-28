@@ -286,12 +286,6 @@ const Map<String, String> stringsTa = {
   'Backup restored': 'காப்பு மீட்டெடுக்கப்பட்டது',
   'This is not a backup file, or it is damaged.':
       'இது காப்புக் கோப்பு அல்ல, அல்லது சேதமடைந்துள்ளது.',
-  'Before you sign in': 'உள்நுழையும் முன்',
-  'Our server stores your Google email, an ID for this phone and when it last connected.': 'எங்கள் சர்வர் உங்கள் Google மின்னஞ்சல், இந்தப் போனின் ID, கடைசியாக இணைந்த நேரம் ஆகியவற்றைச் சேமிக்கும்.',
-  'It does not receive your entries, balances or notes.':
-      'உங்கள் பதிவுகள், இருப்பு, குறிப்புகள் அதற்குச் செல்லாது.',
-  'It can turn off access to the app for an account or phone.':
-      'ஒரு கணக்கு அல்லது போனுக்கான அணுகலை அது நிறுத்த முடியும்.',
   'I agree': 'ஒப்புக்கொள்கிறேன்',
   'Sign in with Google': 'Google மூலம் உள்நுழை',
   'Needed only for a shared group': 'பகிர்ந்த குழுவுக்கு மட்டுமே தேவை',
@@ -332,13 +326,6 @@ const Map<String, String> stringsTa = {
   'The group is full.': 'குழு நிரம்பிவிட்டது.',
   'This invite has expired. Ask for a new one.':
       'அழைப்பு காலாவதியானது. புதியதைக் கேளுங்கள்.',
-  'Before you continue': 'தொடரும் முன்',
-  'Cash++ now checks with its server that it may run.':
-      'Cash++ இயங்கலாமா என இப்போது அதன் சர்வரிடம் சரிபார்க்கும்.',
-  'It sends a random ID for this phone. The server notes when it connected.': 'இது இந்தப் போனின் ஒரு தற்செயல் ID-ஐ அனுப்பும். இணைந்த நேரத்தை சர்வர் குறித்துக்கொள்ளும்.',
-  'Your entries, balances and notes are not sent.':
-      'உங்கள் பதிவுகள், இருப்பு, குறிப்புகள் அனுப்பப்படாது.',
-  'Access to the app can be turned off.': 'ஆப்பின் அணுகல் நிறுத்தப்படலாம்.',
   'Set': 'அமை',
   'left': 'மீதம்',
   'Partner': 'துணை',
@@ -396,4 +383,8 @@ const Map<String, String> stringsTa = {
   'Set aside in categories': 'வகைகளில் ஒதுக்கியது',
   'more than the month': 'மாதத்தை விட அதிகம்',
   'Google account': 'Google கணக்கு',
+  'I agree to the': 'ஒப்புக்கொள்கிறேன்:',
+  'Terms and Conditions': 'விதிமுறைகள்',
+  'and': 'மற்றும்',
+  'Privacy Policy': 'தனியுரிமைக் கொள்கை',
 };
