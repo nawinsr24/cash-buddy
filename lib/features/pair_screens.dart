@@ -115,6 +115,8 @@ class _ShowCodePageState extends State<ShowCodePage> {
             child: QrImageView(
               data: '$_prefix${widget.code}',
               padding: EdgeInsets.zero,
+              // spare detail, so round dots still scan easily
+              errorCorrectionLevel: QrErrorCorrectLevel.M,
               eyeStyle: const QrEyeStyle(
                 eyeShape: QrEyeShape.circle,
                 color: Color(0xFF2A1D6B),
