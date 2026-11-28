@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/db_key.dart';
@@ -14,6 +13,7 @@ import '../ui/widgets.dart';
 import 'account_tile.dart';
 import '../data/home_repo.dart';
 import 'group_keeper.dart';
+import 'pair_screens.dart';
 import 'partner_balance.dart';
 
 /// Null in builds without a server: then nothing about groups is shown.
@@ -158,8 +158,13 @@ class _GroupPageState extends ConsumerState<GroupPage> {
       if (!mounted || !await signInWithConsent(context, account)) return;
     }
     if (!mounted) return;
-    final code = joining ? await _ask('Invite code') : null;
-    if (joining && code == null) return;
+    String? code;
+    if (joining) {
+      code = await ref.read(scanCodeProvider)(context);
+      // empty: they would rather type it
+      if (code == '' && mounted) code = await _ask('Invite code');
+      if (code == null || !mounted) return;
+    }
     final name = await _ask('Your name');
     if (name == null) return;
     await _attempt(() async {
@@ -171,6 +176,8 @@ class _GroupPageState extends ConsumerState<GroupPage> {
       await repo.chooseSharing(earlierToo: earlier);
       await _open();
     });
+    // just created: go straight to the QR for the partner to scan
+    if (!joining && _group != null && mounted) await _invite();
   }
 
   /// Null when the dialog is dismissed: nothing is set up then.
@@ -197,34 +204,21 @@ class _GroupPageState extends ConsumerState<GroupPage> {
   Future<void> _invite() => _attempt(() async {
     final code = await _service.inviteCode();
     if (!mounted) return;
-    await showDialog<void>(
-      context: context,
-      builder: (d) => AlertDialog(
-        title: Text(tr('Invite code')),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SelectableText(code),
-            const SizedBox(height: Sp.x3),
-            Text(
-              tr(
-                'Valid for one day. Send it only to the person joining: it opens the group.',
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: code));
-              Navigator.pop(d);
-            },
-            child: Text(tr('Copy')),
-          ),
-        ],
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ShowCodePage(code: code, partner: _partnerName),
       ),
     );
   });
+
+  Future<String?> _partnerName() async {
+    final g = await _service.open();
+    if (g == null) return null;
+    for (final e in GroupService.ofKind(g, 'member')) {
+      if (e.id != 'member:${g.disk.member}') return e.data['name'] as String;
+    }
+    return null;
+  }
 
   Future<void> _leave() async {
     final ok = await showDialog<bool>(
@@ -290,20 +284,72 @@ class _GroupPageState extends ConsumerState<GroupPage> {
     children: [
       Text(
         tr(
-          'Start home sharing, or join with a code from your partner. You then share one budget and your spending.',
+          'One budget and one spending list for you and your partner. One of you shows a QR, the other scans it.',
         ),
       ),
-      const SizedBox(height: Sp.x4),
-      FilledButton(
-        onPressed: () => _start(joining: false),
-        child: Text(tr('Start home sharing')),
+      const SizedBox(height: Sp.x5),
+      _choice(
+        Icons.qr_code_2_rounded,
+        tr('Show my QR'),
+        tr('Start here, then let your partner scan'),
+        () => _start(joining: false),
       ),
       const SizedBox(height: Sp.x3),
-      OutlinedButton(
-        onPressed: () => _start(joining: true),
-        child: Text(tr('Join with a code')),
+      _choice(
+        Icons.qr_code_scanner_rounded,
+        tr('Scan partner\'s QR'),
+        tr('Your partner already shows one'),
+        () => _start(joining: true),
       ),
     ],
+  );
+
+  Widget _choice(
+    IconData icon,
+    String title,
+    String subtitle,
+    VoidCallback onTap,
+  ) => Card(
+    clipBehavior: Clip.antiAlias,
+    child: InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(Sp.x5),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(Sp.x3),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(18),
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF5232E0), Color(0xFF1E9AD0)],
+                ),
+              ),
+              child: Icon(icon, size: 36, color: Colors.white),
+            ),
+            const SizedBox(width: Sp.x4),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: context.text.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: TextStyle(color: context.cash.textMuted),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right),
+          ],
+        ),
+      ),
+    ),
   );
 
   Widget _members(Replica g) => ListView(
@@ -338,7 +384,7 @@ class _GroupPageState extends ConsumerState<GroupPage> {
       ),
       const SizedBox(height: Sp.x4),
       FilledButton.icon(
-        icon: const Icon(Icons.person_add_alt),
+        icon: const Icon(Icons.qr_code_2_rounded),
         label: Text(tr('Invite your partner')),
         onPressed: _invite,
       ),

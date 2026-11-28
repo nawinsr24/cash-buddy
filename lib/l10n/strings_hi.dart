@@ -301,11 +301,8 @@ const Map<String, String> stringsHi = {
       'सर्वर तक नहीं पहुँच सके। बाद में कोशिश करें।',
   'The server did not accept the sign-in.':
       'सर्वर ने साइन इन स्वीकार नहीं किया।',
-  'Join with a code': 'कोड से जुड़ें',
   'Invite code': 'आमंत्रण कोड',
   'Your name': 'आपका नाम',
-  'Valid for one day. Send it only to the person joining: it opens the group.':
-      'एक दिन के लिए मान्य। केवल जुड़ने वाले को भेजें: इससे समूह खुलता है।',
   'It is removed from this phone. Others keep what they already have.':
       'यह इस फ़ोन से हटेगा। दूसरों के पास जो है वह रहेगा।',
   'Leave': 'छोड़ें',
@@ -352,7 +349,6 @@ const Map<String, String> stringsHi = {
   'Invite your partner': 'साथी को बुलाएँ',
   'Home sharing': 'घर साझा करें',
   'Share house spending with your partner': 'साथी के साथ घर का खर्च साझा करें',
-  'Start home sharing': 'घर साझा करना शुरू करें',
   'Stop home sharing?': 'घर साझा करना बंद करें?',
   'From account': 'किस खाते से',
   'days left': 'दिन बाकी',
@@ -370,10 +366,28 @@ const Map<String, String> stringsHi = {
   'What you both spend counts in one budget.':
       'आप दोनों का खर्च एक ही बजट में गिना जाता है।',
   'Share one budget with your partner.': 'साथी के साथ एक बजट रखें।',
-  'Start home sharing, or join with a code from your partner. You then share one budget and your spending.': 'घर साझा करना शुरू करें, या साथी के कोड से जुड़ें। फिर एक बजट और खर्च साझा होगा।',
   'of': 'कुल',
   'Old backup password': 'पुराना बैकअप पासवर्ड',
   'This was saved by an older version with a password. Enter it once.':
       'इसे पुराने संस्करण ने पासवर्ड के साथ सहेजा था। एक बार डालें।',
   'Save a file where you choose': 'अपनी चुनी जगह पर फ़ाइल सहेजें',
+  'Invite QR code': 'आमंत्रण QR कोड',
+  'Ask your partner to scan this': 'साथी से इसे स्कैन करने को कहें',
+  'Valid for one day. Anyone who scans it can join your home.':
+      'एक दिन के लिए मान्य। स्कैन करने वाला कोई भी जुड़ सकता है।',
+  'Waiting for your partner': 'साथी का इंतज़ार',
+  'Copy code instead': 'कोड कॉपी करें',
+  'joined your home': 'आपके घर से जुड़ गए',
+  'Done': 'हो गया',
+  'Torch': 'टॉर्च',
+  'The camera is not available. Type the code instead.':
+      'कैमरा उपलब्ध नहीं। कोड टाइप करें।',
+  'Type the code instead': 'कोड टाइप करें',
+  'One budget and one spending list for you and your partner. One of you shows a QR, the other scans it.':
+      'आप और साथी के लिए एक बजट और एक खर्च सूची। एक QR दिखाए, दूसरा स्कैन करे।',
+  'Show my QR': 'मेरा QR दिखाएँ',
+  'Start here, then let your partner scan':
+      'यहाँ से शुरू करें, फिर साथी स्कैन करे',
+  'Your partner already shows one': 'साथी पहले से QR दिखा रहा है',
+  "Scan partner's QR": 'साथी का QR स्कैन करें',
 };

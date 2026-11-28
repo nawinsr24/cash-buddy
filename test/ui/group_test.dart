@@ -2,6 +2,7 @@ import 'package:cash_buddy/data/home_repo.dart';
 import 'package:cash_buddy/data/db_key.dart';
 import 'package:cash_buddy/features/account_tile.dart';
 import 'package:cash_buddy/features/group.dart';
+import 'package:cash_buddy/features/pair_screens.dart';
 import 'package:cash_buddy/platform/access.dart';
 import 'package:cash_buddy/platform/account.dart';
 import 'package:cash_buddy/providers.dart';
@@ -10,9 +11,10 @@ import 'package:cash_buddy/ui/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 import '../data/helpers.dart';
-import 'app_flow_test.dart' show tapText;
+import 'app_flow_test.dart' show settle, tapText;
 import 'cards_test.dart' show wait;
 
 /// A server that accepts everything and has nothing waiting.
@@ -69,12 +71,17 @@ void main() {
     );
     await wait(tester);
 
-    await tapText(tester, 'Start home sharing');
+    await tapText(tester, 'Show my QR');
     await tester.enterText(find.byType(TextField), 'Naveen');
     await tapText(tester, 'OK');
     await wait(tester);
     await tapText(tester, 'Only from today');
     await wait(tester);
+    // straight to the QR for the partner
+    expect(find.text('Ask your partner to scan this'), findsOneWidget);
+    expect(find.byType(QrImageView), findsOneWidget);
+    await tester.pageBack();
+    await settle(tester);
     expect(find.text('Show my balance to my partner'), findsOneWidget);
     expect(find.text('Naveen'), findsOneWidget);
     expect(find.text('Invite your partner'), findsOneWidget);
@@ -89,5 +96,13 @@ void main() {
       ),
     );
     expect(find.text('Home sharing'), findsNothing);
+  });
+
+  test('only our own pairing QR is accepted', () {
+    final code = 'abcdefgh12345678.${'k' * 43}';
+    expect(codeFromQr('cashpp:$code'), code);
+    for (final other in [null, code, 'https://example.com', 'cashpp:short']) {
+      expect(codeFromQr(other), isNull);
+    }
   });
 }

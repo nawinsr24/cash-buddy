@@ -304,10 +304,8 @@ const Map<String, String> stringsTa = {
   'The server could not be reached. Try again later.':
       'சர்வரை அணுக முடியவில்லை. பிறகு முயலவும்.',
   'The server did not accept the sign-in.': 'சர்வர் உள்நுழைவை ஏற்கவில்லை.',
-  'Join with a code': 'குறியீட்டால் சேர்',
   'Invite code': 'அழைப்புக் குறியீடு',
   'Your name': 'உங்கள் பெயர்',
-  'Valid for one day. Send it only to the person joining: it opens the group.': 'ஒரு நாள் செல்லும். சேர்பவருக்கு மட்டும் அனுப்பவும்: இது குழுவைத் திறக்கும்.',
   'It is removed from this phone. Others keep what they already have.':
       'இந்தப் போனிலிருந்து நீங்கும். மற்றவர்களிடம் உள்ளவை இருக்கும்.',
   'Leave': 'வெளியேறு',
@@ -354,7 +352,6 @@ const Map<String, String> stringsTa = {
   'Home sharing': 'வீட்டுப் பகிர்வு',
   'Share house spending with your partner':
       'துணையுடன் வீட்டுச் செலவைப் பகிரவும்',
-  'Start home sharing': 'வீட்டுப் பகிர்வைத் தொடங்கு',
   'Stop home sharing?': 'வீட்டுப் பகிர்வை நிறுத்தவா?',
   'From account': 'எந்தக் கணக்கிலிருந்து',
   'days left': 'நாட்கள் மீதம்',
@@ -371,11 +368,28 @@ const Map<String, String> stringsTa = {
   'What you both spend counts in one budget.':
       'இருவரின் செலவும் ஒரே பட்ஜெட்டில் சேரும்.',
   'Share one budget with your partner.': 'துணையுடன் ஒரே பட்ஜெட்டைப் பகிரவும்.',
-  'Start home sharing, or join with a code from your partner. You then share one budget and your spending.': 'வீட்டுப் பகிர்வைத் தொடங்கவும், அல்லது துணையின் குறியீட்டால் சேரவும். பிறகு ஒரே பட்ஜெட்டும் செலவும் பகிரப்படும்.',
   'of': 'மொத்தம்',
   'Old backup password': 'பழைய காப்பு கடவுச்சொல்',
   'This was saved by an older version with a password. Enter it once.':
       'இது பழைய பதிப்பால் கடவுச்சொல்லுடன் சேமிக்கப்பட்டது. ஒருமுறை உள்ளிடவும்.',
   'Save a file where you choose':
       'நீங்கள் தேர்ந்தெடுக்கும் இடத்தில் கோப்பைச் சேமி',
+  'Invite QR code': 'அழைப்பு QR குறியீடு',
+  'Ask your partner to scan this': 'துணையை இதை ஸ்கேன் செய்யச் சொல்லுங்கள்',
+  'Valid for one day. Anyone who scans it can join your home.':
+      'ஒரு நாள் செல்லும். ஸ்கேன் செய்யும் எவரும் சேரலாம்.',
+  'Waiting for your partner': 'துணைக்காகக் காத்திருக்கிறது',
+  'Copy code instead': 'குறியீட்டை நகலெடு',
+  'joined your home': 'உங்கள் வீட்டில் சேர்ந்தார்',
+  'Done': 'முடிந்தது',
+  'Torch': 'டார்ச்',
+  'The camera is not available. Type the code instead.':
+      'கேமரா கிடைக்கவில்லை. குறியீட்டை தட்டச்சு செய்யவும்.',
+  'Type the code instead': 'குறியீட்டை தட்டச்சு செய்',
+  'One budget and one spending list for you and your partner. One of you shows a QR, the other scans it.': 'உங்களுக்கும் துணைக்கும் ஒரே பட்ஜெட், ஒரே செலவுப் பட்டியல். ஒருவர் QR காட்ட, மற்றவர் ஸ்கேன் செய்யவும்.',
+  'Show my QR': 'என் QR-ஐக் காட்டு',
+  'Start here, then let your partner scan':
+      'இங்கே தொடங்கி, துணை ஸ்கேன் செய்யட்டும்',
+  'Your partner already shows one': 'துணை ஏற்கனவே QR காட்டுகிறார்',
+  "Scan partner's QR": 'துணையின் QR-ஐ ஸ்கேன் செய்',
 };
