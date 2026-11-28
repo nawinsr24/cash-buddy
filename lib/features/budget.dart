@@ -11,6 +11,7 @@ import 'budget_editor.dart';
 import '../ui/emoji.dart';
 import '../ui/motion.dart';
 import '../ui/theme.dart';
+import 'home_budget.dart';
 import '../ui/widgets.dart';
 
 Color budgetColor(BuildContext c, BudgetState s) => switch (s) {
@@ -109,7 +110,9 @@ class _Bar extends StatelessWidget {
 
 // ───────────────────────── page ─────────────────────────
 class BudgetPage extends ConsumerWidget {
-  const BudgetPage({super.key});
+  /// Shown inside the Home / Personal tabs, which have their own top bar.
+  final bool embedded;
+  const BudgetPage({super.key, this.embedded = false});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(budgetStatusProvider);
@@ -117,16 +120,25 @@ class BudgetPage extends ConsumerWidget {
     final b = async.value;
     final month = DateFormat('MMMM y').format(ref.read(repoProvider).today);
     return Scaffold(
-      appBar: AppBar(
-        title: Text(tr('Monthly budget')),
-        actions: [
-          IconButton(
-            tooltip: b == null ? 'Set budget' : 'Edit budget',
-            icon: const Icon(Icons.edit_outlined),
-            onPressed: () => showBudgetSheet(context),
-          ),
-        ],
-      ),
+      floatingActionButton: !embedded
+          ? null
+          : FloatingActionButton.small(
+              tooltip: b == null ? 'Set budget' : 'Edit budget',
+              onPressed: () => showBudgetSheet(context),
+              child: const Icon(Icons.edit_outlined),
+            ),
+      appBar: embedded
+          ? null
+          : AppBar(
+              title: Text(tr('Monthly budget')),
+              actions: [
+                IconButton(
+                  tooltip: b == null ? 'Set budget' : 'Edit budget',
+                  icon: const Icon(Icons.edit_outlined),
+                  onPressed: () => showBudgetSheet(context),
+                ),
+              ],
+            ),
       body: !async.hasValue
           ? const Center(child: CircularProgressIndicator.adaptive())
           : b == null
@@ -319,9 +331,19 @@ class BudgetPage extends ConsumerWidget {
               children: [
                 Row(
                   children: [
-                    Text(
-                      s.isElse ? '🧺' : emojiForCategory(s.name),
-                      style: const TextStyle(fontSize: 22),
+                    Container(
+                      width: 40,
+                      height: 40,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: (s.isElse ? c.textMuted : colorOf(s.colorValue))
+                            .withValues(alpha: 0.16),
+                        borderRadius: BorderRadius.circular(13),
+                      ),
+                      child: Text(
+                        s.isElse ? '🧺' : emojiForCategory(s.name),
+                        style: const TextStyle(fontSize: 20),
+                      ),
                     ),
                     const SizedBox(width: Sp.x3),
                     Expanded(
@@ -795,4 +817,27 @@ class _YearChart extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// While sharing a home: the family budget and my own, one tap apart.
+class BudgetTabsPage extends StatelessWidget {
+  const BudgetTabsPage({super.key});
+  @override
+  Widget build(BuildContext context) => DefaultTabController(
+    length: 2,
+    child: Scaffold(
+      appBar: AppBar(
+        title: Text(tr('Budget')),
+        bottom: TabBar(
+          tabs: [
+            Tab(text: tr('Home')),
+            Tab(text: tr('Personal')),
+          ],
+        ),
+      ),
+      body: const TabBarView(
+        children: [HomeBudgetPage(embedded: true), BudgetPage(embedded: true)],
+      ),
+    ),
+  );
 }

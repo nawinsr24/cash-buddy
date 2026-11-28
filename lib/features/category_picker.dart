@@ -372,3 +372,123 @@ class CategoryField extends StatelessWidget {
     );
   }
 }
+
+/// Category tiles for the Add sheet: the main categories one tap away, and
+/// "More" (or the line under them) for sub-categories and the full list.
+class QuickCategoryGrid extends StatelessWidget {
+  final List<Category> cats;
+  final String? categoryId;
+  final ValueChanged<String?> onChanged;
+  const QuickCategoryGrid({
+    super.key,
+    required this.cats,
+    required this.categoryId,
+    required this.onChanged,
+  });
+
+  Future<void> _more(BuildContext context) async {
+    final r = await pickCategory(context, cats: cats, selectedId: categoryId);
+    if (r != null) onChanged(r == kNoCategory ? null : r);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final sel = cats.where((c) => c.id == categoryId).firstOrNull;
+    final selMain = sel?.parentId ?? sel?.id;
+    final mains = cats.where((c) => c.parentId == null).toList();
+    final shown = mains.take(7).toList();
+    // the chosen one is always visible
+    if (selMain != null && !shown.any((c) => c.id == selMain)) {
+      final m = mains.where((c) => c.id == selMain).firstOrNull;
+      if (m != null && shown.isNotEmpty) shown[shown.length - 1] = m;
+    }
+    final parent = sel?.parentId == null
+        ? null
+        : cats.where((c) => c.id == sel!.parentId).firstOrNull;
+    Widget tile(
+      String emoji,
+      String label,
+      bool on,
+      VoidCallback tap, {
+      Color? color,
+    }) => Pressable(
+      onTap: () {
+        haptic();
+        tap();
+      },
+      child: Semantics(
+        button: true,
+        selected: on,
+        label: label,
+        child: Column(
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 52,
+              height: 52,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: on
+                    ? context.scheme.primaryContainer
+                    : (color ?? context.cash.textMuted).withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: on ? context.scheme.onSurface : Colors.transparent,
+                  width: 1.6,
+                ),
+              ),
+              child: Text(emoji, style: const TextStyle(fontSize: 24)),
+            ),
+            const SizedBox(height: 4),
+            ExcludeSemantics(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: context.text.labelSmall?.copyWith(
+                  fontWeight: on ? FontWeight.w800 : FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        GridView.count(
+          crossAxisCount: 4,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: Sp.x2,
+          crossAxisSpacing: Sp.x2,
+          childAspectRatio: 0.92,
+          children: [
+            for (final c in shown)
+              tile(
+                emojiForCategory(c.name),
+                c.name,
+                c.id == selMain,
+                () => onChanged(c.id == categoryId ? null : c.id),
+                color: colorOf(c.colorValue),
+              ),
+            tile('•••', tr('More'), false, () => _more(context)),
+          ],
+        ),
+        // the exact choice (a sub-category shows here), tap for the full list
+        TextButton.icon(
+          style: TextButton.styleFrom(alignment: Alignment.centerLeft),
+          onPressed: () => _more(context),
+          icon: const Icon(Icons.tune, size: 18),
+          label: Text(
+            sel == null
+                ? 'No category'
+                : (parent != null ? '${parent.name} › ${sel.name}' : sel.name),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+}

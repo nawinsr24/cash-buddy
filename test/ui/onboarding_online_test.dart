@@ -39,7 +39,6 @@ Future<TestEnv> pumpFresh(WidgetTester tester, SignInFn signIn) async {
     ),
   );
   await settle(tester);
-  await tapText(tester, 'Continue'); // language and currency
   return env;
 }
 
@@ -53,15 +52,12 @@ void main() {
         asked++;
         return (remote: remote, email: 'me@gmail.com');
       });
-      await tapText(tester, 'Back up to Google Drive');
       expect(find.text('Continue with Google'), findsOneWidget);
       await tapText(tester, 'Continue with Google');
       await settle(tester);
       expect(asked, 1);
-      expect(find.text('How do you track your money?'), findsOneWidget);
+      expect(find.text('How do you keep money?'), findsOneWidget);
       await tapText(tester, 'One balance');
-      await tapText(tester, 'Continue');
-      await tapText(tester, 'Continue'); // bank messages
       await tester.enterText(find.byType(TextField).first, '1000');
       await finishWizard(tester);
       await settle(tester);
@@ -80,14 +76,12 @@ void main() {
       final env = await pumpFresh(tester, () async {
         throw DriveSignInException('Google sign-in is not set up.');
       });
-      await tapText(tester, 'Back up to Google Drive');
       await tapText(tester, 'Continue with Google');
       await settle(tester);
       expect(find.text('Could not sign in'), findsOneWidget);
       expect(find.text('Google sign-in is not set up.'), findsOneWidget);
       await tapText(tester, 'Keep on this phone');
-      expect(find.text('Continue with Google'), findsNothing);
-      expect(find.text('Where should your data live?'), findsOneWidget);
+      expect(find.text('Feel good about your money.'), findsOneWidget);
       // nothing was switched on behind the user's back
       expect(await tester.runAsync(() => env.repo.dataMode), 'offline');
     },
@@ -97,12 +91,11 @@ void main() {
     tester,
   ) async {
     await pumpFresh(tester, () async => null);
-    await tapText(tester, 'Back up to Google Drive');
     await tapText(tester, 'Continue with Google');
     await settle(tester);
     expect(find.text('Could not sign in'), findsOneWidget);
     await tapText(tester, 'Try again');
-    expect(find.text('Where should your data live?'), findsOneWidget);
+    expect(find.text('Feel good about your money.'), findsOneWidget);
   });
 
   testWidgets('existing Drive data can be restored, skipping the wizard', (
@@ -127,7 +120,6 @@ void main() {
       tester,
       () async => (remote: remote, email: 'me@gmail.com'),
     );
-    await tapText(tester, 'Back up to Google Drive');
     await tapText(tester, 'Continue with Google');
     await settle(tester);
     expect(find.text('Found your Cash++ data'), findsOneWidget);
@@ -157,11 +149,10 @@ void main() {
       tester,
       () async => (remote: remote, email: 'me@gmail.com'),
     );
-    await tapText(tester, 'Back up to Google Drive');
     await tapText(tester, 'Continue with Google');
     await settle(tester);
     await tapText(tester, 'Start fresh');
-    expect(find.text('How do you track your money?'), findsOneWidget);
+    expect(find.text('How do you keep money?'), findsOneWidget);
   });
 
   testWidgets('Offline Mode never asks for Google', (tester) async {
@@ -170,9 +161,8 @@ void main() {
       asked++;
       return null;
     });
-    await tapText(tester, 'Keep on this phone only');
-    await tapText(tester, 'Continue');
-    expect(find.text('How do you track your money?'), findsOneWidget);
+    await tapText(tester, 'Use offline');
+    expect(find.text('Your details'), findsOneWidget);
     expect(asked, 0);
   });
 }

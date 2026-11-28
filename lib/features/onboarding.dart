@@ -6,13 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/money.dart';
 import '../domain/currency.dart';
 import '../l10n/l10n.dart';
-import '../platform/app_lock.dart';
-import '../platform/features.dart';
-import '../platform/notifications.dart';
-import '../platform/reminders.dart';
-import '../platform/sms_reader.dart';
 import '../providers.dart';
-import 'budget_editor.dart';
 import 'locale_pickers.dart';
 import 'account_tile.dart';
 import 'legal.dart';
@@ -47,7 +41,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
 
   int _step = 0;
   String? _dataMode;
-  String? _accountMode;
+  String? _accountMode = 'combined';
   final _cash = TextEditingController();
   final _bank = TextEditingController();
   bool _saving = false;
@@ -55,41 +49,51 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   bool _restoring = false;
   String? _welcome;
   String? _signedInAs; // Google account chosen during setup (Online Mode)
-  static const _steps = 9;
-  // steps: 0 language + currency, 1 data, 2 accounts, 3 bank alerts,
-  // 4 balance, 5 reminder, 6 budget, 7 look, 8 privacy
+  static const _steps = 3;
+  // steps: 0 start (language, currency, Google or offline), 1 your details
+  // (offline only), 2 your money. Budget, bank messages, family and the
+  // reminder are offered on Home afterwards ("Finish setting up").
   String _lang = 'en';
   String _cur = 'INR';
-  bool _smsOn = false;
-  bool _remind = false;
-  TimeOfDay _remindAt = const TimeOfDay(hour: 20, minute: 0);
-  final _income = TextEditingController();
-  String _theme = 'system';
-  bool _lock = false;
+  final _name = TextEditingController();
+  final _mobile = TextEditingController();
+  final _email = TextEditingController();
 
   var _ticked = false;
 
   /// Only builds that talk to a server need the agreement.
   bool get _needsTick => ref.read(accountProvider) != null;
 
+  bool get _detailsOk {
+    final m = _mobile.text.replaceAll(RegExp(r'[^0-9]'), '');
+    final e = _email.text.trim();
+    return m.length >= 10 || RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(e);
+  }
+
   bool get _canNext => switch (_step) {
-    1 => _dataMode != null && (!_needsTick || _ticked),
+    1 => _detailsOk,
     2 => _accountMode != null,
     _ => true,
   };
 
-  /// Steps after the account choice can all be skipped.
-  bool get _skippable => _step >= 3;
+  /// The start step has its own two buttons.
+  bool get _ownButtons => _step == 0;
 
-  /// The budget step has its own Save / Skip buttons.
-  bool get _ownButtons => _step == 6;
+  Future<void> _choose(String mode) async {
+    if (_needsTick && !_ticked) {
+      toast(context, tr('Tick the box to agree first'));
+      return;
+    }
+    setState(() => _dataMode = mode);
+    await _continueFromDataMode();
+  }
 
   /// Choosing Online Mode asks for the Google sign-in right here, so the user
   /// is never left "online" without an account.
   Future<void> _continueFromDataMode() async {
     if (_needsTick) await recordAgreement(ref.read(repoProvider));
     if (_dataMode != 'online') {
-      _go(2);
+      _go(1);
       return;
     }
     if (_signedInAs != null) {
@@ -216,23 +220,12 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             openingBankMinor: bank,
           );
       final repo = ref.read(repoProvider);
-      final inc = Money.parse(_income.text.trim().isEmpty ? '0' : _income.text);
-      if (inc != null && inc > 0) {
-        await repo.setSetting('expectedIncome', '$inc');
-      }
       await repo.setSetting('language', _lang);
       await repo.setSetting('currency', _cur);
-      await repo.setSetting('themeMode', _theme);
-      if (_lock) {
-        await repo.setSetting('appLock', '1');
-      }
-      if (_remind) {
-        await repo.setSetting('reminderEnabled', '1');
-        await repo.setSetting(
-          'reminderTime',
-          '${_remindAt.hour.toString().padLeft(2, '0')}:${_remindAt.minute.toString().padLeft(2, '0')}',
-        );
-        await refreshReminder(repo);
+      if (_dataMode == 'offline') {
+        await repo.setSetting('profileName', _name.text.trim());
+        await repo.setSetting('profileMobile', _mobile.text.trim());
+        await repo.setSetting('profileEmail', _email.text.trim());
       }
       if (_dataMode == 'offline' && _signedInAs != null) {
         // changed their mind after signing in: sign out again
@@ -288,67 +281,9 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
               child: PageView(
                 controller: _page,
                 physics: const NeverScrollableScrollPhysics(),
-                children: [
-                  _languagePage(),
-                  _choicePage(
-                    art: Art.welcome,
-                    title: 'Where should your data live?',
-                    body: 'You can change this later in Settings.',
-                    options: [
-                      _Opt(
-                        'offline',
-                        Icons.phonelink_lock_outlined,
-                        'Keep on this phone only',
-                        'Your data stays on this phone. No sign-in needed.',
-                      ),
-                      _Opt(
-                        'online',
-                        Icons.cloud_sync_outlined,
-                        'Back up to Google Drive',
-                        'Your data stays on this phone and is also saved in your own Google Drive.',
-                      ),
-                    ],
-                    value: _dataMode,
-                    onChanged: (v) => setState(() => _dataMode = v),
-                  ),
-                  _choicePage(
-                    art: Art.piggy,
-                    title: 'How do you track your money?',
-                    body: 'Switch any time without losing history.',
-                    options: [
-                      _Opt(
-                        'combined',
-                        Icons.account_balance_wallet_outlined,
-                        'One balance',
-                        'Cash and bank together in one total.',
-                      ),
-                      _Opt(
-                        'split',
-                        Icons.call_split,
-                        'Separate balances',
-                        'Cash and each bank account kept apart.',
-                      ),
-                    ],
-                    value: _accountMode,
-                    onChanged: (v) => setState(() => _accountMode = v),
-                  ),
-                  _alertsPage(),
-                  _openingPage(),
-                  _reminderPage(),
-                  BudgetEditor(onSaved: () => _go(7), onSkip: () => _go(7)),
-                  _lookPage(),
-                  _privacyPage(),
-                ],
+                children: [_startPage(), _detailsPage(), _moneyPage()],
               ),
             ),
-            if (_step == 1 && _needsTick)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: Sp.x4),
-                child: ConsentCheck(
-                  value: _ticked,
-                  onChanged: (v) => setState(() => _ticked = v),
-                ),
-              ),
             Padding(
               padding: const EdgeInsets.all(Sp.x6),
               child: Row(
@@ -360,48 +295,33 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                         style: OutlinedButton.styleFrom(
                           minimumSize: const Size(56, 52),
                         ),
-                        onPressed: _saving ? null : () => _go(_step - 1),
+                        onPressed: _saving
+                            ? null
+                            : () => _go(
+                                _step == 2 && _dataMode == 'online'
+                                    ? 0
+                                    : _step - 1,
+                              ),
                         child: const Icon(Icons.arrow_back),
                       ),
                     ),
                   if (_ownButtons)
-                    const Spacer()
-                  else ...[
-                    if (_skippable && _step < _steps - 1)
-                      Padding(
-                        padding: const EdgeInsets.only(right: Sp.x3),
-                        child: TextButton(
-                          onPressed: _saving ? null : () => _go(_step + 1),
-                          child: Text(tr('Skip')),
-                        ),
-                      ),
+                    Expanded(child: _startButtons())
+                  else
                     Expanded(
                       child: FilledButton(
-                        onPressed: !_canNext || _saving || _signingIn
+                        onPressed: !_canNext || _saving
                             ? null
                             : (_step == _steps - 1
                                   ? _finish
-                                  : (_step == 1
-                                        ? _continueFromDataMode
-                                        : () => _go(_step + 1))),
-                        child: _signingIn
-                            ? const SizedBox(
-                                width: 22,
-                                height: 22,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.5,
-                                ),
-                              )
-                            : Text(
-                                _step == _steps - 1
-                                    ? 'Start using Cash++'
-                                    : (_step == 1 && _dataMode == 'online'
-                                          ? 'Continue with Google'
-                                          : 'Continue'),
-                              ),
+                                  : () => _go(_step + 1)),
+                        child: Text(
+                          _step == _steps - 1
+                              ? 'Start using Cash++'
+                              : 'Continue',
+                        ),
                       ),
                     ),
-                  ],
                 ],
               ),
             ),
@@ -410,6 +330,36 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       ),
     );
   }
+
+  Widget _startButtons() => Column(
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      if (_needsTick)
+        ConsentCheck(
+          value: _ticked,
+          onChanged: (v) => setState(() => _ticked = v),
+        ),
+      const SizedBox(height: Sp.x2),
+      FilledButton.icon(
+        onPressed: _saving || _signingIn ? null : () => _choose('online'),
+        icon: _signingIn
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2.5),
+              )
+            : const Icon(Icons.account_circle_outlined),
+        label: const Text('Continue with Google'),
+      ),
+      const SizedBox(height: Sp.x3),
+      OutlinedButton(
+        style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(52)),
+        onPressed: _saving || _signingIn ? null : () => _choose('offline'),
+        child: Text(tr('Use offline')),
+      ),
+    ],
+  );
 
   Widget _header(String title, String body, {Art? art}) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -431,97 +381,126 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     ],
   );
 
-  Widget _choicePage({
-    required String title,
-    required String body,
-    required List<_Opt> options,
-    required String? value,
-    required ValueChanged<String> onChanged,
-    Art? art,
-  }) => ListView(
-    padding: const EdgeInsets.symmetric(horizontal: Sp.x6),
-    children: [
-      _header(title, body, art: art),
-      for (final o in options)
-        Padding(
-          padding: const EdgeInsets.only(bottom: Sp.x3),
-          child: Semantics(
-            selected: value == o.key,
-            button: true,
-            label: '${o.title}. ${o.subtitle}',
-            child: InkWell(
-              borderRadius: BorderRadius.circular(Sp.rCard),
-              onTap: () {
-                haptic();
-                onChanged(o.key);
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.all(Sp.x5),
-                decoration: BoxDecoration(
-                  color: context.cash.surfaceRaised,
-                  borderRadius: BorderRadius.circular(Sp.rCard),
-                  border: Border.all(
-                    color: value == o.key
-                        ? context.scheme.primary
-                        : context.scheme.outlineVariant,
-                    width: value == o.key ? 2 : 1,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(o.icon, size: 32, color: context.scheme.primary),
-                    const SizedBox(width: Sp.x4),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            o.title,
-                            style: context.text.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: Sp.x1),
-                          Text(
-                            o.subtitle,
-                            style: context.text.bodyMedium?.copyWith(
-                              color: context.cash.textMuted,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (value == o.key)
-                      Icon(Icons.check_circle, color: context.scheme.primary),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-    ],
-  );
-
-  Widget _openingPage() => ListView(
+  Widget _moneyPage() => ListView(
     padding: const EdgeInsets.symmetric(horizontal: Sp.x6),
     children: [
       _header(
-        'Opening balance',
-        _accountMode == 'split'
-            ? 'How much do you have in cash and in the bank today? Skip if you are unsure — you can edit it later.'
-            : 'How much money do you have in total today? Skip if you are unsure.',
+        tr('How do you keep money?'),
+        tr('Switch any time without losing history.'),
       ),
+      Row(
+        children: [
+          for (final o in [
+            ('combined', 'One balance', 'Simplest'),
+            ('split', 'Separate balances', 'Cash and bank apart'),
+          ]) ...[
+            if (o.$1 == 'split') const SizedBox(width: Sp.x3),
+            Expanded(
+              child: Semantics(
+                button: true,
+                selected: _accountMode == o.$1,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(Sp.rCard),
+                  onTap: () {
+                    haptic();
+                    setState(() => _accountMode = o.$1);
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: Sp.x5,
+                      horizontal: Sp.x3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _accountMode == o.$1
+                          ? context.scheme.primaryContainer
+                          : context.cash.surfaceRaised,
+                      borderRadius: BorderRadius.circular(Sp.rCard),
+                      border: Border.all(
+                        color: _accountMode == o.$1
+                            ? context.scheme.onSurface
+                            : context.scheme.outlineVariant,
+                        width: _accountMode == o.$1 ? 1.6 : 1,
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          tr(o.$2),
+                          textAlign: TextAlign.center,
+                          style: context.text.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          tr(o.$3),
+                          textAlign: TextAlign.center,
+                          style: context.text.bodySmall?.copyWith(
+                            color: context.cash.textMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+      const SizedBox(height: Sp.x6),
       AmountField(
         controller: _cash,
-        label: _accountMode == 'split' ? 'Cash in hand' : 'Current balance',
+        label: _accountMode == 'split' ? 'Cash in hand' : 'Balance now',
       ),
       if (_accountMode == 'split') ...[
         const SizedBox(height: Sp.x4),
         AmountField(controller: _bank, label: tr('Bank balance')),
       ],
+      const SizedBox(height: Sp.x2),
+      Text(
+        tr('Leave it empty if unsure. You can change it later.'),
+        style: context.text.bodySmall?.copyWith(color: context.cash.textMuted),
+      ),
+    ],
+  );
+
+  Widget _detailsPage() => ListView(
+    padding: const EdgeInsets.symmetric(horizontal: Sp.x6),
+    children: [
+      _header(tr('Your details'), tr('Mobile or email is needed.')),
+      TextField(
+        controller: _name,
+        textCapitalization: TextCapitalization.words,
+        autofillHints: const [AutofillHints.name],
+        decoration: InputDecoration(labelText: tr('Name')),
+        onChanged: (_) => setState(() {}),
+      ),
       const SizedBox(height: Sp.x4),
-      AmountField(controller: _income, label: tr('Monthly income (optional)')),
+      TextField(
+        controller: _mobile,
+        keyboardType: TextInputType.phone,
+        autofillHints: const [AutofillHints.telephoneNumber],
+        decoration: InputDecoration(labelText: tr('Mobile')),
+        onChanged: (_) => setState(() {}),
+      ),
+      const SizedBox(height: Sp.x4),
+      TextField(
+        controller: _email,
+        keyboardType: TextInputType.emailAddress,
+        autofillHints: const [AutofillHints.email],
+        decoration: InputDecoration(
+          labelText: tr('Email'),
+          hintText: 'you@example.com',
+        ),
+        onChanged: (_) => setState(() {}),
+      ),
+      const SizedBox(height: Sp.x3),
+      Text(
+        tr('Your money entries are never sent anywhere.'),
+        style: context.text.bodySmall?.copyWith(color: context.cash.textMuted),
+      ),
     ],
   );
 
@@ -541,24 +520,39 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     if (mounted) setState(() => _cur = code);
   }
 
-  Widget _languagePage() {
+  Widget _startPage() {
     final lang = appLanguages.firstWhere((l) => l.code == _lang);
     final cur = currencyByCode(_cur);
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: Sp.x6),
       children: [
         _header(
-          tr('Language and currency'),
-          tr('You can change this later in Settings.'),
+          tr('Feel good about your money.'),
+          tr(
+            'Track spending, plan ahead, and share a home budget when you are ready.',
+          ),
           art: Art.welcome,
         ),
-        _pickTile(Icons.translate, tr('Language'), lang.native, _pickLanguage),
-        const SizedBox(height: Sp.x3),
-        _pickTile(
-          Icons.payments_outlined,
-          tr('Currency'),
-          '${cur.symbol}  ${cur.label}',
-          _pickCurrency,
+        Row(
+          children: [
+            Expanded(
+              child: _pickTile(
+                Icons.translate,
+                tr('Language'),
+                lang.native,
+                _pickLanguage,
+              ),
+            ),
+            const SizedBox(width: Sp.x3),
+            Expanded(
+              child: _pickTile(
+                Icons.payments_outlined,
+                tr('Currency'),
+                '${cur.symbol} ${cur.code}',
+                _pickCurrency,
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -602,158 +596,4 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       ),
     ),
   );
-
-  Widget _alertsPage() {
-    final can = Features.smsReading(
-      remoteFlag: ref.read(settingsProvider).value?.smsAllowed ?? true,
-    );
-    return _alertsList(can);
-  }
-
-  Widget _alertsList(bool can) => ListView(
-    padding: const EdgeInsets.symmetric(horizontal: Sp.x6),
-    children: [
-      _header(
-        can
-            ? 'Add bank messages automatically'
-            : 'Add bank messages in seconds',
-        can
-            ? 'Cash++ sees your bank alerts in your notifications, never your message inbox, and turns them into entries for you to confirm. Everything stays on your phone.'
-            : 'Paste or share a bank message into Cash++ and it fills in the entry for you.',
-        art: Art.welcome,
-      ),
-      if (can)
-        _smsOn
-            ? ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Icon(Icons.check_circle, color: context.cash.income),
-                title: const Text(
-                  'Almost there: switch on Cash++ in the list that opened',
-                ),
-              )
-            : FilledButton.tonalIcon(
-                icon: const Icon(Icons.sms_outlined),
-                label: Text(tr('Turn on notification access')),
-                onPressed: () async {
-                  AppLockGate.holdOff();
-                  await SmsReader.instance.requestPermission();
-                  if (!mounted) return;
-                  final repo = ref.read(repoProvider);
-                  await repo.setSetting('smsEnabled', '1');
-                  await SmsReader.instance.setAutoDetect(true);
-                  setState(() => _smsOn = true);
-                },
-              ),
-    ],
-  );
-
-  Widget _reminderPage() => ListView(
-    padding: const EdgeInsets.symmetric(horizontal: Sp.x6),
-    children: [
-      _header(
-        'Daily reminder',
-        'A quiet nudge each day to note your spending. People who check daily keep their budget.',
-      ),
-      SwitchListTile.adaptive(
-        contentPadding: EdgeInsets.zero,
-        title: Text(tr('Remind me every day')),
-        value: _remind,
-        onChanged: (v) async {
-          if (v) {
-            AppLockGate.holdOff();
-            final ok = await Notifications.instance.requestPermission();
-            if (!ok) {
-              if (mounted) {
-                toast(
-                  context,
-                  'Notifications are blocked. You can allow them later in Settings.',
-                );
-              }
-              return;
-            }
-          }
-          if (mounted) setState(() => _remind = v);
-        },
-      ),
-      if (_remind)
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: const Icon(Icons.schedule),
-          title: Text(tr('Time')),
-          trailing: Text(
-            _remindAt.format(context),
-            style: context.text.titleMedium,
-          ),
-          onTap: () async {
-            final t = await showTimePicker(
-              context: context,
-              initialTime: _remindAt,
-            );
-            if (t != null && mounted) setState(() => _remindAt = t);
-          },
-        ),
-    ],
-  );
-
-  Widget _lookPage() => ListView(
-    padding: const EdgeInsets.symmetric(horizontal: Sp.x6),
-    children: [
-      _header('Pick your theme', 'You can change this later in Settings.'),
-      Text(tr('Theme'), style: context.text.titleSmall),
-      const SizedBox(height: Sp.x2),
-      SegmentedButton<String>(
-        showSelectedIcon: false,
-        segments: [
-          ButtonSegment(value: 'system', label: Text(tr('System'))),
-          ButtonSegment(value: 'light', label: Text(tr('Light'))),
-          ButtonSegment(value: 'dark', label: Text(tr('Dark'))),
-        ],
-        selected: {_theme},
-        onSelectionChanged: (v) async {
-          setState(() => _theme = v.first);
-          await ref.read(repoProvider).setSetting('themeMode', _theme);
-        },
-      ),
-    ],
-  );
-
-  Widget _privacyPage() => ListView(
-    padding: const EdgeInsets.symmetric(horizontal: Sp.x6),
-    children: [
-      _header(
-        'Keep it private',
-        'Lock Cash++ with your fingerprint, face or phone PIN. Your data is also stored encrypted on this phone.',
-      ),
-      SwitchListTile.adaptive(
-        contentPadding: EdgeInsets.zero,
-        title: Text(tr('Lock the app')),
-        value: _lock,
-        onChanged: (v) async {
-          if (v) {
-            final auth = ref.read(authenticatorProvider);
-            if (!await auth.available) {
-              if (mounted) {
-                toast(
-                  context,
-                  'Set up a screen lock in your phone settings first.',
-                );
-              }
-              return;
-            }
-            AppLockGate.holdOff();
-            if (!await auth.authenticate('Turn on app lock')) return;
-          }
-          if (mounted) setState(() => _lock = v);
-        },
-      ),
-    ],
-  );
-}
-
-class _Opt {
-  final String key;
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  _Opt(this.key, this.icon, this.title, this.subtitle);
 }

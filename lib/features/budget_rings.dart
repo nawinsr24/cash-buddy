@@ -10,7 +10,6 @@ import '../ui/motion.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
 import 'budget.dart';
-import 'home_budget.dart';
 
 /// This month's budget as a round card, shared by both while home sharing is
 /// on. With no budget it shows only a plus.
@@ -29,7 +28,7 @@ class BudgetRings extends ConsumerWidget {
     final budget = home == null
         ? mine.value?.budget
         : home.budget ?? mine.value?.budget;
-    return _Ring(
+    return BudgetRingCard(
       key: const ValueKey('my-budget'),
       title: tr('Budget'),
       spent: home == null ? mine.value?.spent ?? 0 : home.sharedTotal,
@@ -37,18 +36,18 @@ class BudgetRings extends ConsumerWidget {
       daysLeft: days,
       onTap: home == null
           ? () => pushReveal(context, const BudgetPage())
-          : () => pushReveal(context, const HomeBudgetPage()),
+          : () => pushReveal(context, const BudgetTabsPage()),
     );
   }
 }
 
-class _Ring extends StatelessWidget {
+class BudgetRingCard extends StatelessWidget {
   final String title;
   final int spent;
   final int? budget;
   final int daysLeft;
   final VoidCallback onTap;
-  const _Ring({
+  const BudgetRingCard({
     super.key,
     required this.title,
     required this.spent,
@@ -88,7 +87,9 @@ class _Ring extends StatelessWidget {
                       strokeWidth: 7,
                       strokeCap: StrokeCap.round,
                       color: color,
-                      backgroundColor: context.cash.surfaceRaised.withValues(alpha: 0.7),
+                      backgroundColor: context.cash.surfaceRaised.withValues(
+                        alpha: 0.7,
+                      ),
                     ),
                     Center(
                       child: set

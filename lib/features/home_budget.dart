@@ -16,7 +16,9 @@ import 'group.dart';
 /// The family budget: one amount for the month, and optionally an amount per
 /// category. Both partners see and change the same figures.
 class HomeBudgetPage extends ConsumerStatefulWidget {
-  const HomeBudgetPage({super.key});
+  /// Shown inside the Home / Personal tabs, which have their own top bar.
+  final bool embedded;
+  const HomeBudgetPage({super.key, this.embedded = false});
   @override
   ConsumerState<HomeBudgetPage> createState() => _HomeBudgetPageState();
 }
@@ -111,7 +113,7 @@ class _HomeBudgetPageState extends ConsumerState<HomeBudgetPage> {
     final total = Money.parse(_total.text) ?? 0;
     final muted = TextStyle(color: context.cash.textMuted);
     return Scaffold(
-      appBar: AppBar(title: Text(tr('Family budget'))),
+      appBar: widget.embedded ? null : AppBar(title: Text(tr('Family budget'))),
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(Sp.x4),

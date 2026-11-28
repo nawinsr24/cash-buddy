@@ -42,6 +42,9 @@ class TransactionsPage extends ConsumerStatefulWidget {
 }
 
 class _TransactionsPageState extends ConsumerState<TransactionsPage> {
+  /// While sharing a home: 'all' (both of us), 'me', or 'personal'.
+  String _who = 'all';
+
   final _search = TextEditingController();
 
   @override
@@ -147,37 +150,88 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
           loading: () =>
               const Center(child: CircularProgressIndicator.adaptive()),
           error: (e, _) => ErrorState(e),
-          data: (list) {
-            if (list.isEmpty && openings.isEmpty) {
-              return EmptyState(
-                art: Art.receipt,
-                icon: Icons.receipt_long_outlined,
-                title: active
-                    ? 'No matching transactions'
-                    : 'No transactions yet',
-                body: active
-                    ? 'Try clearing filters.'
-                    : 'Tap + to add your first one.',
-                action: active
-                    ? OutlinedButton(
-                        onPressed: () {
-                          _search.clear();
-                          ref
-                              .read(txnFilterProvider.notifier)
-                              .set(const TxnFilter());
-                        },
-                        child: Text(tr('Clear filters')),
-                      )
-                    : null,
+          data: (all) {
+            final homeOn = ref.watch(homeOnProvider).value == true;
+            final partner = homeOn && _who == 'all' && !active
+                ? ref.watch(partnerSpendsProvider).value
+                : null;
+            final list = homeOn && _who == 'personal'
+                ? all.where((t) => t.uncounted == true).toList()
+                : all;
+            final theirs = partner?.spends ?? const <HomeSpend>[];
+            final whoBar = !homeOn
+                ? null
+                : Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      Sp.x4,
+                      Sp.x2,
+                      Sp.x4,
+                      Sp.x2,
+                    ),
+                    child: SegmentedButton<String>(
+                      showSelectedIcon: false,
+                      segments: [
+                        ButtonSegment(
+                          value: 'all',
+                          label: Text(tr('Everyone')),
+                        ),
+                        ButtonSegment(value: 'me', label: Text(tr('Only me'))),
+                        ButtonSegment(
+                          value: 'personal',
+                          label: Text(tr('Personal')),
+                        ),
+                      ],
+                      selected: {_who},
+                      onSelectionChanged: (v) {
+                        haptic();
+                        setState(() => _who = v.first);
+                      },
+                    ),
+                  );
+            Widget withBar(Widget child) => whoBar == null
+                ? child
+                : Column(
+                    children: [
+                      whoBar,
+                      Expanded(child: child),
+                    ],
+                  );
+            if (list.isEmpty && openings.isEmpty && theirs.isEmpty) {
+              return withBar(
+                EmptyState(
+                  art: Art.receipt,
+                  icon: Icons.receipt_long_outlined,
+                  title: active
+                      ? 'No matching transactions'
+                      : 'No transactions yet',
+                  body: active
+                      ? 'Try clearing filters.'
+                      : 'Tap + to add your first one.',
+                  action: active
+                      ? OutlinedButton(
+                          onPressed: () {
+                            _search.clear();
+                            ref
+                                .read(txnFilterProvider.notifier)
+                                .set(const TxnFilter());
+                          },
+                          child: Text(tr('Clear filters')),
+                        )
+                      : null,
+                ),
               );
             }
             // flatten into day headers + rows
             final items = <Object>[];
             String? last;
-            for (final t in list) {
-              if (t.date != last) {
-                items.add(t.date);
-                last = t.date;
+            // mine and my partner's, newest day first
+            final rows = <Object>[...list, ...theirs]
+              ..sort((a, b) => _dateOf(b).compareTo(_dateOf(a)));
+            for (final t in rows) {
+              final d = _dateOf(t);
+              if (d != last) {
+                items.add(d);
+                last = d;
               }
               items.add(t);
             }
@@ -185,42 +239,53 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
               items.add('__opening__');
               items.addAll(openings);
             }
-            return ListView.builder(
-              padding: const EdgeInsets.fromLTRB(Sp.x4, 0, Sp.x4, 96),
-              itemCount: items.length,
-              itemBuilder: (context, i) {
-                final it = items[i];
-                if (it == '__opening__') return const _OpeningHeader();
-                if (it is Account) {
-                  return _OpeningTile(
-                    account: it,
-                    showName: settings?.split ?? false,
+            return withBar(
+              ListView.builder(
+                padding: const EdgeInsets.fromLTRB(Sp.x4, 0, Sp.x4, 96),
+                itemCount: items.length,
+                itemBuilder: (context, i) {
+                  final it = items[i];
+                  if (it == '__opening__') return const _OpeningHeader();
+                  if (it is Account) {
+                    return _OpeningTile(
+                      account: it,
+                      showName: settings?.split ?? false,
+                    );
+                  }
+                  if (it is String) {
+                    return _DayHeader(
+                      it,
+                      list.where((t) => t.date == it).toList(),
+                    );
+                  }
+                  if (it is HomeSpend) {
+                    return _PartnerTile(
+                      spend: it,
+                      name: partner?.names[it.paidBy] ?? '',
+                    );
+                  }
+                  final t = it as Transaction;
+                  final tile = _TxnTile(
+                    txn: t,
+                    category: cats[t.categoryId],
+                    parent: cats[cats[t.categoryId]?.parentId],
+                    account: accounts[t.accountId],
+                    toAccount: accounts[t.toAccountId],
+                    showAccount: settings?.split ?? false,
                   );
-                }
-                if (it is String) {
-                  return _DayHeader(
-                    it,
-                    list.where((t) => t.date == it).toList(),
-                  );
-                }
-                final t = it as Transaction;
-                final tile = _TxnTile(
-                  txn: t,
-                  category: cats[t.categoryId],
-                  parent: cats[cats[t.categoryId]?.parentId],
-                  account: accounts[t.accountId],
-                  toAccount: accounts[t.toAccountId],
-                  showAccount: settings?.split ?? false,
-                );
-                // the first screenful glides in one after another
-                return i < 12 ? Reveal(index: i, child: tile) : tile;
-              },
+                  // the first screenful glides in one after another
+                  return i < 12 ? Reveal(index: i, child: tile) : tile;
+                },
+              ),
             );
           },
         ),
       ),
     );
   }
+
+  static String _dateOf(Object o) =>
+      o is Transaction ? o.date : (o as HomeSpend).date;
 
   void _setQuery(String q) {
     setState(() {});
@@ -1060,7 +1125,7 @@ class _TxnFormState extends ConsumerState<_TxnForm> {
             ],
             if (type != 'transfer') ...[
               const SizedBox(height: Sp.x4),
-              CategoryField(
+              QuickCategoryGrid(
                 cats: cats,
                 categoryId: categoryId,
                 onChanged: (v) => setState(() => categoryId = v),
@@ -1143,6 +1208,69 @@ class _TxnFormState extends ConsumerState<_TxnForm> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// A spend my partner shared: read-only, with who paid.
+class _PartnerTile extends StatelessWidget {
+  final HomeSpend spend;
+  final String name;
+  const _PartnerTile({required this.spend, required this.name});
+  @override
+  Widget build(BuildContext context) {
+    final who = name.isEmpty ? tr('Partner') : name;
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: Sp.x1),
+      leading: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: context.scheme.primaryContainer,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Text(
+              emojiForCategory(spend.sub ?? spend.category, spend.category),
+              style: const TextStyle(fontSize: 20),
+            ),
+          ),
+          Positioned(
+            right: -4,
+            bottom: -4,
+            child: CircleAvatar(
+              radius: 9,
+              backgroundColor: context.cash.positiveBg,
+              child: Text(
+                who.characters.first.toUpperCase(),
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+      title: Text(
+        spend.note.isEmpty ? (spend.sub ?? spend.category) : spend.note,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(fontWeight: FontWeight.w600),
+      ),
+      subtitle: Text(
+        '${spend.sub ?? spend.category} · $who',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(color: context.cash.textMuted),
+      ),
+      trailing: Text(
+        '−${Money.format(spend.amount)}',
+        style: const TextStyle(fontWeight: FontWeight.w700),
       ),
     );
   }

@@ -61,7 +61,11 @@ class HomeSummary {
   final List<CatSlice> main, subs;
   final bool showMyBalance;
   final List<PartnerBalance> partnerBalances;
+
+  /// Member ID to the name each one chose.
+  final Map<String, String> names;
   const HomeSummary({
+    this.names = const {},
     required this.me,
     required this.spends,
     required this.sharedTotal,
@@ -232,6 +236,11 @@ extension HomeRepo on Repo {
     final share = await showsMyBalance;
     return HomeSummary(
       me: me,
+      names: {
+        for (final e in entries.values)
+          if (e.data['kind'] == 'member' && e.id.startsWith('member:'))
+            e.id.substring('member:'.length): e.data['name'] as String? ?? '',
+      },
       spends: spends,
       sharedTotal: shared,
       budget: entries['budget']?.data['limitMinor'] as int?,

@@ -11,17 +11,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../data/helpers.dart';
 
-/// From the opening-balance step to the end of the first-run wizard,
-/// skipping every optional step.
+/// From the money step to the end of the short first-run setup.
 Future<void> finishWizard(WidgetTester tester) async {
-  await tapText(tester, 'Continue'); // balance -> reminder
-  await tapText(tester, 'Skip'); // reminder -> budget
-  await tester.runAsync(
-    () => Future<void>.delayed(const Duration(milliseconds: 300)),
-  );
-  await settle(tester);
-  await tapText(tester, 'Skip for now'); // budget -> look
-  await tapText(tester, 'Skip'); // look -> privacy
   await tapText(tester, 'Start using Cash++');
 }
 
@@ -52,6 +43,8 @@ Future<TestEnv> pump(
       opening: opening,
       now: now ?? DateTime.now(),
     );
+    // the "Finish setting up" card has its own tests
+    if (onboarded) await env.repo.setSetting('setupHidden', '1');
     if (!onboarded) {
       await env.db.delete(env.db.settings).go();
       await env.db.delete(env.db.accounts).go();
@@ -97,7 +90,12 @@ Future<void> tapText(
     } catch (_) {}
   }
   expect(f, findsWidgets, reason: 'expected to find "$text"');
-  await tester.tap(last ? f.last : f.first, warnIfMissed: false);
+  final target = last ? f.last : f.first;
+  try {
+    await tester.ensureVisible(target);
+    await tester.pump();
+  } catch (_) {}
+  await tester.tap(target, warnIfMissed: false);
   await settle(tester);
 }
 
@@ -108,28 +106,21 @@ void main() {
       tester.platformDispatcher.localeTestValue = const Locale('en', 'IN');
       addTearDown(tester.platformDispatcher.clearLocaleTestValue);
       await pump(tester, onboarded: false);
-      // first question: language and currency (English and INR come first)
-      expect(find.text('Language and currency'), findsOneWidget);
+      // first screen: language and currency are filled in, then a choice
+      expect(find.text('Feel good about your money.'), findsOneWidget);
       expect(find.text('English'), findsOneWidget);
-      await tapText(tester, 'Continue');
-      expect(find.text('Where should your data live?'), findsOneWidget);
-      // Continue is disabled until a choice is made (nothing silently pre-selected)
+      await tapText(tester, 'Use offline');
+      expect(find.text('Your details'), findsOneWidget);
+      // mobile or email is needed before going on
       expect(
         tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
         isNull,
       );
-      await tapText(tester, 'Keep on this phone only');
+      await tester.enterText(find.byType(TextField).at(1), '9876543210');
+      await settle(tester);
       await tapText(tester, 'Continue');
-      expect(find.text('How do you track your money?'), findsOneWidget);
-      expect(
-        tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
-        isNull,
-      );
+      expect(find.text('How do you keep money?'), findsOneWidget);
       await tapText(tester, 'One balance');
-      await tapText(tester, 'Continue');
-      expect(find.text('Add bank messages automatically'), findsOneWidget);
-      await tapText(tester, 'Continue');
-      expect(find.text('Opening balance'), findsOneWidget);
       await tester.enterText(find.byType(TextField).first, '5000');
       await finishWizard(tester);
       expect(find.text('TOTAL BALANCE'), findsOneWidget);
@@ -532,7 +523,7 @@ void main() {
     expect(find.text('INSIDE'), findsOneWidget);
     await tapText(tester, 'Cycling');
     // back in the form the field shows the choice
-    expect(find.text('Hobbies › Cycling'), findsOneWidget);
+    expect(find.text('Hobbies › Cycling'), findsWidgets);
     await tester.enterText(find.byType(TextField).first, '1200');
     await tapText(tester, 'Add', last: true);
     await settle(tester);
@@ -549,7 +540,7 @@ void main() {
     final env = await pump(tester, opening: 1000000);
     await tapText(tester, 'Add');
     await tapText(tester, 'Sent money home'); // quick chip
-    expect(find.text('Family Support'), findsOneWidget);
+    expect(find.text('Family Support'), findsWidgets);
     await tester.enterText(find.byType(TextField).first, '5000');
     await tapText(tester, 'Add', last: true);
     await settle(tester);

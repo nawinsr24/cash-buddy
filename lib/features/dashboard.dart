@@ -16,6 +16,7 @@ import '../ui/theme.dart';
 import '../ui/emoji.dart';
 import '../domain/budget.dart' show SplitRow;
 import 'budget_rings.dart';
+import 'setup_checklist.dart';
 import 'home_share.dart';
 import 'partner_balance.dart';
 import 'card_warning.dart';
@@ -113,6 +114,7 @@ class DashboardPage extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: Sp.x3),
+            const SetupChecklistCard(),
             const HomeInviteCard(),
             const BudgetRings(),
             const CardWarningLine(),

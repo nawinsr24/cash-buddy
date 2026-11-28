@@ -13,37 +13,32 @@ void main() {
     tester.platformDispatcher.localeTestValue = const Locale('en', 'US');
     addTearDown(tester.platformDispatcher.clearLocaleTestValue);
     await pump(tester, onboarded: false);
-    expect(find.textContaining('Indian Rupee'), findsOneWidget);
+    expect(find.textContaining('INR'), findsOneWidget);
     expect(Money.code, 'INR');
     // there is no tone question anywhere in setup
     expect(find.textContaining('talk to you'), findsNothing);
   });
 
-  testWidgets('first-run budget step: By category lists the categories', (
-    tester,
-  ) async {
-    tester.platformDispatcher.localeTestValue = const Locale('en', 'IN');
-    addTearDown(tester.platformDispatcher.clearLocaleTestValue);
-    await pump(tester, onboarded: false);
-    await tapText(tester, 'Continue'); // language and currency
-    await tapText(tester, 'Keep on this phone only');
-    await tapText(tester, 'Continue');
-    await tapText(tester, 'One balance');
-    await tapText(tester, 'Continue');
-    await tapText(tester, 'Continue'); // bank alerts
-    await tapText(tester, 'Continue'); // balance
-    await tapText(tester, 'Skip'); // reminder -> budget
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(milliseconds: 400)),
-    );
-    await settle(tester);
-    await tapText(tester, 'By category');
-    await settle(tester);
-    expect(find.text('Food'), findsOneWidget);
-    expect(find.text('Home & Kitchen'), findsOneWidget);
-    expect(find.text('Personal Care'), findsOneWidget);
-    expect(find.text('Kids'), findsOneWidget);
-  });
+  testWidgets(
+    'budget step from Finish setting up: By category lists the categories',
+    (tester) async {
+      final env = await pump(tester);
+      await tester.runAsync(() => env.repo.setSetting('setupHidden', '0'));
+      await tapText(tester, 'Activity', last: true);
+      await tapText(tester, 'Home', last: true);
+      await tapText(tester, 'Monthly budget');
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 400)),
+      );
+      await settle(tester);
+      await tapText(tester, 'By category');
+      await settle(tester);
+      expect(find.text('Food'), findsOneWidget);
+      expect(find.text('Home & Kitchen'), findsOneWidget);
+      expect(find.text('Personal Care'), findsOneWidget);
+      expect(find.text('Kids'), findsOneWidget);
+    },
+  );
 
   testWidgets('Debts opens on Credit cards first', (tester) async {
     await pump(tester);

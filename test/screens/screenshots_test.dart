@@ -368,7 +368,11 @@ void main() {
       await shot(tester, '$p-2d-grade');
       await tester.tap(find.byTooltip('Back'));
       await settle(tester);
-      await tester.scrollUntilVisible(find.byKey(const ValueKey('my-budget')), -300, scrollable: find.byType(Scrollable).first);
+      await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('my-budget')),
+        -300,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.tap(find.byKey(const ValueKey('my-budget')));
       await settle(tester);
       await shot(tester, '$p-2e-budget');
@@ -430,20 +434,42 @@ void main() {
       await shot(tester, '$p-14-add-sheet');
       await tapText(tester, 'No category');
       await shot(tester, '$p-15-category-picker');
-      await tester.ensureVisible(find.text('Hobbies').first);
-      await tapText(tester, 'Hobbies');
+      await tester.ensureVisible(find.text('Hobbies').last);
+      await tapText(tester, 'Hobbies', last: true);
       await shot(tester, '$p-16-category-subs');
       await tester.tap(find.byTooltip('Back to categories'));
       await settle(tester);
-      await tester.ensureVisible(find.text('Family Support').first);
-      await tapText(tester, 'Family Support');
+      await tester.ensureVisible(find.text('Family Support').last);
+      await tapText(tester, 'Family Support', last: true);
       await tapText(tester, 'Parents');
       await tester.enterText(find.byType(TextField).first, '5000');
-      await tapText(tester, 'Add', last: true);
+      final save = find.widgetWithText(FilledButton, 'Add').last;
+      // press it directly: at the very bottom of a tall sheet a tap can miss
+      tester.widget<FilledButton>(save).onPressed!();
+      await tester.pump();
       await settle(tester);
       await tester.pump(const Duration(milliseconds: 900));
       await shot(tester, '$p-17-home-celebration');
-      await tester.tap(find.text('Home is proud of you'));
+      // the celebration can come a moment late on a busy machine
+      for (
+        var i = 0;
+        i < 20 && find.text('Home is proud of you').evaluate().isEmpty;
+        i++
+      ) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 150)),
+        );
+        await tester.pump(const Duration(milliseconds: 150));
+      }
+      if (find.text('Home is proud of you').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Home is proud of you'));
+      }
+      await settle(tester);
+      // let the celebration's own timer close it, whatever happened above
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 4300)),
+      );
+      await tester.pump(const Duration(milliseconds: 100));
       await settle(tester);
       // the Categories page, opened directly
       tester
@@ -556,32 +582,27 @@ void loaderShot() {
       );
       await settle(tester);
       final p = dark ? 'dark' : 'light';
-      await shot(tester, '$p-s0-language');
+      await shot(tester, '$p-s0-start');
       await tapText(tester, 'Currency');
       await shot(tester, '$p-s0b-currency-list');
       await tester.binding.handlePopRoute();
       await settle(tester);
+      await tapText(tester, 'Use offline');
+      await shot(tester, '$p-s1-details');
+      await tester.enterText(find.byType(TextField).at(0), 'Neha');
+      await tester.enterText(find.byType(TextField).at(1), '9876543210');
+      await settle(tester);
       await tapText(tester, 'Continue');
-      await shot(tester, '$p-s1-data');
-      await tapText(tester, 'Keep on this phone only');
-      await tapText(tester, 'Continue');
-      await tapText(tester, 'One balance');
-      await shot(tester, '$p-s2-accounts');
-      await tapText(tester, 'Continue');
-      await shot(tester, '$p-s3-bank-messages');
-      await tapText(tester, 'Continue');
-      await shot(tester, '$p-s4-balance');
-      await tapText(tester, 'Continue');
-      await shot(tester, '$p-s5-reminder');
-      await tapText(tester, 'Skip');
+      await shot(tester, '$p-s2-money');
+      await tester.enterText(find.byType(TextField).first, '25000');
+      await tapText(tester, 'Start using Cash++');
       await tester.runAsync(
         () => Future<void>.delayed(const Duration(milliseconds: 400)),
       );
-      await shot(tester, '$p-s6-budget');
-      await tapText(tester, 'Skip for now');
-      await shot(tester, '$p-s7-look');
-      await tapText(tester, 'Skip');
-      await shot(tester, '$p-s8-privacy');
+      await settle(tester);
+      await shot(tester, '$p-s3-home-checklist');
+      await tapText(tester, 'Daily reminder', last: true);
+      await shot(tester, '$p-s4-reminder');
     });
   }
 

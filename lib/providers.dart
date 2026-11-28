@@ -423,3 +423,18 @@ final splitExpensesProvider = FutureProvider.autoDispose<Set<String>>((ref) {
     },
   );
 });
+
+/// While sharing: my partner's shared spends, newest first (for Activity).
+final partnerSpendsProvider =
+    FutureProvider.autoDispose<
+      ({List<HomeSpend> spends, Map<String, String> names})?
+    >((ref) {
+      final repo = ref.watch(repoProvider);
+      return _tick(ref, () async {
+        final h = await repo.homeSummary(DateRange(DateTime(2000), repo.now()));
+        if (h == null) return null;
+        final theirs = h.spends.where((s) => s.paidBy != h.me).toList()
+          ..sort((a, b) => b.date.compareTo(a.date));
+        return (spends: theirs, names: h.names);
+      });
+    });

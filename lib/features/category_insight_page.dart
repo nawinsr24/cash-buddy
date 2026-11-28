@@ -12,6 +12,9 @@ import '../ui/emoji.dart';
 import '../ui/motion.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
+import '../l10n/l10n.dart';
+import 'budget.dart';
+import 'budget_rings.dart';
 
 /// Tap a category (or sub-category) in "Where your money went" to land here.
 class CategoryInsightPage extends ConsumerWidget {
@@ -123,6 +126,31 @@ class _Body extends StatelessWidget {
               ],
             ),
           ),
+        ),
+        // this category's budget, when one is set (this month)
+        Consumer(
+          builder: (context, ref, _) {
+            final b = ref.watch(budgetStatusProvider).value;
+            final row = b?.splits
+                .where((r) => !r.isElse && r.allocated > 0)
+                .where((r) => r.name == x.name)
+                .firstOrNull;
+            if (row == null || x.parentName != null) {
+              return const SizedBox.shrink();
+            }
+            final today = ref.read(repoProvider).today;
+            return Padding(
+              padding: const EdgeInsets.only(top: Sp.x3),
+              child: BudgetRingCard(
+                title: tr('Category budget'),
+                spent: row.spent,
+                budget: row.allocated,
+                daysLeft:
+                    Dates.daysInMonth(today.year, today.month) - today.day,
+                onTap: () => pushReveal(context, const BudgetPage()),
+              ),
+            );
+          },
         ),
         const SizedBox(height: Sp.x3),
         Reveal(
