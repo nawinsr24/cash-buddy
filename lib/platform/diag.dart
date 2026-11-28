@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import 'version.dart';
+
 /// A small in-memory event log (last ~200 events) so a problem on a real
 /// phone can be diagnosed: app lifecycle, scans, native calls and how fast
 /// the database is changing. Nothing is stored or sent anywhere.
@@ -20,7 +22,7 @@ class Diag {
   }
 
   List<String> get lines => List.unmodifiable(_lines);
-  String dump() => _lines.join('\n');
+  String dump() => ['Cash++ $appVersion', ..._lines].join('\n');
   void clear() {
     _lines.clear();
     changed.value++;

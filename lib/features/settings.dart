@@ -9,6 +9,7 @@ import '../data/repo.dart';
 import '../domain/money.dart';
 import '../platform/app_lock.dart';
 import '../platform/diag.dart';
+import '../platform/version.dart';
 import '../platform/notifications.dart';
 import '../platform/reminders.dart';
 import '../platform/sms_reader.dart';
@@ -544,6 +545,21 @@ class SettingsPage extends ConsumerWidget {
                     },
                   ),
                 ],
+              ),
+            ),
+            // which APK this is; tap to copy
+            TextButton(
+              onPressed: () async {
+                await Clipboard.setData(
+                  const ClipboardData(text: 'Cash++ $appVersion'),
+                );
+                if (context.mounted) toast(context, 'Copied');
+              },
+              child: Text(
+                'Cash++ $appVersion',
+                style: context.text.bodySmall?.copyWith(
+                  color: context.cash.textMuted,
+                ),
               ),
             ),
           ],

@@ -138,6 +138,14 @@ class GroupService {
     final had = replica.disk.notes.length;
     await _guard(() => replica.sync(box, step: save));
     await save();
+    // Everything is up: now the others can be told, once.
+    if (toSend > 0) {
+      try {
+        await box.call('done', body: {});
+      } catch (e) {
+        _log('could not signal the others: ${e.runtimeType}');
+      }
+    }
     final me = replica.disk.member;
     final entries = replica.entries.values;
     _log(
@@ -155,6 +163,13 @@ class GroupService {
     final text = 'home $line';
     final last = Diag.instance.lines.lastOrNull ?? '';
     if (!last.endsWith(text)) Diag.instance.log(text);
+  }
+
+  /// One small request: is there anything to send or fetch?
+  Future<bool> hasNews() async {
+    final box = await _box();
+    if (_replica!.disk.outbox.isNotEmpty) return true;
+    return (await box.call('news') as Map)['news'] == true;
   }
 
   /// Tells the server where to nudge this phone.

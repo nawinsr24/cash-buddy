@@ -61,6 +61,9 @@ class _GroupKeeperState extends ConsumerState<GroupKeeper>
     with WidgetsBindingObserver {
   StreamSubscription<void>? _nudges;
   var _busy = false;
+  var _again = false;
+  var _setUp = false;
+  Timer? _check;
   StreamSubscription<void>? _spends;
   Timer? _later;
 
@@ -69,6 +72,7 @@ class _GroupKeeperState extends ConsumerState<GroupKeeper>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     unawaited(_update());
+    _startChecking();
     final db = ref.read(repoProvider).db;
     _spends = db.tableUpdates(TableUpdateQuery.onTable(db.transactions)).listen(
       (_) {
@@ -85,17 +89,47 @@ class _GroupKeeperState extends ConsumerState<GroupKeeper>
     _nudges?.cancel();
     _spends?.cancel();
     _later?.cancel();
+    _check?.cancel();
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) unawaited(_update());
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_update());
+      _startChecking();
+    } else if (state == AppLifecycleState.paused) {
+      _check?.cancel();
+    }
+  }
+
+  /// While the app is open, a signal that is late or lost is made up for by a
+  /// small check. It also notices a home paired since the app started.
+  void _startChecking() {
+    _check?.cancel();
+    _check = Timer.periodic(const Duration(seconds: 20), (_) async {
+      final group = ref.read(groupServiceProvider);
+      if (group == null || _busy) return;
+      try {
+        if (await group.open() == null) {
+          _setUp = false;
+        } else if (!_setUp || await group.hasNews()) {
+          await _update();
+        }
+      } catch (_) {
+        // offline: the next tick tries again
+      }
+    });
   }
 
   Future<void> _update() async {
     final group = ref.read(groupServiceProvider);
-    if (group == null || _busy) return;
+    if (group == null) return;
+    // Something changed while a sync was running: run once more afterwards.
+    if (_busy) {
+      _again = true;
+      return;
+    }
     _busy = true;
     try {
       if (await group.open() == null) return;
@@ -108,6 +142,7 @@ class _GroupKeeperState extends ConsumerState<GroupKeeper>
       }
       final repo = ref.read(repoProvider);
       await updateGroup(group, repo);
+      _setUp = true;
       if (!mounted) return;
       ref.invalidate(budgetStatusProvider);
     } catch (e) {
@@ -117,6 +152,10 @@ class _GroupKeeperState extends ConsumerState<GroupKeeper>
       );
     } finally {
       _busy = false;
+      if (_again && mounted) {
+        _again = false;
+        unawaited(_update());
+      }
     }
   }
 

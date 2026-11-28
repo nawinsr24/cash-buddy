@@ -83,6 +83,16 @@ export async function groups(request, env, url, who) {
         group, member, body.token).run();
       return json({ ok: true });
     }
+    case 'done': // the sender has finished uploading: tell the others now
+      await nudge(env, group, member, now);
+      return json({ ok: true });
+    case 'news': { // the cheap "anything new for me?" check
+      const waiting = await q('SELECT COUNT(*) AS n FROM waiting WHERE group_id = ? AND member_id = ?',
+        group, member).first();
+      const asked = await q('SELECT COUNT(*) AS n FROM requests WHERE group_id = ? AND member_id <> ? ' +
+        "AND missing <> '{}'", group, member).first();
+      return json({ news: waiting.n > 0 || asked.n > 0 });
+    }
     case 'upload': {
       const { id, sealed } = body;
       if (!NOTE.test(id ?? '') || typeof sealed !== 'string' || sealed.length > MAX_NOTE) {
@@ -99,7 +109,6 @@ export async function groups(request, env, url, who) {
       await q('INSERT INTO highest (group_id, writer, seq) VALUES (?, ?, ?) ' +
         'ON CONFLICT(group_id, writer) DO UPDATE SET seq = MAX(seq, excluded.seq)',
         group, id.slice(0, cut), Number(id.slice(cut + 1))).run();
-      await nudge(env, group, member, now);
       return json({ ok: true });
     }
     case 'fetch': {

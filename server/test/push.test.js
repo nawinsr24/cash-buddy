@@ -21,7 +21,13 @@ test('a new note nudges only the other phone, without its content', async () => 
 
   // without the secret nothing is sent
   await send(a, 'upload', { ...ma, id: 'malice01.0:1', sealed: 'S' });
+  await send(a, 'done', ma);
   assert.equal(nudges.length, 0);
+  const news = async (who, m) => (await (await call(
+    `/group/news?group=${m.group}&member=${m.member}`,
+    { headers: { 'x-session': who } })).json()).news;
+  assert.equal(await news(b, mb), true);
+  assert.equal(await news(a, ma), false);
 
   const { privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
   env.FCM_SERVICE_ACCOUNT = JSON.stringify({
@@ -30,7 +36,10 @@ test('a new note nudges only the other phone, without its content', async () => 
   });
   await send(a, 'upload', { ...ma, id: 'malice01.0:2', sealed: 'LOCKED-TEXT' });
   await send(a, 'upload', { ...ma, id: 'malice01.0:3', sealed: 'S' });
-  assert.deepEqual(nudges.map((n) => n.token), ['bob-phone']);
+  assert.equal(nudges.length, 0); // nothing until the sender has finished
+  await send(a, 'done', ma);
+  await send(a, 'done', ma); // a later change is never dropped
+  assert.deepEqual(nudges.map((n) => n.token), ['bob-phone', 'bob-phone']);
   assert.doesNotMatch(JSON.stringify(nudges), /LOCKED-TEXT|malice|group-push/);
   delete env.FCM_SERVICE_ACCOUNT;
 });

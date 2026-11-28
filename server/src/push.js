@@ -41,10 +41,9 @@ async function accessToken(account, now) {
 export async function nudge(env, group, sender, now = Date.now()) {
   try {
     if (!env.FCM_SERVICE_ACCOUNT) return;
-    // At most one nudge a minute per phone, however many notes arrive.
     const { results } = await env.DB.prepare(
-      'SELECT member_id, token FROM push WHERE group_id = ? AND member_id <> ? ' +
-      'AND nudged < ?').bind(group, sender, now - 60000).all();
+      'SELECT member_id, token FROM push WHERE group_id = ? AND member_id <> ?')
+      .bind(group, sender).all();
     if (results.length === 0) return;
     const account = JSON.parse(env.FCM_SERVICE_ACCOUNT);
     const bearer = await accessToken(account, now);
@@ -63,10 +62,10 @@ export async function nudge(env, group, sender, now = Date.now()) {
           }),
         });
       // 404: the app was removed from that phone.
-      await env.DB.prepare(reply.status === 404
-        ? 'DELETE FROM push WHERE group_id = ?1 AND member_id = ?2 AND ?3 > 0'
-        : 'UPDATE push SET nudged = ?3 WHERE group_id = ?1 AND member_id = ?2')
-        .bind(group, row.member_id, now).run();
+      if (reply.status === 404) {
+        await env.DB.prepare('DELETE FROM push WHERE group_id = ? AND member_id = ?')
+          .bind(group, row.member_id).run();
+      }
     }
   } catch {
     // the notes are waiting anyway
